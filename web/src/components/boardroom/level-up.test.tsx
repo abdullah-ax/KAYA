@@ -33,6 +33,20 @@ describe("level-up dialog", () => {
     expect(screen.getByRole("button", { name: "Keep talking with the co-founder" })).toBeInTheDocument();
   });
 
+  it("stacks the two buttons full width, primary first, so the long label never spills out of its button", async () => {
+    chat(run());
+    const go = await screen.findByRole("button", { name: "Go to Validation" });
+    const keep = screen.getByRole("button", { name: "Keep talking with the co-founder" });
+    const footer = go.parentElement as HTMLElement;
+    expect(keep.parentElement).toBe(footer);
+    expect(footer.className).not.toMatch(/grid-cols-2|flex-row/);
+    expect(footer.className).toMatch(/flex-col(?!-reverse)/);
+    expect([...footer.children]).toEqual([go, keep]);
+    for (const b of [go, keep]) expect(b.className).toMatch(/w-full/);
+    expect(go.className).toMatch(/\bh-12\b/);
+    expect(keep.className).toMatch(/\bh-12\b/);
+  });
+
   it("says the Build plan is ready, not that the product is built", async () => {
     chat(run({ stage: "phase3_gate", pending: { ...LEVEL_UP, done: 3, stage: "Build", next: "Commercial setup", proof: "Must-haves fit your hours." } as Run["pending"] }));
     expect(await screen.findByRole("dialog", { name: "Build plan ready" })).toBeInTheDocument();

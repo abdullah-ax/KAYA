@@ -6,7 +6,7 @@
 import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ApiError, nextStage, type Pending, type Run } from "@/lib/api";
 
 export type LevelUp = Extract<Pending, { kind: "level_up" }>;
@@ -60,10 +60,11 @@ export function LevelUpDialog({ pending, open, onGo, onKeepTalking, busy = false
         </DialogHeader>
         <p className="text-xl font-semibold">Next level: Stage {pending.done + 1}, {pending.next}</p>
         {error && <p role="alert" className="text-base font-semibold text-destructive">{error}</p>}
-        <DialogFooter className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 sm:justify-normal">
-          <Button variant="outline" size="lg" className="w-full rounded-full text-base" onClick={onKeepTalking}>Keep talking with the co-founder</Button>
-          <Button ref={go} size="lg" className="w-full rounded-full text-base font-bold" onClick={onGo} disabled={busy}>Go to {pending.next}</Button>
-        </DialogFooter>
+        {/* One column: the long "Keep talking" label does not fit in half the dialog. */}
+        <div className="flex flex-col gap-3">
+          <Button ref={go} size="lg" className="h-12 w-full rounded-full text-base font-bold" onClick={onGo} disabled={busy}>Go to {pending.next}</Button>
+          <Button variant="outline" size="lg" className="h-12 w-full rounded-full text-base" onClick={onKeepTalking}>Keep talking with the co-founder</Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
