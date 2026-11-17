@@ -48,6 +48,7 @@ class Draft:
     rows: list[tuple[str, str, str, str]] = field(default_factory=list)  # option, cost, risk, source
     founder_fit: int = 0
     data: Any = None
+    redrafted: bool = False
 
 
 def search(ctx: Ctx, brief: str, profile: FounderProfile) -> list[SearchResult]:

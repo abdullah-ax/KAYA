@@ -154,7 +154,7 @@ def test_repeat_the_test_is_a_pivot_and_stop_or_pivot_is_a_stop(tmp_path):
 def write_opportunity(run_dir, pick):
     out = run_dir / "outputs"
     out.mkdir(parents=True, exist_ok=True)
-    (out / "phase1_step2_opportunities.md").write_text("# Opportunities\n\n## Option A: A\n", encoding="utf-8")
+    (out / "phase1_step2_opportunities.md").write_text("# Opportunities\n\n## Option A: Speaking drills\n\n- Problem: x\n\n## Option B: Band score tracker\n\n- Problem: y\n", encoding="utf-8")
     (out / "phase1_gate_decision.md").write_text(
         "# Gate: phase1 discover\n\n## System recommendation\ngo: 3 sourced problems (need 3), founder fit 4 of 5 "
         f"(model estimate; need 3).\n\n## Founder's decision\n- Picked: {pick}\n"

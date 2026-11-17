@@ -19,6 +19,7 @@ from typing import Any, Callable, Literal
 
 import httpx
 from fastapi import FastAPI, Header, HTTPException
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 
 from api.approval import ApprovalError, check_approval
@@ -28,6 +29,7 @@ from api.guardrail import check_answer
 from api.llm import LLM, LLMError, make_llm
 from api.log import DecisionLog
 from api.onboarding import AnswerIn, next_step
+from api.plan import build_plan, get_version, plan_markdown
 from api.orchestrator import AnswersExhausted, Ctx, run_pipeline
 from api.research import Search, SearxSearch
 
@@ -402,6 +404,36 @@ def create_app(*, llm_factory: LLMFactory = _default_llm, search_factory: Search
         if not re.fullmatch(r"\w+", run_id) or not run_dir.exists():
             raise HTTPException(404, "No run with that id.")
         return DecisionLog(run_dir / "decision_log.json").entries()
+
+    def plan_for(run_id: str) -> tuple[Path, dict[str, Any]]:
+        """The run dir and the state the plan overview reads. 404 like the log endpoint."""
+        if not re.fullmatch(r"\w+", run_id):
+            raise HTTPException(404, "No run with that id.")
+        run_dir = sessions[run_id].run_dir if run_id in sessions else runs_dir() / run_id
+        if not run_dir.exists():
+            raise HTTPException(404, "No run with that id.")
+        state = sessions[run_id].state() if run_id in sessions else (_read_json(run_dir / "session.json") or {})
+        return run_dir, state
+
+    @app.get("/runs/{run_id}/plan")
+    def read_plan(run_id: str) -> dict[str, Any]:
+        run_dir, state = plan_for(run_id)
+        return build_plan(run_dir, state)
+
+    @app.get("/runs/{run_id}/plan/versions/{n}")
+    def read_plan_version(run_id: str, n: int) -> dict[str, Any]:
+        run_dir, _ = plan_for(run_id)
+        version = get_version(run_dir, n)
+        if version is None:
+            raise HTTPException(404, "No plan version with that number.")
+        return version
+
+    @app.get("/runs/{run_id}/plan.md")
+    def read_plan_markdown(run_id: str) -> PlainTextResponse:
+        run_dir, state = plan_for(run_id)
+        return PlainTextResponse(
+            plan_markdown(build_plan(run_dir, state), run_id), media_type="text/markdown; charset=utf-8",
+            headers={"content-disposition": f'attachment; filename="business-plan-{run_id}.md"'})
 
     def netlify_token(token: str | None) -> str:
         if not token or not token.strip():

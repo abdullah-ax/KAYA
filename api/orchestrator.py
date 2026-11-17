@@ -20,6 +20,7 @@ from api.gates import GateResult, phase1_gate, phase2_gate, write_gate_decision
 from api.guardrail import check_request
 from api.llm import LLM
 from api.log import DecisionLog
+from api.plan import snapshot
 from api.research import Search, SourceRegistry, write_sources
 
 PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
@@ -128,6 +129,7 @@ def publish_signup_page(ctx: Ctx, page: str, *, approval: Approval) -> Path:
     path = ctx.output(2, 2, "signup_page")
     path.write_text(page + "\n\nSTUBBED: approved by the founder, saved here only. "
                     "Nothing was posted online.\n", encoding="utf-8")
+    snapshot(ctx.run_dir, "draft", "Sign-up page saved after your approval (not posted online)")
     return path
 
 
@@ -168,6 +170,7 @@ def _reviewed(ctx: Ctx, step: str, make: Callable[[list[str]], Draft]) -> Draft 
     if review.passed:
         return draft
     draft = make(review.reasons)
+    draft.redrafted = True
     review = boss.review(ctx, draft, step)
     if review.blocked:
         kept = ctx.run_dir / "outputs" / f"{step}_rejected_draft.md"
@@ -176,6 +179,7 @@ def _reviewed(ctx: Ctx, step: str, make: Callable[[list[str]], Draft]) -> Draft 
                         encoding="utf-8")
         top = "; ".join(review.reasons[:2])
         ctx.say(f"The ethics check blocked this draft twice, so the run stops here. Why: {top}")
+        snapshot(ctx.run_dir, "stop", f"The ethics check blocked the {step} draft twice")
         return None
     if not review.passed:
         draft.markdown += "\n## Boss notes (did not pass)\n\n" + "\n".join(f"- {r}" for r in review.reasons) + "\n"
@@ -185,6 +189,9 @@ def _reviewed(ctx: Ctx, step: str, make: Callable[[list[str]], Draft]) -> Draft 
 def _write_draft(ctx: Ctx, phase: int, step: int, name: str, draft: Draft) -> None:
     ctx.output(phase, step, name).write_text(draft.markdown, encoding="utf-8")
     write_sources(ctx.output(phase, step, "sources", "json"), draft.cards)
+    snapshot(ctx.run_dir, "redraft" if draft.redrafted else "draft",
+             f"{name.replace('_', ' ').capitalize()} written"
+             + (" after the boss asked for a redraft" if draft.redrafted else ""))
 
 
 def _write_gate(ctx: Ctx, phase: int, result: GateResult, approval: Approval,
@@ -203,6 +210,7 @@ def _gate(ctx: Ctx, phase: int, result: GateResult, options: list[Option]) -> Ap
                                     options)
     run_gated(ctx, "founder", f"phase{phase}_decision", approval,
               lambda: _write_gate(ctx, phase, result, approval, options))
+    snapshot(ctx.run_dir, "decision", f"Phase {phase} gate: you picked {approval.option}", option=approval.option)
     return approval
 
 
