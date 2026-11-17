@@ -19,7 +19,10 @@ def verified_urls() -> set[str]:
     data = (ROOT / "web/src/components/boardroom/data.ts").read_text(encoding="utf-8")
     sist = (ROOT / "kb/method/sistilli_map.md").read_text(encoding="utf-8")
     urls = set(re.findall(r'url: "(https?://[^"]+)"', data))
-    urls |= set(re.findall(r"\]\((https?://[^\s]+?)\)(?=[,\s|.]|$)", sist))
+    for u in re.findall(r"\]\((https?://[^\s]+?)\)(?=[,\s|.)]|$)", sist):
+        while u.count(")") > u.count("("):
+            u = u[:-1]
+        urls.add(u)
     return urls
 
 

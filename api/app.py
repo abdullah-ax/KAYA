@@ -29,6 +29,7 @@ from api.guardrail import check_answer
 from api.llm import LLM, LLMError, make_llm
 from api.log import DecisionLog
 from api.onboarding import AnswerIn, next_step
+from api import program
 from api.plan import build_plan, get_version, plan_markdown
 from api.orchestrator import AnswersExhausted, Ctx, run_pipeline
 from api.research import Search, SearxSearch
@@ -414,6 +415,14 @@ def create_app(*, llm_factory: LLMFactory = _default_llm, search_factory: Search
             raise HTTPException(404, "No run with that id.")
         state = sessions[run_id].state() if run_id in sessions else (_read_json(run_dir / "session.json") or {})
         return run_dir, state
+
+    @app.get("/runs/{run_id}/program")
+    def read_program(run_id: str) -> dict[str, Any]:
+        """This week's accelerator card for the run's current stage, with the coach handoff line."""
+        run_dir, state = plan_for(run_id)
+        stage = program.stage_for(state.get("stage") or "start", state.get("status") or "", state.get("outcome"))
+        words = program.words_from_profile(_read_json(run_dir / "outputs" / "phase1_step1_founder_profile.json"))
+        return {"stage": stage, "card": program.card(stage, words, program.previous_stage(stage))}
 
     @app.get("/runs/{run_id}/plan")
     def read_plan(run_id: str) -> dict[str, Any]:

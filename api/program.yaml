@@ -1,0 +1,218 @@
+# The accelerator program as data (planning/ACCELERATOR_PROGRAM.md).
+# Rules: no money promises anywhere, and every link must already be checked in
+# web/src/components/boardroom/data.ts (LEARN, CASES) or kb/method/sistilli_map.md.
+# Questions may use {group}, {skill} and {market}: the founder's own words.
+stages:
+  ideation:
+    label: Ideation
+    goal: Pick one problem you know well, from people you can reach.
+    lead: {id: profiler, name: Profiler}
+    handoff: "The Profiler starts by learning who you are, so the ideas fit you."
+    joins:
+      - {id: intern, name: Research intern, when: finds sources for each idea}
+      - {id: boss, name: Boss, when: checks every draft}
+    big_question: If this worked perfectly, how many people could it help in a year, and who are they?
+    questions:
+      - What do people in {group} keep asking you for help with?
+      - Where does {skill} already help someone you know?
+      - Which problem in {market} have you lived yourself?
+    do_today: Write down 3 problems you have seen up close. Next to each, name one person who has it.
+    ship: A one-page list of 2 or 3 idea spaces, shared with one person you trust, by day 3.
+    metric:
+      name: Problems you can name with a real person who has each one
+      target: A number you set before you start, for example 3 of 3.
+    review: Two or more problems with a real person each means go. One means repeat. None means pick a new space.
+    learn:
+      kind: Essay
+      org: Paul Graham
+      title: How to Get Startup Ideas
+      url: https://paulgraham.com/startupideas.html
+      why: Problems you live with beat ideas you invent.
+    case:
+      company: Nafham
+      market: Egypt, edtech
+      fact: Free, crowdsourced lessons for Egyptian school (K-12) curricula. Tyro agreed to buy it in November 2021.
+      url: https://cairoscene.com/Business/Tyro-Acquires-Fellow-Egyptian-Edtech-Startup-Nafham
+      source: CairoScene
+      why: It started from one exact need that students in Egypt already had.
+    steps:
+      - step: "0"
+        title: Know your goals
+        line: Decide what you want from the company, your time, and what you will not do, before you pick an idea.
+        links:
+          - {title: "Idea Creation", url: "https://map.sistilli.dev/public/startups/steps/1.+Idea+Creation"}
+      - step: "1"
+        title: Find idea spaces where you fit
+        line: Pick 2 or 3 areas with many problems, where your skills and groups give you founder-market fit.
+        links:
+          - {title: "Idea space", url: "https://map.sistilli.dev/public/startups/concepts/idea+space"}
+          - {title: "Founder-market fit", url: "https://map.sistilli.dev/public/startups/concepts/Founder+Market+Fit"}
+      - step: "2"
+        title: Check each idea on your own first
+        line: Does it fit your goals? Is it a tarpit idea that looks easy but nobody solved? Is it a painkiller or a vitamin?
+        links:
+          - {title: "Tarpit idea", url: "https://map.sistilli.dev/public/startups/concepts/Tarpit+idea"}
+          - {title: "Painkiller vs vitamin", url: "https://map.sistilli.dev/public/startups/concepts/Pricing+-+Painkiller+vs+Vitamin"}
+
+  validation:
+    label: Validation
+    goal: Get proof from strangers before you build anything.
+    lead: {id: warm_skeptic, name: Noor}
+    handoff: "Noor takes over to help you test the idea with real people before you build."
+    joins:
+      - {id: hustler, name: Hustler, when: writes your outreach messages}
+      - {id: judge_wee, name: Evidence judge, when: checks your numbers and sources}
+    big_question: If this worked, who else would want it in a year, and how would they hear about it?
+    questions:
+      - Who outside {group} have you talked to about this?
+      - When did someone last struggle with {market} in front of you? What did they do?
+      - What would you need to see from strangers to believe your idea?
+    do_today: Message 10 people you do not know. Ask about the last time they had this problem. Do not pitch.
+    ship: A sign-up page, published only after you approve it, within 7 days.
+    metric:
+      name: Sign-ups from strangers in 14 days
+      target: A number you set before you start. Write it down first.
+    review: Under 30% of your target means stop or pivot. Near it means repeat. At or above it means go.
+    learn:
+      kind: Notes
+      org: map.sistilli.dev
+      title: Good questions to ask users
+      url: https://map.sistilli.dev/public/startups/The+Mom+Test/conversations/Questions
+      why: Ask how they solve it today, not whether they would buy.
+    case:
+      company: Airbnb
+      market: Global unicorn
+      fact: The founders went door to door in New York, recruiting hosts and taking professional photos of their apartments themselves.
+      url: https://paulgraham.com/ds.html
+      source: Paul Graham
+      why: Weak numbers? Go to the users and fix the offer by hand.
+
+  build:
+    label: Build
+    goal: Make the smallest version that solves the problem, in two weeks or less.
+    lead: {id: operator, name: Operator}
+    handoff: "The Operator joins to help you build the smallest version that works."
+    joins:
+      - {id: boss, name: Boss, when: cuts anything that does not fit two weeks}
+    big_question: What would you build if ten times more people showed up next month?
+    questions:
+      - What is the one thing {group} must be able to do on day one?
+      - Which part of {skill} can you do by hand first, before any code?
+      - What can you leave out and still solve the problem in {market}?
+    do_today: List everything you want in version one. Cross out half. Cross out half again.
+    ship: A rough working version that one real person uses, within 7 days.
+    metric:
+      name: Real people who finish the main task in your version
+      target: A number you set before you start, for example 5 of 5.
+    review: If people cannot finish the main task, repeat the build. If they finish it, move on.
+    learn:
+      kind: Notes
+      org: map.sistilli.dev
+      title: Build the MVP
+      url: https://map.sistilli.dev/public/startups/steps/4.+Build+MVP
+      why: One to two weeks. Manual work and spreadsheets are fine.
+    case:
+      company: Breadfast
+      market: Egypt, YC company
+      fact: "In 2017 it only delivered fresh bakery each morning. In its first months: more than 1,000 orders, and over 90% of customers came back."
+      url: https://www.menabytes.com/breadfast-egypt/
+      source: MENAbytes, September 2017
+      why: Start with one small, daily product.
+
+  pricing:
+    label: Pricing and setup
+    goal: Set a fair price and the simple rules for your first customers.
+    lead: {id: numbers_hawk, name: Numbers hawk}
+    handoff: "The Numbers hawk joins to check that your price and your costs add up."
+    joins:
+      - {id: judge_barn, name: Ethics judge, when: checks your policies for tricks on customers}
+    big_question: How many people would miss this if it disappeared tomorrow?
+    questions:
+      - What do people in {group} pay for today to solve this?
+      - What does {skill} cost you in time each week?
+      - Is your idea in {market} a painkiller or a vitamin? How do you know?
+    do_today: Write your price and what it costs you per customer. Ask 3 people if the price feels fair.
+    ship: A clear price and a plain refund and privacy note on your page, after you approve it.
+    metric:
+      name: People who say yes to the price when they hear it
+      target: A number you set before you start, for example 3 of 10.
+    review: If almost nobody accepts the price, repeat with a new price or a smaller offer.
+    learn:
+      kind: Notes
+      org: map.sistilli.dev
+      title: Painkiller vs vitamin
+      url: https://map.sistilli.dev/public/startups/concepts/Pricing+-+Painkiller+vs+Vitamin
+      why: People pay more to remove a pain than to add a nice extra. Use the idea, not the numbers on the page.
+    case:
+      company: Breadfast
+      market: Egypt, YC company
+      fact: "In 2017 it only delivered fresh bakery each morning. In its first months: more than 1,000 orders, and over 90% of customers came back."
+      url: https://www.menabytes.com/breadfast-egypt/
+      source: MENAbytes, September 2017
+      why: Customers who come back are the clearest sign the offer is worth its price.
+
+  distribution:
+    label: Distribution
+    goal: Put your offer in front of real people this week.
+    lead: {id: hustler, name: Hustler}
+    handoff: "The Hustler takes the lead to help you reach people this week."
+    joins:
+      - {id: brand_builder, name: Brand builder, when: helps with your name, message and page}
+      - {id: judge_barn, name: Ethics judge, when: checks every message before it goes out}
+    big_question: Where do the people who need this already gather, and how could you meet 100 of them?
+    questions:
+      - Which people in {group} would share this with a friend?
+      - How would you tell a stranger about {skill} in one sentence?
+      - Which place do people with a {market} problem already visit every day?
+    do_today: Send your offer to 10 people you know, then to 10 you do not. Keep each message personal.
+    ship: Your message sent to 20 real people, only after you approve each channel.
+    metric:
+      name: Replies from the people you reached
+      target: A number you set before you start, for example 5 of 20.
+    review: Few replies means change the message or the place, then repeat. Many replies means go.
+    learn:
+      kind: Essay
+      org: Paul Graham
+      title: Do Things That Don't Scale
+      url: https://paulgraham.com/ds.html
+      why: Recruit the first users by hand, one at a time.
+    case:
+      company: Stripe
+      market: Global unicorn
+      fact: The founders installed Stripe on a user's laptop on the spot instead of sending a link. Paul Graham calls it the Collison installation.
+      url: https://paulgraham.com/ds.html
+      source: Paul Graham
+      why: Early users came one by one, set up in person.
+
+  operate:
+    label: Operate and learn
+    goal: Check your numbers every week, then repeat, pivot, or stop on evidence.
+    lead: {id: warm_skeptic, name: Noor}
+    handoff: "Noor is back to read your weekly numbers with you and decide what comes next."
+    joins:
+      - {id: judge_long, name: Clarity judge, when: keeps your updates plain}
+      - {id: shark_numbers, name: Numbers shark, when: asks hard questions in a simulation}
+    big_question: What do you know about this problem now that most people do not?
+    questions:
+      - What did {group} do this week that surprised you?
+      - What did you learn about {skill} from real use?
+      - What is one thing in {market} you would change after what you saw?
+    do_today: Write 3 lines for your weekly update. What shipped, the number, and what is next.
+    ship: Your weekly update, sent to one person who will be honest with you.
+    metric:
+      name: People who came back and used it again this week
+      target: A number you set before you start, for example 5 of 10.
+    review: At or above target means keep going. Under target means repeat, pivot, or stop. A pivot is saved as a new version of your plan.
+    learn:
+      kind: Essay
+      org: YC Startup Library
+      title: YC's essential startup advice
+      url: https://www.ycombinator.com/library/4D-yc-s-essential-startup-advice
+      why: The short list of advice YC repeats to every founder.
+    case:
+      company: Breadfast
+      market: Egypt, YC company
+      fact: "In 2017 it only delivered fresh bakery each morning. In its first months: more than 1,000 orders, and over 90% of customers came back."
+      url: https://www.menabytes.com/breadfast-egypt/
+      source: MENAbytes, September 2017
+      why: Prove people come back before you grow.
