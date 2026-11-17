@@ -1,0 +1,6 @@
+{
+  "name": "kaya-github",
+  "version": "0.1.0",
+  "description": "GitHub MCP server locked to the abdullah-ax/KAYA repository. Every GitHub tool call that targets any other repository, user or org is blocked.",
+  "author": { "name": "KAYA" }
+}
