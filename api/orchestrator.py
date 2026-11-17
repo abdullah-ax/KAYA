@@ -265,7 +265,7 @@ def _run(ctx: Ctx, brief: str, result: RunResult) -> RunResult:
     _save(ctx, result, "phase1_step3")
 
     advantage = cofounder.ask_founder(
-        ctx, "unfair_advantage", "Lean Canvas box 9: what do you have that others can't copy or buy?")
+        ctx, "unfair_advantage", "What do you have that others can't easily copy or buy? For example your skills, your group, or what people trust you for.")
     ctx.log.append("founder", "write_unfair_advantage", founder_input=advantage)
     canvas = _reviewed(ctx, "phase2_step1",
                        lambda notes: intern.draft_lean_canvas(ctx, chosen, profile, advantage, notes))
