@@ -13,3 +13,9 @@ def tmp_run(tmp_path, monkeypatch):
     """A throwaway run directory so tests never touch outputs/ or decision_log.json."""
     monkeypatch.setenv("RUNS_DIR", str(tmp_path))
     return tmp_path
+
+
+@pytest.fixture(autouse=True)
+def _no_real_backoff(monkeypatch):
+    """Retries back off with real sleeps in production; tests skip the wait."""
+    monkeypatch.setattr("api.llm._sleep", lambda seconds: None)
