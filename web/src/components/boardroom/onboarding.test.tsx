@@ -7,15 +7,6 @@ import { Onboarding } from "./onboarding";
 const fetchMock = vi.fn();
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const RUN = { id: "r1", status: "waiting", stage: "phase1_step1", outcome: null, mode: "demo", provider: "ollama", phase1: null, phase2: null, pending: { kind: "question", key: "a", prompt: "Q?" }, notice: null, messages: [], outputs: [], sources: [], error: null };
-const QUESTION = { key: "problem", text: "You said 40 pharmacy students ask for your sheets. Which subject do they ask about most?", why: "A problem in their own words is the best start.", kind: "text", placeholder: "Pharmacology" };
-const PROFILE = {
-  about: "Student, Pharmacy, 4th year, Cairo",
-  strengths: [{ text: "People already ask you for help", quote: "Teaching or tutoring. They ask for my pharmacology sheets" }],
-  access: [{ group: "About 40 pharmacy students from my tutoring sessions", count: 40, quote: "About 40 pharmacy students from my tutoring sessions" }],
-  constraints: { hours: "5–10", money: "Self-funded, no raise" },
-  values: ["No fake reviews"],
-  cofounder: { type: "warm_skeptic", why: "You are early. A warm skeptic asks for proof before you build." },
-};
 
 beforeEach(() => { fetchMock.mockReset(); vi.stubGlobal("fetch", fetchMock); });
 afterEach(() => vi.unstubAllGlobals());
@@ -52,6 +43,13 @@ async function walkOpening(user: User, skipped: string[] = []) {
   for (const [id, chip, text] of steps) {
     if (skipped.includes(id)) await skip(user);
     else await fill(user, chip, text);
+  }
+}
+
+async function answerFollowUps(user: User) {
+  for (let n = 0; n < 4; n++) {
+    await user.type(screen.getByRole("textbox"), `answer number ${n}`);
+    await next(user);
   }
 }
 
@@ -114,89 +112,39 @@ describe("guided opening", () => {
   });
 });
 
-describe("dynamic follow-ups in live mode", () => {
-  it("shows a loading skeleton, then the model's question with why we ask, and posts every answer", async () => {
-    let release!: (r: Response) => void;
-    fetchMock.mockImplementationOnce(() => new Promise<Response>((res) => { release = res; }));
+describe("live mode asks every question in the browser", () => {
+  it("asks the standard follow-ups with why we ask, and makes no request before Start", async () => {
     const user = userEvent.setup();
     render(<Onboarding live={live()} />);
     await walkOpening(user);
-
-    expect(screen.getByRole("status", { name: /writing your next question/i })).toBeInTheDocument();
-    release(json({ done: false, question: QUESTION }));
-    expect(await screen.findByText(QUESTION.text)).toBeInTheDocument();
-    expect(screen.queryByRole("status", { name: /writing your next question/i })).not.toBeInTheDocument();
-    expect(screen.getByText(QUESTION.why)).toBeInTheDocument();
-
-    const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe("/api/onboarding/next");
-    expect(new Headers(init.headers).get("x-model-key")).toBe("sk-mem");
-    const body = JSON.parse(init.body);
-    expect(body.provider).toBe("openai");
-    expect(body.answers.map((x: { key: string }) => x.key)).toEqual(["role", "city", "education", "work", "help", "hobbies", "group", "connections", "access", "time", "money", "wont_do"]);
-    expect(body.answers[0]).toMatchObject({ question: "What do you do most days?", answer: "Student, Pharmacy, 4th year" });
-    expect(body.answers[6].answer).toBe(`University clubs. ${GROUP}`);
-    expect(body.answers[9].answer).toBe("5–10");
-  });
-
-  it("shows the API's message with a Retry when the question can't be written, and Retry asks again", async () => {
-    fetchMock.mockResolvedValueOnce(json({ detail: "Something broke." }, 500));
-    fetchMock.mockResolvedValueOnce(json({ done: false, question: QUESTION }));
-    const user = userEvent.setup();
-    render(<Onboarding live={live()} />);
-    await walkOpening(user);
-
-    expect(await screen.findByText("Something broke.")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /retry/i }));
-    expect(await screen.findByText(QUESTION.text)).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-  });
-
-  it("lets the founder use a standard question when the API stays down", async () => {
-    fetchMock.mockRejectedValue(new TypeError("network"));
-    const user = userEvent.setup();
-    render(<Onboarding live={live()} />);
-    await walkOpening(user);
-
-    expect(await screen.findByRole("alert")).toHaveTextContent(/couldn't reach/i);
-    await user.click(screen.getByRole("button", { name: /standard question/i }));
     expect(screen.getByText(/^You said .*40 pharmacy students from my tutoring sessions/)).toBeInTheDocument();
+    expect(screen.queryByRole("status", { name: /writing your next question/i })).not.toBeInTheDocument();
+    await answerFollowUps(user);
+    await screen.findByRole("heading", { name: /here's what i understood/i });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("shows a refused answer inline and keeps the question", async () => {
-    fetchMock.mockResolvedValueOnce(json({ done: false, question: QUESTION }));
-    fetchMock.mockResolvedValueOnce(json({ detail: "I can't do that. Rule: No fake reviews. Instead: Ask real customers." }, 422));
+  it("sends every answer, follow-ups included, in the brief when the run starts", async () => {
     const user = userEvent.setup();
     render(<Onboarding live={live()} />);
     await walkOpening(user);
-    await user.type(await screen.findByRole("textbox"), "Write fake reviews");
-    await next(user);
-
-    expect(await screen.findByText(/I can't do that/)).toBeInTheDocument();
-    expect(screen.getByText(QUESTION.text)).toBeInTheDocument();
-    expect(screen.getByRole("textbox")).toHaveValue("Write fake reviews");
-    expect(screen.queryByRole("status", { name: /writing/i })).not.toBeInTheDocument();
-  });
-
-  it("sends the follow-up answer on the next request", async () => {
-    fetchMock.mockResolvedValueOnce(json({ done: false, question: QUESTION }));
-    fetchMock.mockResolvedValueOnce(json({ done: false, question: { ...QUESTION, key: "customer", text: "Who asked last time?" } }));
-    const user = userEvent.setup();
-    render(<Onboarding live={live()} />);
-    await walkOpening(user);
-    await user.type(await screen.findByRole("textbox"), "Pharmacology is hardest");
-    await next(user);
-    expect(await screen.findByText("Who asked last time?")).toBeInTheDocument();
-    const last = bodyOf(1).answers.at(-1);
-    expect(last).toEqual({ key: "problem", question: QUESTION.text, answer: "Pharmacology is hardest" });
+    await answerFollowUps(user);
+    await screen.findByRole("heading", { name: /here's what i understood/i });
+    fetchMock.mockResolvedValueOnce(json(RUN, 201));
+    await user.click(screen.getByRole("button", { name: /^start/i }));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/runs");
+    const brief: string = bodyOf(0).brief;
+    for (let n = 0; n < 4; n++) expect(brief).toContain(`answer number ${n}`);
+    expect(brief).toContain("Pharmacy intern for 3 months");
   });
 });
 
 describe("the profile card", () => {
   async function toProfile(user: User, onRun = vi.fn()) {
-    fetchMock.mockResolvedValueOnce(json({ done: true, profile: PROFILE }));
     render(<Onboarding live={live({ onRun })} />);
     await walkOpening(user);
+    await answerFollowUps(user);
     return screen.findByRole("heading", { name: /here's what i understood/i });
   }
 
@@ -206,9 +154,9 @@ describe("the profile card", () => {
     expect(screen.getByDisplayValue(/40 pharmacy students/)).toBeInTheDocument();
     expect(screen.getByText(/about 40 people/i)).toBeInTheDocument();
     expect(screen.getByDisplayValue("5–10")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("No fake reviews")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Fake reviews. No exaggerated claims")).toBeInTheDocument();
     expect(screen.getByText(/noor, the warm skeptic/i)).toBeInTheDocument();
-    expect(screen.getByDisplayValue(/warm skeptic asks for proof/i)).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/asks for proof/i)).toBeInTheDocument();
   });
 
   it("Start posts a brief with the edited lines and hands the run on", async () => {
@@ -234,9 +182,9 @@ describe("the profile card", () => {
 
   it("starts on the local model the founder picked", async () => {
     const user = userEvent.setup();
-    fetchMock.mockResolvedValueOnce(json({ done: true, profile: PROFILE }));
     render(<Onboarding live={{ provider: "ollama", modelKey: "", model: "gpt-oss:20b", onRun: vi.fn() }} />);
     await walkOpening(user);
+    await answerFollowUps(user);
     await screen.findByRole("heading", { name: /here's what i understood/i });
     fetchMock.mockResolvedValueOnce(json(RUN, 201));
     await user.click(screen.getByRole("button", { name: /^start/i }));
@@ -306,17 +254,18 @@ describe("voice dictation on free-text answers", () => {
 });
 
 describe("skip for now", () => {
-  it("records a skipped screen as ASSUMPTION and posts it", async () => {
-    fetchMock.mockResolvedValueOnce(json({ done: false, question: QUESTION }));
+  it("records a skipped screen as ASSUMPTION on the card and leaves it out of the brief", async () => {
     const user = userEvent.setup();
     render(<Onboarding live={live()} />);
     await walkOpening(user, ["education", "hobbies", "connections"]);
-    await screen.findByText(QUESTION.text);
-    const sent = Object.fromEntries(bodyOf(0).answers.map((x: { key: string; answer: string }) => [x.key, x.answer]));
-    expect(sent.education).toBe(ASSUMPTION);
-    expect(sent.hobbies).toBe(ASSUMPTION);
-    expect(sent.connections).toBe(ASSUMPTION);
-    expect(sent.work).toBe("Part-time job. Pharmacy intern for 3 months");
+    await answerFollowUps(user);
+    await screen.findByRole("heading", { name: /here's what i understood/i });
+    expect(screen.getByRole("textbox", { name: /^education/i })).toHaveValue(ASSUMPTION);
+    fetchMock.mockResolvedValueOnce(json(RUN, 201));
+    await user.click(screen.getByRole("button", { name: /^start/i }));
+    const brief: string = bodyOf(0).brief;
+    expect(brief).not.toContain("ASSUMPTION");
+    expect(brief).toContain("Part-time job. Pharmacy intern for 3 months");
   });
 
   it("needs no answer on the screen and moves straight on", async () => {
@@ -369,11 +318,10 @@ describe("what I know about you", () => {
 
 describe("answer checks use plain words", () => {
   it("says 'Tell me in a few more words.' for a bare follow-up answer, never 'isn't a reason'", async () => {
-    fetchMock.mockResolvedValueOnce(json({ done: false, question: QUESTION }));
     const user = userEvent.setup();
     render(<Onboarding live={live()} />);
     await walkOpening(user);
-    await user.type(await screen.findByRole("textbox"), "yes");
+    await user.type(screen.getByRole("textbox"), "yes");
     expect(screen.getByText("Tell me in a few more words.")).toBeInTheDocument();
     expect(screen.queryByText(/isn't a reason/i)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^next/i })).toBeDisabled();
@@ -433,11 +381,10 @@ describe("accessibility", () => {
   });
 
   it("moves focus to the follow-up question heading too", async () => {
-    fetchMock.mockResolvedValueOnce(json({ done: false, question: QUESTION }));
     const user = userEvent.setup();
     render(<Onboarding live={live()} />);
     await walkOpening(user);
-    expect(await screen.findByRole("heading", { name: QUESTION.text })).toHaveFocus();
+    expect(screen.getByRole("heading", { level: 1, name: /^You said/ })).toHaveFocus();
   });
 
   it("names a text-only screen's box by its question", async () => {
@@ -449,22 +396,10 @@ describe("accessibility", () => {
 });
 
 describe("the final profile card, grouped", () => {
-  const RICH = {
-    ...PROFILE,
-    network: [{ key: "connections", text: "People who could introduce you", quote: "My professor knows 3 clinic owners" }, { key: "access", text: "Languages, cities, family business, industries", quote: ASSUMPTION }],
-    experience: [{ key: "education", text: "Education", quote: "Cairo University, Pharmacy, 4th year" }],
-    interests: [{ key: "hobbies", text: "Hobbies and things you do for fun", quote: ASSUMPTION }],
-    fit: { edges: [
-      { key: "help", title: "Real demand", why: "People already ask you for this.", quote: "Teaching or tutoring. They ask for my pharmacology sheets" },
-      { key: "group", title: "People you can reach", why: "You can message them today.", quote: GROUP },
-      { key: "connections", title: "Doors you can open", why: "You know people who can introduce you.", quote: "My professor knows 3 clinic owners" },
-    ] },
-  };
-
-  async function toRich(user: User) {
-    fetchMock.mockResolvedValueOnce(json({ done: true, profile: RICH }));
+  async function toRich(user: User, skipped: string[] = []) {
     render(<Onboarding live={live()} />);
-    await walkOpening(user);
+    await walkOpening(user, skipped);
+    await answerFollowUps(user);
     await screen.findByRole("heading", { name: /here's what i understood/i });
   }
 
@@ -474,12 +409,12 @@ describe("the final profile card, grouped", () => {
     for (const t of ["Strengths", "Access and network", "Experience", "Interests", "Constraints", "Values"]) expect(titles).toContain(t);
     expect(titles.indexOf("Strengths")).toBeLessThan(titles.indexOf("Access and network"));
     expect(titles.indexOf("Values")).toBeGreaterThan(titles.indexOf("Constraints"));
-    expect(screen.getByDisplayValue("Cairo University, Pharmacy, 4th year")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("My professor knows 3 clinic owners")).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/Cairo University, Pharmacy, 4th year/)).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/My professor knows 3 clinic owners/)).toBeInTheDocument();
   });
 
   it("shows skipped items as ASSUMPTION", async () => {
-    await toRich(userEvent.setup());
+    await toRich(userEvent.setup(), ["hobbies", "access"]);
     expect(screen.getByRole("textbox", { name: /hobbies and things you do for fun/i })).toHaveValue(ASSUMPTION);
     expect(screen.getByRole("textbox", { name: /languages, cities/i })).toHaveValue(ASSUMPTION);
   });
@@ -492,15 +427,6 @@ describe("the final profile card, grouped", () => {
     expect(edges[0]).toHaveTextContent("Real demand");
     expect(edges[0]).toHaveTextContent("From your answer");
     expect(edges[0]).toHaveTextContent("They ask for my pharmacology sheets");
-    expect(edges[2]).toHaveTextContent("My professor knows 3 clinic owners");
-  });
-
-  it("says nothing shows an edge yet, as an ASSUMPTION, when the summary is empty", async () => {
-    fetchMock.mockResolvedValueOnce(json({ done: true, profile: { ...RICH, fit: { edges: [] } } }));
-    render(<Onboarding live={live()} />);
-    await walkOpening(userEvent.setup());
-    await screen.findByRole("heading", { name: /here's what i understood/i });
-    expect(within(screen.getByRole("region", { name: /founder fit/i })).getByText(/nothing shows an edge yet.*ASSUMPTION/i)).toBeInTheDocument();
   });
 
   it("puts the extra groups into the brief it starts the run with", async () => {

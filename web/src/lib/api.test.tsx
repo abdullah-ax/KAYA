@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, createRun, getRun, nextQuestion, sendAnswer, sendGate, testModel, useRun, type Run } from "./api";
+import { ApiError, createRun, getRun, nextQuestion, nextStage, sendAnswer, sendGate, testModel, useRun, type Run } from "./api";
 
 const run = (over: Partial<Run> = {}): Run => ({
   id: "r1", status: "working", stage: "phase1_step1", outcome: null, mode: "demo", provider: "ollama",
@@ -63,6 +63,16 @@ describe("api client", () => {
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ text: "I tutor students" });
     expect(fetchMock.mock.calls[1][0]).toBe("/api/runs/r1/gate");
     expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ option: "A", reason: "Because forty students already ask me for these sheets" });
+  });
+
+  it("nextStage posts to /next with no body and returns the run", async () => {
+    fetchMock.mockResolvedValue(json(run({ stage: "phase2_step1" })));
+    const r = await nextStage("r1");
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/runs/r1/next");
+    expect(init.method).toBe("POST");
+    expect(init.body).toBeUndefined();
+    expect(r.stage).toBe("phase2_step1");
   });
 
   it("throws ApiError carrying the API's plain 422 message", async () => {

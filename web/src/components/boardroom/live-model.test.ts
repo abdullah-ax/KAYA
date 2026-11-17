@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ApiSource } from "@/lib/api";
-import { composeBrief, friendlyFileName, gateArgsFromPending, outcomeSentence, progressLine, progressStages, sourceCardsFrom, stageInfo } from "./live-model";
+import { composeBrief, friendlyFileName, gateArgsFromPending, outcomeSentence, progressLine, progressStages, sourceCardsFrom, stageInfo, STAGE_NAMES, stageNumber, stageTitle } from "./live-model";
 import { STAGES } from "./journey";
 
 describe("composeBrief", () => {
@@ -189,5 +189,24 @@ describe("outcomeSentence", () => {
     expect(outcomeSentence("done", "stop")).toBe("Finished: stop");
     expect(outcomeSentence("done", "go")).toBe("Finished: go");
     expect(outcomeSentence("done", null)).toBe("Finished");
+  });
+});
+
+describe("stageNumber and stageTitle", () => {
+  it("names the six stages in order", () => {
+    expect(STAGE_NAMES).toEqual(["Ideation", "Validation", "Build", "Commercial setup", "Sell and get paid", "Operate and learn"]);
+  });
+  it("numbers the stage from the step, 1 to 6, and starts at 1", () => {
+    expect(stageNumber("start")).toBe(1);
+    expect(stageNumber("phase1_gate")).toBe(1);
+    expect(stageNumber("phase2_step1")).toBe(2);
+    expect(stageNumber("phase3_gate")).toBe(3);
+    expect(stageNumber("phase6_step1")).toBe(6);
+    expect(stageNumber("phase9_step1")).toBe(1);
+  });
+  it("writes one plain line: stage number, stage name and step", () => {
+    expect(stageTitle("phase1_step2")).toBe("Stage 1 of 6: Ideation, Opportunities");
+    expect(stageTitle("phase2_gate")).toBe("Stage 2 of 6: Validation, Sign-up gate");
+    expect(stageTitle("start")).toBe("Stage 1 of 6: Ideation, Getting to know you");
   });
 });
