@@ -26,8 +26,8 @@ import { cn } from "@/lib/utils";
 type Provider = { id: string; name: string; model: string; note: string; needsKey: boolean };
 
 export const PROVIDERS: Provider[] = [
-  { id: "ollama", name: "Local · light", model: "qwen3:8b", note: "Free. Runs on a 16 GB laptop. Nothing leaves your machine.", needsKey: false },
-  { id: "ollama-gpt-oss", name: "Local · stronger", model: "gpt-oss:20b", note: "Free. Better answers, slower. Needs about 16 GB free memory.", needsKey: false },
+  { id: "ollama", name: "Local, light", model: "qwen3:8b", note: "Free. Runs on a 16 GB laptop. Nothing leaves your machine.", needsKey: false },
+  { id: "ollama-gpt-oss", name: "Local, stronger", model: "gpt-oss:20b", note: "Free. Better answers, slower. Needs about 16 GB free memory.", needsKey: false },
   { id: "groq", name: "Groq free tier", model: "openai/gpt-oss-20b", note: "Free key. Open-weight model, fast. Rate limited.", needsKey: true },
   { id: "openrouter", name: "OpenRouter free models", model: "qwen/qwen3-8b:free", note: "Free key. Open-weight model. Slower at peak.", needsKey: true },
 ];

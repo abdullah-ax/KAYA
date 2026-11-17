@@ -497,7 +497,7 @@ function ToolFallbackApprovalReceipt({
         <Icon aria-hidden className="text-muted-foreground size-3.5 shrink-0" />
         <span className="font-medium">{receipt.label}</span>
         {receipt.option !== undefined ? (
-          <span className="text-muted-foreground">· {receipt.option}</span>
+          <span className="text-muted-foreground">({receipt.option})</span>
         ) : null}
       </p>
       {approval.answers &&
@@ -517,7 +517,7 @@ function ToolFallbackApprovalReceipt({
               <span className="text-muted-foreground">
                 {question.header ?? question.prompt}
               </span>{" "}
-              · {labels.join(", ")}
+              : {labels.join(", ")}
             </p>
           );
         })}

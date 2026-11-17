@@ -152,11 +152,11 @@ export function LivePanel({ run, error, onRestart }: { run: Run | null; error: s
         {ended && <Button variant="outline" onClick={onRestart} className="w-fit rounded-full">Start a new run</Button>}
       </Section>
 
-      <Section title={`Sources · ${cards.length}`}>
+      <Section title={`Sources (${cards.length})`}>
         {cards.length ? cards.map((c) => <SourceCard key={c.n} {...c} />) : <p className="text-[15px] text-muted-foreground">None yet. Every claim will show its source here, or the word ASSUMPTION.</p>}
       </Section>
 
-      <Section title={`Files · ${run.outputs.length}`}>
+      <Section title={`Files (${run.outputs.length})`}>
         {run.outputs.length ? (
           <ul className="flex flex-col gap-1.5">{run.outputs.map((o) => <li key={o} className="font-mono text-[14px] break-all">{o}</li>)}</ul>
         ) : (

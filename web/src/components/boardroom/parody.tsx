@@ -20,7 +20,7 @@ export type FaceEmotion = "neutral" | "listening" | "thinking" | "talking" | "pl
 export const PARODY = {
   id: "ahmed_tarek",
   name: "Ahmed Tarek",
-  role: "PARODY · Ahmed Tarek mode",
+  role: "Parody: Ahmed Tarek mode",
   fallback: "/mascots/ahmed_tarek/placeholder.svg",
 };
 

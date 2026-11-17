@@ -58,7 +58,7 @@ export function StatesGallery() {
         </div>
       </Row>
 
-      <Row title="MascotAvatar · activity">
+      <Row title="MascotAvatar: activity">
         <div className="flex flex-wrap gap-8">
           {(["idle", "thinking", "speaking", "done", "error"] as Activity[]).map((a) => (
             <Labeled key={a} label={a}><MascotAvatar id="boss" activity={a} size={56} /></Labeled>
@@ -66,7 +66,7 @@ export function StatesGallery() {
         </div>
       </Row>
 
-      <Row title="MascotAvatar · expression">
+      <Row title="MascotAvatar: expression">
         <div className="flex flex-wrap gap-8">
           {(["neutral", "listening", "thinking", "pleased", "skeptical"] as const).map((e) => (
             <Labeled key={e} label={e}><MascotAvatar id="warm_skeptic" expression={e} size={72} /></Labeled>
@@ -75,7 +75,7 @@ export function StatesGallery() {
         </div>
       </Row>
 
-      <Row title="FaceAvatar · parody easter egg">
+      <Row title="FaceAvatar: parody mode">
         <div className="flex flex-wrap gap-8">
           {(["neutral", "listening", "thinking", "talking", "pleased", "skeptical", "im_out"] as FaceEmotion[]).map((e) => (
             <Labeled key={e} label={e}><FaceAvatar emotion={e} size={72} /></Labeled>
@@ -102,7 +102,7 @@ export function StatesGallery() {
         </RadioGroup>
       </Row>
 
-      <Row title="ReasonField · no bare yes">
+      <Row title="ReasonField: no bare yes">
         <div className="grid grid-cols-2 gap-6">
           {REASONS.map((r) => (
             <Labeled key={r.label} label={r.label}>
@@ -129,11 +129,11 @@ export function StatesGallery() {
         </div>
       </Row>
 
-      <Row title="LearnCard · CaseStudyCard">
+      <Row title="LearnCard and CaseStudyCard">
         <div className="grid grid-cols-3 gap-4">
           <Labeled label="default"><LearnCard kind="Essay" org="Paul Graham" title="Do Things That Don't Scale" url="https://paulgraham.com/ds.html" why="Recruit your next 10 users by hand." /></Labeled>
           <Labeled label="done"><LearnCard kind="Book" org="Rob Fitzpatrick" title="The Mom Test" url="https://www.momtestbook.com/" why="Ask about the past." done /></Labeled>
-          <Labeled label="case study"><CaseStudyCard company="Breadfast" market="Egypt · YC company" lesson="Start tiny, do the unscalable part yourself." fact="Started in 2017 with bread only." url="https://www.ycombinator.com/companies/breadfast" source="Y Combinator" /></Labeled>
+          <Labeled label="case study"><CaseStudyCard company="Breadfast" market="Egypt, YC company" lesson="Start tiny, do the unscalable part yourself." fact="Started in 2017 with bread only." url="https://www.ycombinator.com/companies/breadfast" source="Y Combinator" /></Labeled>
         </div>
       </Row>
 

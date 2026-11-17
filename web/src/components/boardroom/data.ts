@@ -9,7 +9,7 @@ export type Member = {
 };
 
 export const TEAM: Member[] = [
-  { id: "warm_skeptic", name: "Noor", role: "Co-founder · Warm skeptic", group: "Co-founder", status: "Leading" },
+  { id: "warm_skeptic", name: "Noor", role: "Co-founder, warm skeptic", group: "Co-founder", status: "Leading" },
   { id: "profiler", name: "Profiler", role: "Learns who you are", group: "Crew" },
   { id: "intern", name: "Research intern", role: "Drafts with sources", group: "Crew", status: "Drafting" },
   { id: "boss", name: "Boss", role: "Checks every draft", group: "Crew" },
@@ -55,7 +55,7 @@ export const SCREENS: Screen[] = [
   {
     id: "intake",
     label: "Intake",
-    phase: "Phase 1 · Discover",
+    phase: "Phase 1: Discover",
     title: "Getting to know you",
     speaker: "profiler",
     panel: "profile",
@@ -82,7 +82,7 @@ export const SCREENS: Screen[] = [
   {
     id: "cofounder",
     label: "Co-founder",
-    phase: "Phase 1 · Discover",
+    phase: "Phase 1: Discover",
     title: "Find opportunities",
     speaker: "warm_skeptic",
     panel: "sources",
@@ -109,7 +109,7 @@ export const SCREENS: Screen[] = [
   {
     id: "gate",
     label: "Gate",
-    phase: "Phase 2 · Validate",
+    phase: "Phase 2: Validate",
     title: "Gate: sign-up target",
     speaker: "warm_skeptic",
     panel: "numbers",
@@ -131,7 +131,7 @@ export const SCREENS: Screen[] = [
   {
     id: "sharks",
     label: "Sharks",
-    phase: "Phase 2 · Validate",
+    phase: "Phase 2: Validate",
     title: "Shark panel (SIMULATION)",
     speaker: "shark_numbers",
     panel: "sharks",
@@ -192,14 +192,14 @@ export const LEARN: Record<string, Learn[]> = {
 export const CASES: Record<string, CaseStudy[]> = {
   cofounder: [{
     company: "Nafham",
-    market: "Egypt · edtech",
+    market: "Egypt, edtech",
     lesson: "Students in Egypt will use study help built around their exact curriculum.",
     fact: "Free curriculum video lessons from Cairo. Came out of Flat6Labs; bought by Tyro in 2021.",
     url: "https://cairoscene.com/Business/Tyro-Acquires-Fellow-Egyptian-Edtech-Startup-Nafham",
     source: "CairoScene",
   }, {
     company: "Stripe",
-    market: "Global · unicorn",
+    market: "Global unicorn",
     lesson: "Early users came one by one, set up in person.",
     fact: "The founders installed Stripe on a user's laptop on the spot instead of sending a link. Paul Graham calls it the “Collison installation”.",
     url: "https://paulgraham.com/ds.html",
@@ -207,14 +207,14 @@ export const CASES: Record<string, CaseStudy[]> = {
   }],
   gate: [{
     company: "Breadfast",
-    market: "Egypt · YC company",
+    market: "Egypt, YC company",
     lesson: "Start with one tiny product and do the unscalable part yourself.",
     fact: "Started in 2017 with bread only, a co-founder as the first driver. Now 3,500+ items in under 60 minutes.",
     url: "https://www.ycombinator.com/companies/breadfast",
     source: "Y Combinator",
   }, {
     company: "Airbnb",
-    market: "Global · unicorn",
+    market: "Global unicorn",
     lesson: "Weak numbers? Go to the users and fix the offer by hand.",
     fact: "With growth flat, the founders went door to door in New York, signed up hosts and took better photos of their listings themselves.",
     url: "https://paulgraham.com/ds.html",

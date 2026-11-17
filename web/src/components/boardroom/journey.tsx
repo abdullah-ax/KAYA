@@ -130,7 +130,7 @@ function StageNode({ stage, focused }: { stage: Stage; focused: boolean }) {
         <p className="text-[15px] leading-snug text-muted-foreground">{stage.goal}</p>
       </div>
       <ul className="flex flex-col gap-1 text-[15px] leading-snug">
-        {stage.facts.map((f) => <li key={f}>• {f}</li>)}
+        {stage.facts.map((f) => <li key={f}>{f}</li>)}
       </ul>
       {stage.issues.length > 0 && (
         <ul className="flex flex-col gap-1 rounded-lg bg-stop-bg p-2.5 text-[14px] font-semibold leading-snug text-destructive">
@@ -140,7 +140,7 @@ function StageNode({ stage, focused }: { stage: Stage; focused: boolean }) {
       <div className="text-[14px]"><b>Gate:</b> <span className="text-muted-foreground">{stage.gate}</span></div>
       <div className="flex flex-wrap items-center gap-2 border-t pt-3">
         {stage.agents.map((a) => (
-          <span key={a.id + a.name} title={`${a.name} · ${a.access === "works" ? "works on this stage" : "read-only"}`} className={cn("flex items-center gap-1.5 rounded-full border py-0.5 pr-2 pl-0.5 text-[13px] font-semibold", a.access === "reads" && "border-dashed text-muted-foreground")}>
+          <span key={a.id + a.name} title={`${a.name}: ${a.access === "works" ? "works on this stage" : "read only"}`} className={cn("flex items-center gap-1.5 rounded-full border py-0.5 pr-2 pl-0.5 text-[13px] font-semibold", a.access === "reads" && "border-dashed text-muted-foreground")}>
             <MascotAvatar id={a.id} size={22} className="ring-1 ring-offset-0" />
             {a.name}
           </span>

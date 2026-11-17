@@ -166,7 +166,7 @@ export function Onboarding({ onDone, live }: { onDone?: () => void; live?: LiveS
           )}
         </section>
         <section className="flex flex-col gap-3">
-          <h3 className="text-[14px] font-bold tracking-wide text-muted-foreground uppercase">Keep learning · 5 min</h3>
+          <h3 className="text-[14px] font-bold tracking-wide text-muted-foreground uppercase">Keep learning, 5 minutes</h3>
           <LearnCard kind="Video" org="YC Startup Library" title="How to get startup ideas" url="https://www.ycombinator.com/library/8g-how-to-get-startup-ideas" why="Start from what you know and who you know." />
         </section>
       </aside>

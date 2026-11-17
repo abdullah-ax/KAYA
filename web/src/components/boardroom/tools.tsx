@@ -146,12 +146,12 @@ export const BoardroomTool: ToolCallMessagePartComponent = ({ toolName, args, re
     return (
       <details className="group my-2 rounded-xl border bg-card p-3 text-[15px]">
         <summary className="flex cursor-pointer list-none items-center gap-2 font-semibold outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40">
-          <Search className="size-4 text-primary" /> Searched {r.engine} · {r.queries.length} queries · {r.queries.reduce((a, x) => a + x.kept, 0)} sources kept
+          <Search className="size-4 text-primary" /> Searched {r.engine}: {r.queries.length} queries, {r.queries.reduce((a, x) => a + x.kept, 0)} sources kept
           <span className="ml-auto text-muted-foreground group-open:hidden">Show</span>
         </summary>
         <ul className="mt-2 flex flex-col gap-1">
           {r.queries.map((x) => (
-            <li key={x.q} className="flex justify-between gap-4"><span className="font-mono text-[14px]">“{x.q}”</span><span className="shrink-0 text-muted-foreground">{x.results} found · {x.kept} kept</span></li>
+            <li key={x.q} className="flex justify-between gap-4"><span className="font-mono text-[14px]">“{x.q}”</span><span className="shrink-0 text-muted-foreground">{x.results} found, {x.kept} kept</span></li>
           ))}
         </ul>
         <p className="mt-2 text-muted-foreground">Dropped: {r.dropped}</p>

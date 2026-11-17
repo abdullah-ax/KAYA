@@ -134,7 +134,7 @@ function StageDetails({ stage, onGo }: { stage: Stage; onGo: () => void }) {
     <section aria-label="Stage details" className="flex w-[22rem] shrink-0 flex-col gap-5 overflow-y-auto border-l bg-background p-6">
       <div className="flex items-center gap-2">
         <StatusDot status={stage.status} />
-        <span className="text-[14px] font-semibold text-muted-foreground">Stage {stage.n} · {STATUS_LABEL[stage.status]}</span>
+        <span className="text-[14px] font-semibold text-muted-foreground">Stage {stage.n}: {STATUS_LABEL[stage.status]}</span>
       </div>
       <div>
         <h2 className="text-[32px] leading-tight font-extrabold tracking-tight">{stage.name}</h2>

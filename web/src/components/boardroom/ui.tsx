@@ -173,7 +173,8 @@ export function OptionCard({
       {recommended && <span className="text-[13px] font-bold tracking-wide text-destructive uppercase">Recommended</span>}
       <span className="text-base leading-snug">{body}</span>
       <span className="text-[14px] leading-snug text-muted-foreground">
-        <b className="text-foreground">Cost:</b> {cost} · <b className="text-foreground">Risk:</b> {risk}
+        <span className="block"><b className="text-foreground">Cost:</b> {cost}</span>
+        <span className="block"><b className="text-foreground">Risk:</b> {risk}</span>
       </span>
     </Label>
   );
@@ -416,7 +417,7 @@ export function LearnCard({
     >
       <Icon className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
       <span className="min-w-0 flex-1">
-        <span className="block text-[13px] font-semibold text-muted-foreground">{kind} · {org}{done && " · Done"}</span>
+        <span className="block text-[13px] font-semibold text-muted-foreground">{kind} from {org}{done && " (done)"}</span>
         <span className="block font-semibold leading-snug group-hover:underline underline-offset-4">{title}</span>
         <span className="mt-0.5 block text-[15px] leading-snug text-muted-foreground">{why}</span>
       </span>

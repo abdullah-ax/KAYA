@@ -22,8 +22,8 @@ function NotesList() {
         <li key={i} className="grid grid-cols-[2.5rem_1fr] gap-2 text-[15px] leading-snug">
           <span className="font-semibold text-muted-foreground">{n.when}</span>
           <span>
-            {n.kind === "decision" && <b className="text-primary">Decision · </b>}
-            {n.kind === "voice" && <b className="text-muted-foreground">Voice · </b>}
+            {n.kind === "decision" && <b className="text-primary">Decision: </b>}
+            {n.kind === "voice" && <b className="text-muted-foreground">Voice note: </b>}
             {n.text}
           </span>
         </li>
@@ -45,9 +45,9 @@ export function WorkingPanel({ screen }: { screen: Screen }) {
             <Progress value={60} className="h-2" />
           </Section>
           <Section title="Still unknown">
-            <ul className="flex flex-col gap-1.5 text-base">
-              <li>• What you won't do, even for money</li>
-              <li>• Who you could call this week</li>
+            <ul className="flex list-disc flex-col gap-1.5 pl-5 text-base marker:text-muted-foreground">
+              <li>What you won&apos;t do, even for money</li>
+              <li>Who you could call this week</li>
             </ul>
           </Section>
           <Section title="Notes">
@@ -58,7 +58,7 @@ export function WorkingPanel({ screen }: { screen: Screen }) {
 
       {screen.panel === "sources" && (
         <>
-          <Section title="Sources · 3">
+          <Section title="Sources (3)">
             {SOURCES.map((s) => <SourceCard key={s.n} {...s} />)}
           </Section>
           <Section title="Boss check">
@@ -74,7 +74,7 @@ export function WorkingPanel({ screen }: { screen: Screen }) {
             <span className="text-3xl font-extrabold">100 in 14 days</span>
           </Section>
           <Section title="Actual">
-            <div className="flex items-center gap-2"><span className="text-3xl font-extrabold">12 · 12%</span><StatusBadge status="mocked">Demo data</StatusBadge></div>
+            <div className="flex items-center gap-2"><span className="text-3xl font-extrabold">12 (12%)</span><StatusBadge status="mocked">Demo data</StatusBadge></div>
             <Progress value={12} className="h-2 [&>div]:bg-destructive" />
           </Section>
           <div className="rounded-xl border-2 border-destructive/50 bg-stop-bg p-4">
@@ -94,7 +94,7 @@ export function WorkingPanel({ screen }: { screen: Screen }) {
             <VerdictCard id="shark_tech" name="Tech shark" verdict="pending" reason="" />
           </Section>
           <Section title="Score">
-            <span className="text-3xl font-extrabold">1 in · 2 out</span>
+            <span className="text-3xl font-extrabold">1 in, 2 out</span>
             <p className="text-[15px] text-muted-foreground">Most common reason: no proof from strangers.</p>
           </Section>
         </>
@@ -117,7 +117,7 @@ export function WorkingPanel({ screen }: { screen: Screen }) {
         <Section title="Who did this before">{CASES[screen.id].map((c) => <CaseStudyCard key={c.company} {...c} />)}</Section>
       )}
       {LEARN[screen.id] && (
-        <Section title="Keep learning · 5 min">
+        <Section title="Keep learning, 5 minutes">
           {LEARN[screen.id].map((l) => <LearnCard key={l.url} {...l} />)}
         </Section>
       )}

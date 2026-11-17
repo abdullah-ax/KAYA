@@ -66,7 +66,7 @@ export function layoutMindMap(
       type: "founder",
       position: centre,
       origin,
-      data: { kind: "founder", title: opts.founder?.title ?? "You", subtitle: opts.founder?.subtitle ?? "Pharmacy tutor · dosage cheat sheets" },
+      data: { kind: "founder", title: opts.founder?.title ?? "You", subtitle: opts.founder?.subtitle ?? "Pharmacy tutor, dosage cheat sheets" },
       draggable: false,
     },
   ];
