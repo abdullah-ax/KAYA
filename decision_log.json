@@ -1,0 +1,134 @@
+[
+  {
+    "timestamp": "2026-11-17T19:20:55Z",
+    "agent": "payments",
+    "action": "payment_succeeded",
+    "sources": [
+      "order-1"
+    ],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "MOCKED payment recorded, no real money"
+  },
+  {
+    "timestamp": "2026-11-17T19:20:55Z",
+    "agent": "delivery",
+    "action": "issue_access_token",
+    "sources": [
+      "order-1"
+    ],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "MOCKED delivery: access token MOCKED-ehSV... issued, nothing sent"
+  },
+  {
+    "timestamp": "2026-11-17T19:20:55Z",
+    "agent": "payments",
+    "action": "payout_recorded",
+    "sources": [
+      "order-1"
+    ],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "MOCKED payout recorded"
+  },
+  {
+    "timestamp": "2026-11-17T19:20:55Z",
+    "agent": "payments",
+    "action": "payment_succeeded",
+    "sources": [
+      "order-2"
+    ],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "MOCKED payment recorded, no real money"
+  },
+  {
+    "timestamp": "2026-11-17T19:20:55Z",
+    "agent": "delivery",
+    "action": "issue_access_token",
+    "sources": [
+      "order-2"
+    ],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "MOCKED delivery: access token MOCKED-30-W... issued, nothing sent"
+  },
+  {
+    "timestamp": "2026-11-17T19:20:55Z",
+    "agent": "payments",
+    "action": "duplicate_event",
+    "sources": [
+      "order-2"
+    ],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "MOCKED duplicate event evt-3 ignored"
+  },
+  {
+    "timestamp": "2026-11-17T19:20:55Z",
+    "agent": "payments",
+    "action": "payment_succeeded",
+    "sources": [
+      "order-3"
+    ],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "MOCKED payment recorded, no real money"
+  },
+  {
+    "timestamp": "2026-11-17T19:20:55Z",
+    "agent": "delivery",
+    "action": "issue_access_token",
+    "sources": [
+      "order-3"
+    ],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "MOCKED delivery: access token MOCKED-ZJU5... issued, nothing sent"
+  },
+  {
+    "timestamp": "2026-11-17T19:20:55Z",
+    "agent": "refunds",
+    "action": "refund_order",
+    "sources": [
+      "order-3"
+    ],
+    "model": null,
+    "cost": 0,
+    "approved_by": "founder",
+    "founder_input": "The buyer asked and the drills did not fit their exam date",
+    "outcome": "MOCKED refund approved by the founder, 1 access token revoked, no money moved"
+  },
+  {
+    "timestamp": "2026-11-17T19:20:56Z",
+    "agent": "reconcile",
+    "action": "reconcile_orders",
+    "sources": [
+      "order-1",
+      "order-2",
+      "order-3"
+    ],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "MOCKED reconcile: 2 mismatches"
+  }
+]
