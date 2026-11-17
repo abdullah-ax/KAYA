@@ -26,7 +26,7 @@ const R2 = 'We got more sign-ups than the target in two weeks, so building the p
   await p.getByRole('radio', { name: /Self-funded/ }).click(); await next();
   // follow-ups: the model (or the standard question) asks up to four, then the profile card
   for (let k = 0; k < 4; k++) { await p.getByRole('textbox').first().fill('No fake reviews, no promises of band scores, 420 students ask weekly'); await next(); }
-  await p.getByRole('button', { name: /^Start/ }).click();
+  await p.getByRole('button', { name: /^Start(?! voice)/ }).click();
   await until(s => s.pending, 'first question');
   await p.waitForTimeout(1500); await snap('02_live_first_question');
   const say = async (text) => { const box = p.getByPlaceholder(/message/i); await box.fill(text); await box.press('Enter'); };

@@ -2,6 +2,10 @@
 
 An open-source AI co-founder team that builds the founder as much as the business. It learns who the founder is first, plays to their strengths, and takes an idea through six gated phases toward a tested, sellable digital product. The founder makes every decision, and the system says **stop** when the evidence is weak. It runs free on a local open-weight model.
 
+![Onboarding asks specific questions, one per screen](docs/media/onboarding.png)
+
+**How a run goes:** you answer short questions about your work, studies, groups and limits. You check the profile it built. A research intern finds problems with sources, a boss agent checks every draft, and at each gate you pick an option and say why in your own words. A bare "yes" never counts. Targets are set before each test, and weak results get a plain stop.
+
 ## Quickstart
 
 ```bash
@@ -9,6 +13,18 @@ docker compose up
 ```
 
 Open http://localhost:3000. The first start downloads the local model, which takes a few minutes. Answer the onboarding questions (type, or use the mic button), then follow the co-founder through each gate. The Map and Plan buttons at the top are always there.
+
+### How to use it
+
+1. **Pick a model.** Click the model button (top right). Local models are free and private; a free hosted key works if your laptop is small.
+2. **Answer the onboarding.** About 16 short screens, and you can skip any. Then check "Here's what I understood" and fix any line.
+3. **Follow the run.** Answer the co-founder's questions. At each gate, pick an option and explain why.
+4. **Watch the evidence.** Sources sit in the right panel with a trust level. Anything unsourced says `ASSUMPTION`.
+5. **Open the Plan** any time for the full business plan, open issues and version history.
+
+![The profile you check before anything starts](docs/media/profile.png)
+
+Without Docker: `pip install -r requirements-dev.txt`, then `python3 -m api.cli --brief briefs/strong.md` runs the pipeline in the terminal.
 
 ## What works and what is mocked
 
@@ -75,3 +91,11 @@ Link added after recording (3 minutes or less).
 - **Roadmap:** see the Roadmap section of [ARCHITECTURE.md](ARCHITECTURE.md). First: finish Phases 3–6, add Arabic voice, add more founder lessons.
 - **Community:** MIT license. Prompts, templates, and the knowledge base are plain markdown, so non-coders can contribute.
 - **Funding:** open-source grants and sponsorships. Every core feature stays free.
+
+### Contributing
+
+- **Run the tests:** `python3 -m pytest -q tests` and `cd web && npx vitest run`. New work starts with a failing test.
+- **Change an agent:** prompts are plain markdown in `prompts/`; the code that calls them is in `api/agents/`.
+- **Add knowledge:** notes go in `kb/`, one claim per line, each with a source link or the word `ASSUMPTION`.
+- **Add a trick prompt:** add a row to `evals/trick_prompts.md`; the guardrail test runs every row.
+- **Commits:** conventional commits (`feat:`, `fix:`, `test:`, `docs:`), small and focused.
