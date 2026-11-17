@@ -183,7 +183,7 @@ export function OptionCard({
 
 /* ---------- ReasonField: the founder's own words, no bare yes ---------- */
 
-export const BARE_ANSWERS = ["yes", "y", "ok", "okay", "sure", "fine", "looks good", "lgtm", "go", "next", "approve"];
+export const BARE_ANSWERS = ["yes", "y", "ok", "okay", "sure", "fine", "looks good", "lgtm", "go", "next", "approve", "ايوه", "تمام", "ماشي", "اه", "tamam", "aywa", "mashy"];
 
 export type ReasonCheck =
   | { state: "empty" }

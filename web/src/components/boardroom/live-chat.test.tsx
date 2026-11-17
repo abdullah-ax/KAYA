@@ -84,7 +84,7 @@ describe("answers in chat", () => {
 
 describe("refusalText", () => {
   it("never doubles the period", () => {
-    const t = refusalText({ refused: true, reason: "Rule: No fake reviews.", alternative: "Ask real customers." }, "Who?");
+    const t = refusalText({ reason: "Rule: No fake reviews.", alternative: "Ask real customers." }, "Who?");
     expect(t).not.toMatch(/\.\./);
     expect(t).toContain("Instead: Ask real customers.");
     expect(t).toContain("Who?");

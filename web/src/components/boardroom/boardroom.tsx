@@ -11,11 +11,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Thread } from "@/components/assistant-ui/elements/thread.aui";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { health, listModels, testModel, useRun, type Run } from "@/lib/api";
+import { getRun, health, listModels, testModel, useRun, type Run } from "@/lib/api";
+import { rememberRun } from "@/lib/run-url";
 import { cn } from "@/lib/utils";
 import { SCREENS, TEAM, type Screen } from "./data";
 import { LiveChat, LivePanel, LiveRoster } from "./live";
-import { progressStages, stageInfo } from "./live-model";
+import { progressStages, speakerFor, stageInfo } from "./live-model";
 import { apiProviderOf, localModelOf, ModelSettings } from "./model-settings";
 import { STAGES } from "./journey";
 import { StageMap } from "./map/stage-map";
@@ -90,6 +91,7 @@ export function Boardroom({ initialScreen, initialRunId, dark, egg: eggParam, de
     return () => { alive = false; };
   }, []);
   const live = conn === "online";
+  useEffect(() => { if (live) rememberRun(runId); }, [live, runId]);
   const [installed, setInstalled] = useState<Record<string, boolean | null> | undefined>();
   useEffect(() => {
     if (!live) return;
@@ -156,14 +158,14 @@ export function Boardroom({ initialScreen, initialRunId, dark, egg: eggParam, de
               <LiveRoster run={run} tarek={egg} />
               <main className="flex min-h-0 flex-col">
                 <div className="flex shrink-0 items-center gap-3 border-b px-6 py-3">
-                  <MascotAvatar id="warm_skeptic" expression="listening" activity={run?.status === "working" ? "thinking" : "speaking"} size={44} />
+                  <MascotAvatar id={speakerFor(run)} expression="listening" activity={run?.status === "working" ? "thinking" : "speaking"} size={44} />
                   <div>
                     <div className="text-[14px] font-semibold text-muted-foreground">{STAGES.find((s) => s.id === stageId)?.name}</div>
                     <h1 className="text-xl font-bold">{stepLabel}</h1>
                   </div>
                 </div>
                 <div className="min-h-0 flex-1">
-                  {run ? <LiveChat key={run.id} run={run} update={update} onRestart={startOver} /> : <p className="p-6 text-base text-muted-foreground">{runError ?? "Loading your run…"}</p>}
+                  {run ? <LiveChat key={run.id} run={run} update={update} onRestart={startOver} onRetry={() => { getRun(run.id).then(update).catch(() => {}); }} /> : <p className="p-6 text-base text-muted-foreground">{runError ?? "Loading your run…"}</p>}
                 </div>
               </main>
               <aside className="min-h-0 border-l bg-card/40">

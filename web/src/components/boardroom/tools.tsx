@@ -44,6 +44,19 @@ function RecommendationNote({ rec }: { rec: Recommendation }) {
 /** In live mode the app provides this. It posts the choice and rejects with the API's message. */
 export const GateSubmitContext = createContext<((option: string, reason: string) => Promise<void>) | null>(null);
 
+/** Live mode gives the error card a way to look at the run again. */
+export const RetryContext = createContext<(() => void) | null>(null);
+
+function RunError() {
+  const retry = useContext(RetryContext);
+  return (
+    <div role="alert" className="my-2 flex flex-col gap-3 rounded-xl border-2 border-destructive/40 bg-stop-bg p-4">
+      <p className="text-base font-semibold text-destructive">Something went wrong on our side. Your answers are saved.</p>
+      {retry && <Button variant="outline" onClick={retry} className="w-fit rounded-full">Try again</Button>}
+    </div>
+  );
+}
+
 /** Live mode tells the card whether the run is over and how to begin again. */
 export const GateNextContext = createContext<{ done: boolean; startOver: () => void } | null>(null);
 
@@ -156,6 +169,7 @@ function FounderProfile({ result }: { result: Profile }) {
 
 export const BoardroomTool: ToolCallMessagePartComponent = ({ toolName, args, result }) => {
   if (toolName === "gate_decision") return <GateDecision args={args as GateArgs} />;
+  if (toolName === "run_error") return <RunError />;
   if (toolName === "parody_verdict") return <ParodyVerdict />;
   if (toolName === "research_trail") {
     const r = result as { engine: string; queries: { q: string; results: number; kept: number }[]; dropped: string };

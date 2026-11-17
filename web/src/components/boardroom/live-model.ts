@@ -26,9 +26,9 @@ export function composeBrief(answers: OnboardingAnswers): string {
 }
 
 const STEP_LABEL: Record<string, string> = {
-  start: "Starting",
-  brief: "Brief",
-  phase1_step1: "Intake",
+  start: "Getting to know you",
+  brief: "Getting to know you",
+  phase1_step1: "Getting to know you",
   phase1_step2: "Opportunities",
   phase1_gate: "Opportunity gate",
   phase2_step1: "Canvas",
@@ -118,6 +118,45 @@ export function sourceCardsFrom(sources: ApiSource[]) {
       backs: claims.join("; "),
     };
   });
+}
+
+const PROGRESS: Record<string, string> = {
+  start: "Profiler is reading your answers...",
+  brief: "Profiler is reading your answers...",
+  phase1_step1: "Profiler is reading your answers...",
+  phase1_step2: "Research intern is searching...",
+  phase1_gate: "Boss is checking the draft...",
+  phase2_step1: "Noor is drafting your Lean Canvas...",
+  phase2_step2: "Noor is writing your sign-up page...",
+  phase2_gate: "Boss is checking the draft...",
+};
+
+/** Who is working right now, in plain words, from run.stage. */
+export function progressLine(stage: string): string {
+  return PROGRESS[stage] ?? "Your team is working...";
+}
+
+/** Which lesson set in data.ts fits the step. */
+export function learnKeyFor(stage: string): "intake" | "cofounder" | "gate" | "daily" {
+  if (stage === "phase1_step2") return "cofounder";
+  if (/^phase1/.test(stage) || stage === "start" || stage === "brief") return "intake";
+  if (/^phase2/.test(stage)) return "gate";
+  return "daily";
+}
+
+const trimDots = (t: string) => t.trim().replace(/[.\s]+$/, "");
+
+/** A refusal in one message: why, what to do instead, and the question still waiting. */
+export function refusalText(notice: { reason?: string; alternative?: string }, pendingPrompt?: string): string {
+  const parts = [`${trimDots(notice.reason ?? "I can't help with that")}.`];
+  if (notice.alternative) parts.push(`Instead: ${trimDots(notice.alternative)}.`);
+  if (pendingPrompt) parts.push(`Your question is still open: ${pendingPrompt}`);
+  return parts.join(" ");
+}
+
+/** The teammate who is talking: the Profiler while the intake questions are open, else Noor. */
+export function speakerFor(run: { stage: string; pending: { kind: string } | null } | null): "profiler" | "warm_skeptic" {
+  return run?.pending?.kind === "question" && /^(start|brief|phase1_step1)$/.test(run.stage) ? "profiler" : "warm_skeptic";
 }
 
 export type Outcome = "go" | "repeat" | "pivot" | "stop";

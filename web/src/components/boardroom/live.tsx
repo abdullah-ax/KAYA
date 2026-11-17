@@ -15,13 +15,13 @@ import { Thread } from "@/components/assistant-ui/elements/thread.aui";
 import { Button } from "@/components/ui/button";
 import { ApiError, sendAnswer, sendGate, type Run } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { TEAM } from "./data";
-import { friendlyFileName, gateArgsFromPending, outcomeSentence, sourceCardsFrom, stageInfo } from "./live-model";
-import { BoardroomTool, GateNextContext, GateSubmitContext } from "./tools";
+import { CASES, LEARN, TEAM } from "./data";
+import { friendlyFileName, gateArgsFromPending, learnKeyFor, outcomeSentence, progressLine, refusalText, sourceCardsFrom, speakerFor, stageInfo } from "./live-model";
+import { BoardroomTool, GateNextContext, GateSubmitContext, RetryContext } from "./tools";
 import { FaceAvatar, PARODY, TarekCard } from "./parody";
 import { PublishCard } from "./publish-card";
 import { tarekMood } from "./tarek-mood";
-import { EmptyState, RosterItem, SourceCard } from "./ui";
+import { CaseStudyCard, checkReason, EmptyState, LearnCard, RosterItem, SourceCard } from "./ui";
 
 const InlineToolGroup = ({ children }: { children?: React.ReactNode }) => <>{children}</>;
 const text = (t: string): ThreadMessageLike["content"] => [{ type: "text", text: t }];
@@ -60,7 +60,7 @@ function useTranscript(run: Run | null) {
         content: [{ type: "tool-call", toolCallId: `gate-${p.key}-${s.ids.size}`, toolName: "gate_decision", args: gateArgsFromPending(p), result: undefined }],
       }));
     }
-    if (run.status === "error") once("error", () => assistant("error", `The run stopped with an error: ${run.error ?? "unknown"}`));
+    if (run.status === "error") once("error", () => ({ id: "error", role: "assistant", content: [{ type: "tool-call", toolCallId: "run-error", toolName: "run_error", args: {}, result: undefined }] }));
     if (run.status === "closed") once("closed", () => assistant("closed", "This run was closed when the server restarted. Start a new one."));
     if (run.status === "done") once("done", () => assistant("done", `The run is finished${run.outcome ? `. Outcome: ${run.outcome}` : ""}.`));
     if (add.length) setMessages((prev) => [...prev, ...add]);
@@ -69,7 +69,7 @@ function useTranscript(run: Run | null) {
   return { messages, push: (m: ThreadMessageLike) => setMessages((prev) => [...prev, m]) };
 }
 
-export function LiveChat({ run, update, onRestart = () => {} }: { run: Run; update: (r: Run) => void; onRestart?: () => void }) {
+export function LiveChat({ run, update, onRestart = () => {}, onRetry }: { run: Run; update: (r: Run) => void; onRestart?: () => void; onRetry?: () => void }) {
   const { messages, push } = useTranscript(run);
   const [sending, setSending] = useState(false);
   const counter = useRef(0);
@@ -87,11 +87,15 @@ export function LiveChat({ run, update, onRestart = () => {} }: { run: Run; upda
         return;
       }
       push({ id: next(), role: "user", content: text(said) });
+      if (checkReason(said, 1).state === "bare") {
+        push(assistant(next(), `“${said}” isn't an answer I can use. Tell me in a few more words.`));
+        return;
+      }
       setSending(true);
       try {
         const fresh = await sendAnswer(run.id, said);
         if (fresh.notice?.refused) {
-          push(assistant(next(), `${fresh.notice.reason ?? "I can't help with that"}.${fresh.notice.alternative ? ` Instead: ${fresh.notice.alternative}.` : ""}`));
+          push(assistant(next(), refusalText(fresh.notice, (fresh.pending ?? run.pending)?.prompt)));
         }
         update(fresh);
       } catch (e) {
@@ -107,14 +111,26 @@ export function LiveChat({ run, update, onRestart = () => {} }: { run: Run; upda
     [run.id, update],
   );
 
+  const composerNote =
+    run.pending?.kind === "gate" ? "Pick an option above, then say why."
+    : run.status === "done" || run.status === "closed" ? "This run is finished. Start a new one when you are ready."
+    : undefined;
   const nextStep = useMemo(() => ({ done: run.status === "done", startOver: onRestart }), [run.status, onRestart]);
 
   return (
     <GateSubmitContext.Provider value={submitGate}>
       <GateNextContext.Provider value={nextStep}>
-        <AssistantRuntimeProvider runtime={runtime}>
-          <Thread components={{ ToolFallback: BoardroomTool, ToolGroup: InlineToolGroup }} autoFocus={false} />
-        </AssistantRuntimeProvider>
+        <RetryContext.Provider value={onRetry ?? null}>
+          <AssistantRuntimeProvider runtime={runtime}>
+            <Thread
+              components={{ ToolFallback: BoardroomTool, ToolGroup: InlineToolGroup }}
+              autoFocus={false}
+              composerNote={composerNote}
+              progress={run.status === "working" ? progressLine(run.stage) : undefined}
+              waitHint="Wait for the reply, then send."
+            />
+          </AssistantRuntimeProvider>
+        </RetryContext.Provider>
       </GateNextContext.Provider>
     </GateSubmitContext.Provider>
   );
@@ -163,6 +179,13 @@ export function LivePanel({ run, error, onRestart, tarek = false }: { run: Run |
         {cards.length ? cards.map((c) => <SourceCard key={c.n} {...c} />) : <p className="text-[15px] text-muted-foreground">None yet. Every claim will show its source here, or the word ASSUMPTION.</p>}
       </Section>
 
+      <Section title="Keep learning, 5 minutes">
+        {(() => { const l = LEARN[learnKeyFor(run.stage)]?.[0]; return l ? <LearnCard key={l.url} {...l} /> : null; })()}
+      </Section>
+      {(() => { const c = (CASES[learnKeyFor(run.stage)] ?? CASES.cofounder)[0]; return (
+        <Section title="Who did this before"><CaseStudyCard {...c} /></Section>
+      ); })()}
+
       <Section title={`Your documents (${run.outputs.length})`}>
         {run.outputs.length ? (
           <ul className="flex flex-col gap-1.5">{run.outputs.map((o) => <li key={o} className="text-base">{friendlyFileName(o)}</li>)}</ul>
@@ -178,6 +201,7 @@ const GROUPS = ["Co-founder", "Crew", "Judges"] as const;
 
 export function LiveRoster({ run, tarek = false }: { run: Run | null; tarek?: boolean }) {
   const working = run?.status === "working";
+  const speaker = speakerFor(run);
   return (
     <aside className="flex min-h-0 flex-col border-r">
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -186,7 +210,7 @@ export function LiveRoster({ run, tarek = false }: { run: Run | null; tarek?: bo
             <div key={g} className="flex flex-col gap-1">
               <div className="px-2.5 text-[13px] font-bold tracking-wide text-muted-foreground uppercase">{g}</div>
               {TEAM.filter((m) => m.group === g).map((m) => (
-                <RosterItem key={m.id} id={m.id} name={m.name} role={m.role} active={m.id === "warm_skeptic"} activity={m.id === "warm_skeptic" ? (working ? "thinking" : "speaking") : "idle"} />
+                <RosterItem key={m.id} id={m.id} name={m.name} role={m.role} active={m.id === speaker} activity={m.id === speaker ? (working ? "thinking" : "speaking") : "idle"} />
               ))}
             </div>
           ))}

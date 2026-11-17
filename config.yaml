@@ -17,7 +17,7 @@ full:
   min_reason_words: 15
 
 approval:
-  rejected_answers: ["yes", "y", "ok", "okay", "sure", "fine", "looks good", "lgtm", "go", "next", "approve"]
+  rejected_answers: ["yes", "y", "ok", "okay", "sure", "fine", "looks good", "lgtm", "go", "next", "approve", "ايوه", "تمام", "ماشي", "اه", "tamam", "aywa", "mashy"]
   options_per_choice: 3
   understanding_questions: 2
 

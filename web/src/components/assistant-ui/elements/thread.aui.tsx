@@ -165,12 +165,19 @@ const taskAwareGroupBy = (
 export type ThreadProps = {
   components?: ThreadComponents | undefined;
   autoFocus?: boolean | undefined;
+  /** When set, the composer is hidden and this note takes its place. */
+  composerNote?: string | undefined;
+  /** Who is working right now. Shown with a skeleton above the composer. */
+  progress?: string | undefined;
+  /** Shown when Enter is pressed while a reply is running. */
+  waitHint?: string | undefined;
 };
 
 const EMPTY_COMPONENTS: ThreadComponents = {};
 
 const ThreadComponentsContext =
   createContext<ThreadComponents>(EMPTY_COMPONENTS);
+const ThreadExtrasContext = createContext<Pick<ThreadProps, "composerNote" | "progress" | "waitHint">>({});
 
 // Startup exposes a loading placeholder thread; treat it as a new chat so
 // the composer mounts centered. Loads after startup keep the docked layout.
@@ -209,12 +216,17 @@ const ThreadHistorySkeleton: FC = () => (
 export const Thread: FC<ThreadProps> = ({
   components = EMPTY_COMPONENTS,
   autoFocus = true,
+  composerNote,
+  progress,
+  waitHint,
 }) => {
   const isEmpty = useAuiState(isNewChatView);
 
   return (
     <ThreadComponentsContext.Provider value={components}>
-      <ThreadRoot isEmpty={isEmpty} autoFocus={autoFocus} />
+      <ThreadExtrasContext.Provider value={{ composerNote, progress, waitHint }}>
+        <ThreadRoot isEmpty={isEmpty} autoFocus={autoFocus} />
+      </ThreadExtrasContext.Provider>
     </ThreadComponentsContext.Provider>
   );
 };
@@ -224,6 +236,7 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
   autoFocus,
 }) => {
   const { Welcome = ThreadWelcome } = useContext(ThreadComponentsContext);
+  const { composerNote, progress } = useContext(ThreadExtrasContext);
 
   return (
     <ThreadPrimitive.Root
@@ -239,7 +252,7 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
       <ThreadPrimitive.Viewport
         turnAnchor="top"
         data-slot="aui_thread-viewport"
-        className="relative flex flex-1 flex-col overflow-x-auto overflow-y-scroll scroll-smooth"
+        className="relative flex flex-1 scroll-pb-56 flex-col overflow-x-auto overflow-y-scroll scroll-smooth"
       >
         <div
           className={cn(
@@ -274,7 +287,18 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
           >
             <ThreadScrollToBottom />
             <ThreadFollowupSuggestions />
-            <Composer autoFocus={autoFocus} />
+            {progress && (
+              <div role="status" className="flex flex-col gap-2 px-2">
+                <p className="text-[15px] font-semibold text-muted-foreground">{progress}</p>
+                <Skeleton className="h-4 w-4/5" />
+                <Skeleton className="h-4 w-3/5" />
+              </div>
+            )}
+            {composerNote ? (
+              <p className="rounded-xl border bg-muted/40 px-4 py-3 text-base">{composerNote}</p>
+            ) : (
+              <Composer autoFocus={autoFocus} />
+            )}
             <AuiIf condition={(s) => isNewChatView(s) && s.composer.isEmpty}>
               <ThreadSuggestions />
             </AuiIf>
@@ -526,7 +550,11 @@ const ThreadSuggestionItem: FC = () => {
 };
 
 const Composer: FC<{ autoFocus: boolean }> = ({ autoFocus }) => {
+  const { waitHint } = useContext(ThreadExtrasContext);
+  const running = useAuiState((s) => s.thread.isRunning);
+  const [hint, setHint] = useState(false);
   return (
+    <>
     <ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col">
       <ComposerPrimitive.AttachmentDropzone asChild>
         <div
@@ -541,11 +569,17 @@ const Composer: FC<{ autoFocus: boolean }> = ({ autoFocus }) => {
             autoFocus={autoFocus}
             enterKeyHint="send"
             aria-label="Message input"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey && running && waitHint) setHint(true);
+              else if (hint) setHint(false);
+            }}
           />
           <ComposerAction />
         </div>
       </ComposerPrimitive.AttachmentDropzone>
     </ComposerPrimitive.Root>
+    {hint && waitHint && <p role="status" className="px-2 text-[15px] font-semibold">{waitHint}</p>}
+    </>
   );
 };
 
@@ -795,7 +829,6 @@ const AssistantMessage: FC = () => {
         className={cn("ms-2 flex items-center", ACTION_BAR_HEIGHT)}
       >
         <BranchPicker />
-        <AssistantActionBar />
       </div>
     </MessagePrimitive.Root>
   );
