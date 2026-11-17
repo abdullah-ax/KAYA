@@ -37,9 +37,13 @@ _BLOCK: list[tuple[str, str]] = [
      "Selling personal data: collect only with consent and never sell."),
     (r"\b(crypto\w*|bitcoin|forex|trading signals?|investment|stock picks?|loans?)\b",
      "Disallowed category: financial, investment or crypto product."),
-    (r"\b(supplements?|physical (goods|products?)|shipped to your door|t-?shirts?|dropship\w*)\b",
+    (r"\b(supplements?|physical (goods|products?)|shipped to your door|t-?shirts?|dropship\w*)\b|"
+     r"\bprint(ed)?\b.{0,15}\b(and|to) (sell|ship)\b|\bprinted\b|\bprint[- ]on[- ]demand\b|"
+     r"\b(posters?|handmade|stickers?|merch(andise)?|etsy shop)\b",
      "Disallowed category: physical goods."),
-    (r"\b(legal|medical|health|diet|therapy|nutrition) advice\b",
+    (r"\b(legal|medical|health|diet|therapy|nutrition) advice\b|"
+     r"\b(diet|meal|keto|weight[- ]loss) (plan|program)\b|\blose \d+\s?(kg|kilos?|pounds|lbs)\b|"
+     r"\b(cures?|treats?|heals?)\b.{0,20}\b(diabetes|cancer|disease|anxiety|depression|obesity)\b",
      "Disallowed category: health or legal advice product."),
 ]
 
@@ -63,8 +67,23 @@ class EthicsVerdict:
     issues: list[str] = field(default_factory=list)
 
 
+_NEGATION = re.compile(r"\b(no|not|never|don't|dont|won't|wont|without|avoid|against|zero)\b")
+
+
+def _clauses(text: str) -> list[str]:
+    return [c for c in re.split(r"[.;,!?\n]+", text) if c.strip()]
+
+
 def _matches(rules: list[tuple[str, str]], text: str) -> list[str]:
-    return [issue for pattern, issue in rules if re.search(pattern, text)]
+    """Issues found clause by clause. A clause that says no, not, never or against
+    before the match is the writer refusing the thing, so it is not an issue."""
+    found: list[str] = []
+    for clause in _clauses(text):
+        for pattern, issue in rules:
+            m = re.search(pattern, clause)
+            if m and not _NEGATION.search(clause[:m.start()]) and issue not in found:
+                found.append(issue)
+    return found
 
 
 def check_draft(text: str) -> EthicsVerdict:
