@@ -179,3 +179,11 @@ def test_refused_brief_runs_nothing_else(tmp_run):
 
     assert result.outcome == "refused" and ctx.llm.calls == []
     assert [e["action"] for e in ctx.log.entries()] == ["refuse_request"]
+
+
+def test_signup_question_says_the_page_stayed_private():
+    from api.orchestrator import signup_question
+
+    assert signup_question(14, published=True) == "How many real people signed up in 14 days?"
+    private = signup_question(14, published=False)
+    assert private.startswith("You kept the page private.") and "showed it to them yourself" in private

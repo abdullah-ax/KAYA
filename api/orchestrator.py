@@ -257,6 +257,15 @@ def level_up(ctx: Ctx, done: int, proof: str) -> None:
                    founder_input=f"Moved on to {nxt} after finishing {stage}.")
 
 
+
+def signup_question(window: int, published: bool) -> str:
+    """Ask for the sign-up count without implying a private page was published."""
+    if published:
+        return f"How many real people signed up in {window} days?"
+    return ("You kept the page private. How many real people signed up after you "
+            f"showed it to them yourself in {window} days? Type 0 if none.")
+
+
 def _signup_page(opportunity: intern.Opportunity, canvas: Draft) -> str:
     data: intern.LeanCanvas = canvas.data
     return (f"# {data.uvp.content}\n\n{data.solution.content}\n\n"
@@ -327,6 +336,7 @@ def _run(ctx: Ctx, brief: str, result: RunResult) -> RunResult:
 
     page = _signup_page(chosen, canvas)
     page_check = check_draft(page)
+    published = False
     if page_check.outcome != "pass":
         ctx.say("We did not offer to publish the sign-up page. It failed the ethics check:\n"
                 + "\n".join(f"- {issue}" for issue in page_check.issues))
@@ -334,14 +344,15 @@ def _run(ctx: Ctx, brief: str, result: RunResult) -> RunResult:
     else:
         ctx.say(page)
         choice = cofounder.ask_choice(ctx, "publish", "Publish this sign-up page?", PUBLISH)
-        if choice.option == PUBLISH[0].name:
+        published = choice.option == PUBLISH[0].name
+        if published:
             run_gated(ctx, "cofounder", "publish_signup_page", choice,
                       lambda: publish_signup_page(ctx, page, approval=choice))
         else:
             ctx.log.append("founder", "keep_page_private", founder_input=choice.reason)
 
     window = ctx.cfg.gates.phase2_validate.window_days
-    signups = cofounder.ask_number(ctx, "signups", f"How many real people signed up in {window} days?")
+    signups = cofounder.ask_number(ctx, "signups", signup_question(window, published))
     result.phase2 = phase2_gate(signups, ctx.cfg)
     result.phase2.evidence["source"] = "founder-entered count"
     pick = _gate(ctx, 2, result.phase2, PHASE2_OPTIONS)
