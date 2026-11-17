@@ -12,11 +12,19 @@ OPENING = [
     {"key": "city", "question": "Where are you based?", "answer": "Cairo"},
     {"key": "help", "question": "What do people already ask you to help with?",
      "answer": "Teaching or tutoring. They ask for my pharmacology summary sheets"},
-    {"key": "group", "question": "Which group could you message today, and about how many people are in it?",
+    {"key": "group", "question": "Which groups are you part of, and about how many people are in each?",
      "answer": "About 40 pharmacy students from my tutoring sessions"},
     {"key": "time", "question": "How many hours a week can you give this?", "answer": "5–10"},
     {"key": "money", "question": "How do you want to fund it?", "answer": "Self-funded, no raise"},
+    {"key": "education", "question": "Education?", "answer": "Cairo University, Pharmacy, 4th year"},
+    {"key": "work", "question": "Past work?", "answer": "Pharmacy intern for 3 months"},
+    {"key": "hobbies", "question": "Hobbies?", "answer": "I draw study posters and friends notice them"},
+    {"key": "connections", "question": "Who can introduce you?", "answer": "My professor knows 3 clinic owners"},
+    {"key": "access", "question": "Access?", "answer": "Arabic and English, I know Cairo and Giza"},
+    {"key": "wont_do", "question": "What won't you do?", "answer": "No fake reviews"},
 ]
+SKIPPED = "ASSUMPTION: not answered yet"
+AREAS = {"strengths", "access", "experience", "interests", "constraints", "values"}
 
 QUOTING = {
     "key": "problem",
@@ -169,7 +177,7 @@ def test_stops_after_four_follow_ups_in_demo_mode_and_returns_a_profile(make_cli
     answers = [*OPENING, follow("problem", "Pharmacology is the hardest subject for them"),
                follow("customer", "Mona asked me for the sheets last week"),
                follow("past", "I sold printed notes to 12 classmates for EGP 30"),
-               follow("wont_do", "I would never sell fake certificates")]
+               follow("hobby", "I run a poster page with 300 followers")]
 
     resp = post(c, answers)
 
@@ -182,7 +190,7 @@ def test_stops_after_four_follow_ups_in_demo_mode_and_returns_a_profile(make_cli
     assert profile["access"][0]["count"] == 40
     assert "pharmacy students" in profile["access"][0]["group"]
     assert profile["constraints"]["hours"] == "5–10" and profile["constraints"]["money"] == "Self-funded, no raise"
-    assert any("fake certificates" in v for v in profile["values"])
+    assert profile["values"] == ["No fake reviews"]
     assert profile["cofounder"]["type"] in {"numbers_hawk", "hustler", "brand_builder", "operator", "warm_skeptic"}
     assert profile["cofounder"]["why"]
 
@@ -206,7 +214,7 @@ def test_profile_marks_missing_parts_as_assumption(make_client):
 
 def test_full_mode_allows_more_follow_ups(make_client):
     c, _ = make_client(FakeLLM([QUOTING]))
-    answers = [*OPENING] + [follow(k, "something specific") for k in ("problem", "customer", "past", "wont_do")]
+    answers = [*OPENING] + [follow(k, "something specific") for k in ("problem", "customer", "past", "hobby")]
 
     resp = c.post("/onboarding/next", json={"answers": answers, "mode": "full"})
 
@@ -229,3 +237,120 @@ def test_any_model_crash_still_falls_back_and_never_blocks_onboarding(make_clien
     resp = post(c, OPENING)
 
     assert resp.status_code == 200 and resp.json()["question"]["key"] == "problem"
+
+
+# -- founder fit: every area, skips, gaps, profile groups ---------------------
+
+def skip(key):
+    return {"key": key, "question": "Q?", "answer": SKIPPED}
+
+
+def with_skipped(*keys):
+    return [skip(a["key"]) if a["key"] in keys else a for a in OPENING]
+
+
+def test_the_fixed_opening_has_twelve_keys():
+    from api.onboarding import FIXED_KEYS
+
+    assert FIXED_KEYS == ("role", "city", "education", "work", "help", "hobbies", "group",
+                          "connections", "access", "time", "money", "wont_do")
+
+
+def test_every_area_has_a_fallback_question():
+    from api.onboarding import AREA_OF_TOPIC, TOPICS
+
+    assert set(AREA_OF_TOPIC.values()) == AREAS
+    assert set(AREA_OF_TOPIC) == set(TOPICS)
+
+
+def test_fallback_walks_through_all_six_areas_when_everything_was_skipped():
+    from api.onboarding import AREA_OF_TOPIC, AnswerIn, FIXED_KEYS, fallback_question
+
+    answers = [AnswerIn(**skip(k)) for k in FIXED_KEYS]
+    seen_areas, asked = set(), []
+    while len(asked) < 8:
+        open_topics = [t for t in AREA_OF_TOPIC if t not in asked]
+        q = fallback_question(answers, open_topics)
+        assert q.text and q.why
+        asked.append(q.key)
+        seen_areas.add(AREA_OF_TOPIC[q.key])
+        answers.append(AnswerIn(key=q.key, question=q.text, answer="x"))
+    assert seen_areas == AREAS
+
+
+def test_fallback_goes_first_to_the_area_the_founder_skipped():
+    c, _ = make_client_for_fallback()
+    q = post(c, with_skipped("hobbies")).json()["question"]
+
+    assert q["key"] == "hobby"
+    assert "poster" not in q["text"] or q["text"]  # never crashes on the skipped answer
+
+
+def make_client_for_fallback():
+    return TestClient(create_app(llm_factory=lambda cfg, provider, key: FakeLLM([]))), None
+
+
+def test_fallback_quotes_what_the_founder_said_about_hobbies():
+    c, _ = make_client_for_fallback()
+    q = post(c, with_skipped("hobbies")).json()["question"]
+    assert q["why"]
+
+    q2 = post(c, with_skipped("connections", "access")).json()["question"]
+    assert q2["key"] == "distribution"
+    assert "40 pharmacy students" in q2["text"]
+
+
+def test_model_prompt_names_the_gaps_and_asks_to_quote(make_client):
+    llm = FakeLLM([QUOTING])
+    c, _ = make_client(llm)
+
+    post(c, with_skipped("hobbies", "connections"))
+
+    system, user = llm.calls[0]
+    assert "quote" in system.lower()
+    assert "Skipped" in user and "hobbies" in user and "connections" in user
+    assert "hobby" in user.split("<founder_answers>")[0]  # the topic for that gap is offered
+    assert user.split("<founder_answers>")[0].index("hobby") < user.split("<founder_answers>")[0].index("problem")
+
+
+def test_profile_groups_everything_and_marks_skips_as_assumption(make_client):
+    c, _ = make_client(FakeLLM([]))
+    answers = [*with_skipped("hobbies", "connections"), follow("problem", "a"), follow("customer", "b"),
+               follow("past", "c"), follow("hobby", "d")]
+
+    p = post(c, answers).json()["profile"]
+
+    assert {"strengths", "access", "experience", "interests", "constraints", "values", "fit"} <= set(p)
+    assert [i["quote"] for i in p["experience"]][:2] == ["Cairo University, Pharmacy, 4th year", "Pharmacy intern for 3 months"]
+    assert p["interests"][0] == {"key": "hobbies", "text": "Hobbies and things you do for fun", "quote": SKIPPED}
+    net = {i["key"]: i["quote"] for i in p["network"]}
+    assert net["connections"] == SKIPPED and "Arabic" in net["access"]
+    assert p["values"] == ["No fake reviews"]
+
+
+def test_founder_fit_is_top_three_edges_each_pointing_to_an_answer(make_client):
+    c, _ = make_client(FakeLLM([]))
+    answers = [*with_skipped("help"), follow("problem", "a"), follow("customer", "Mona asked me last week"),
+               follow("past", "c"), follow("hobby", "d")]
+
+    edges = post(c, answers).json()["profile"]["fit"]["edges"]
+
+    assert len(edges) == 3
+    answered = {a["key"]: a["answer"] for a in answers if a["answer"] != SKIPPED}
+    for e in edges:
+        assert e["title"] and e["why"]
+        assert e["key"] != "help"  # skipped answers never count
+        assert e["quote"] == answered[e["key"]]
+    assert edges[0]["key"] == "customer"
+
+
+def test_founder_fit_is_empty_when_everything_was_skipped(make_client):
+    from api.onboarding import FIXED_KEYS
+
+    c, _ = make_client(FakeLLM([]))
+    answers = [skip(k) for k in FIXED_KEYS] + [follow("a", "x")] * 4
+
+    p = post(c, answers).json()["profile"]
+
+    assert p["fit"]["edges"] == []
+    assert p["values"] == [SKIPPED] and p["access"][0]["group"] == SKIPPED
