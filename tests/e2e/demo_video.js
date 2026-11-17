@@ -85,32 +85,67 @@ async function type(page, el, text, delay = 18) {
   await inject(p);
   await say(p, 'Boardroom: an open-source AI co-founder team that takes one idea through six stages. You make every decision.', 3200);
 
-  // Onboarding: answer whatever each screen asks. Ahmed Tarek mode stays on (the default).
-  const first = ['IELTS tutor', 'Alexandria'];
-  const rest = ['Taught at a language centre for 3 years', 'Students ask me for speaking practice', 'Book club host',
-    'My WhatsApp group of 420 IELTS students', 'Two language centre owners', 'Arabic and English', 'No fake reviews, no promises of band scores'];
-  let shown = 0;
+  // Onboarding: read the heading of the screen that is showing, then answer that question.
+  // Each row: [words in the heading, chips to pick, text to write, type it at human speed].
+  // Follow-ups come first because they quote earlier answers. The founder is an IELTS tutor in Alexandria.
+  const ANSWERS = [
+    [/complain about most/, [], 'They say they have nobody to practise speaking with before the test'],
+    [/who asked last time/, [], 'Mariam asked last week for a mock speaking test before her exam'],
+    [/built, sold, taught/, [], 'I ran paid mock speaking tests for two students and both booked again'],
+    [/what do (people|they) say/, [], 'They say I explain books simply and ask me what to read next'],
+    [/first hear about you/, [], 'My WhatsApp group and the language centre where I used to teach'],
+    [/right person/, [], 'I failed my first speaking test, then reached band 8.5, so I know the fear'],
+    [/how many months/, [], 'About 4 months'],
+    [/plan goes wrong/, [], 'I stop, write down what happened and ask a student what they think'],
+    [/do most days/, ['Freelancer'], 'IELTS tutor', true],
+    [/where are you based/, [], 'Alexandria', true],
+    [/study/, ['University'], 'Alexandria University, English literature, 2019'],
+    [/jobs/, ['Full-time job', 'Freelance'], 'IELTS teacher at a language centre for 3 years, private tutor since'],
+    [/help with/, ['Teaching or tutoring'], 'Students ask me for IELTS speaking practice'],
+    [/for fun/, ['Reading'], 'I host a book club in Alexandria'],
+    [/groups|communit/, ['WhatsApp or Facebook groups'], 'My WhatsApp group of 420 IELTS students'],
+    [/introduce you/, ['A boss or old boss'], 'Two language centre owners in Alexandria'],
+    [/languages/, ['Arabic', 'English'], 'I know Alexandria and Cairo'],
+    [/hours a week/, ['10–20'], null],
+    [/money/, ['Self-funded, no raise'], 'Up to EGP 3,000'],
+    [/never do/, ['Fake reviews', 'Lie to customers'], 'No promises of band scores'],
+  ];
+  const headings = async () => (await p.locator('h1, h2').allTextContents().catch(() => [])).map((t) => t.trim().toLowerCase()).filter(Boolean);
+  const startBtn = () => p.getByRole('button', { name: /^Start(?! voice)/ });
+  let prev = '', saidFollow = false;
   for (let k = 0; k < 40; k++) {
-    if (await p.getByRole('button', { name: /^Start(?! voice)/ }).isVisible().catch(() => false)) break;
-    const heading = ((await p.locator('h1, h2').first().textContent().catch(() => '')) || '');
+    // Wait until the heading differs from the last screen's (up to 3s), so the answer fits the question on screen.
+    let hs = await headings();
+    for (let t = 0; t < 30 && k > 0 && hs.join('|') === prev; t++) { await p.waitForTimeout(100); hs = await headings(); }
+    if (await startBtn().isVisible().catch(() => false)) break;
+    prev = hs.join('|');
+    const row = ANSWERS.find(([re]) => hs.some((h) => re.test(h)));
     if (k === 0) await say(p, 'Onboarding: one specific question per screen about your work, communities, time, money and limits.', 0);
-    if (k === 4) await say(p, 'Follow-up questions are written from your own earlier answers.', 0);
-    const radio = p.locator('[role=radio]').first();
-    if (await radio.isVisible().catch(() => false) && !(await p.locator('[role=radio][aria-checked=true], [role=radio][data-state=checked]').count())) await moveClick(p, radio, 120);
-    const box = p.locator('[role=checkbox]').first();
-    if (await box.isVisible().catch(() => false) && !(await p.locator('[role=checkbox][aria-checked=true], [role=checkbox][data-state=checked]').count())) await moveClick(p, box, 120);
-    const tb = p.locator('textarea').first();
-    if (await tb.isVisible().catch(() => false) && !(await tb.inputValue().catch(() => ''))) {
-      const h = heading.toLowerCase();
-      const fit = /never do/.test(h) ? 'No fake reviews, no promises of band scores' : /study/.test(h) ? 'Cairo University, English literature, 2019'
-        : /languages|cities/.test(h) ? 'Arabic and English, Alexandria' : /introduce/.test(h) ? 'Two language centre owners' : /fun/.test(h) ? 'Book club host'
-        : /group|communit/.test(h) ? 'My WhatsApp group of 420 IELTS students' : null;
-      if (shown < first.length && !fit) await type(p, tb, first[shown]); else { await moveClick(p, tb, 100); await tb.fill(fit || rest[(shown - first.length) % rest.length]); }
-      shown++;
+    if (row && !saidFollow && ANSWERS.indexOf(row) < 8) { saidFollow = true; await say(p, 'Follow-up questions are written from your own earlier answers.', 0); }
+    if (row) {
+      const [, chips, text, slow] = row;
+      for (const c of chips) {
+        const chip = p.locator('[role=radio], [role=checkbox]').filter({ hasText: new RegExp('^' + c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$') }).first();
+        if (await chip.isVisible().catch(() => false) && (await chip.getAttribute('aria-checked')) !== 'true') await moveClick(p, chip, 120);
+      }
+      const tb = p.locator('textarea').first();
+      if (text && await tb.isVisible().catch(() => false)) {
+        if (slow) await type(p, tb, text); else { await moveClick(p, tb, 100); await tb.fill(text); }
+      }
+      await p.waitForTimeout(350);
     }
     const next = p.getByRole('button', { name: /^Next/ });
-    if (await next.isEnabled().catch(() => false)) await moveClick(p, next, 300);
-    else await moveClick(p, p.getByRole('button', { name: /skip for now/i }), 300);
+    // Never skip a screen. If Next is still off, pick an option, then write the field's own example.
+    if (!(await next.isEnabled().catch(() => false))) {
+      const opt = p.locator('[role=radio], [role=checkbox]').first();
+      if (await opt.isVisible().catch(() => false)) await moveClick(p, opt, 120);
+    }
+    if (!(await next.isEnabled().catch(() => false))) {
+      const tb = p.locator('textarea').first();
+      await moveClick(p, tb, 100); await tb.fill((await tb.getAttribute('placeholder')) || '');
+    }
+    if (!(await next.isEnabled().catch(() => false))) throw new Error('no answer for screen: ' + hs.join(' | '));
+    await moveClick(p, next, 300);
   }
   await say(p, 'Before anything starts, you check what it understood about you. Missing facts are labelled ASSUMPTION.', 3000);
   await moveClick(p, p.getByRole('button', { name: /^Start(?! voice)/ }), 700);
@@ -118,9 +153,26 @@ async function type(page, el, text, delay = 18) {
   // Stage 1: Ideation.
   await until((s) => s.pending, 'first question');
   await say(p, 'Stage 1, Ideation. The co-founder asks only what is missing. Ahmed Tarek, a parody shark, watches on the right.', 2800);
-  for (let i = 0; i < 6; i++) {
-    const s = await state(); if (s.status === 'gate') break;
-    await answer('I can give 15 hours a week, and two students already paid me for mock speaking tests', i === 0);
+  // One answer per pending question, picked by the question's words. No answer is used twice.
+  const INTAKE = [
+    [/hours|time/, 'Fifteen hours a week for the next two months, mostly evenings and Fridays'],
+    [/paid|pay|bought/, 'Two students in my group paid me EGP 300 each for a mock speaking test last month'],
+    [/problem|complain|struggle/, 'They freeze in part two of the speaking test and have nobody to practise with'],
+    [/who|customer|audience/, 'University graduates in Alexandria who need band 6.5 to study or work abroad'],
+    [/reach|where|channel/, 'Through my WhatsApp group and two language centres in Alexandria'],
+    [/skill|good at|experience/, 'I scored band 8.5 and have coached IELTS speaking for three years'],
+    [/money|budget|spend/, 'I can put in up to EGP 3,000 of my own money and nothing more'],
+  ];
+  const used = new Set();
+  for (let i = 0; i < 8; i++) {
+    const s = await state(); if (s.status === 'gate' || !s.pending || s.pending.kind !== 'question') break;
+    const q = s.pending.prompt.toLowerCase();
+    const pick = INTAKE.find(([re, a]) => re.test(q) && !used.has(a)) || INTAKE.find(([, a]) => !used.has(a));
+    if (!pick) throw new Error('no answer left for: ' + q);
+    used.add(pick[1]);
+    await p.getByText(s.pending.prompt, { exact: false }).last().waitFor({ timeout: 5000 }).catch(() => {});
+    await p.waitForTimeout(i === 0 ? 0 : 900);
+    await answer(pick[1], i === 0);
     await until((x) => x.status === 'gate' || (x.pending && x.pending.prompt !== s.pending.prompt), 'next question');
   }
   await p.waitForTimeout(900);
