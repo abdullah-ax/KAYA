@@ -73,9 +73,9 @@ class PaymentProcessor:
         order.status = "paid"
         self._log("payment_succeeded", order.order_id, "MOCKED payment recorded, no real money")
         delivery = self.fulfilment.issue(order.order_id, order.product)
-        self.log.append("delivery", "issue_access_token", sources=[order.order_id],
-                        outcome=f"MOCKED delivery: access token {delivery.token[:11]}... issued, nothing sent")
+        self.log.append("delivery", "issue_access_token", sources=[],
+                        outcome=f"{order.order_id}: MOCKED delivery, access token {delivery.token[:11]}... issued, nothing sent")
         return "delivered"
 
     def _log(self, action: str, order_id: Any, outcome: str) -> None:
-        self.log.append("payments", action, sources=[str(order_id)], outcome=outcome)
+        self.log.append("payments", action, outcome=f"{order_id}: {outcome}")

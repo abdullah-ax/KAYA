@@ -19,12 +19,12 @@ def apply_refund(proc: "PaymentProcessor", order_id: str, *, approval: Approval 
     order.status = "refunded"
     revoked = proc.fulfilment.revoke(order_id)
     if approval is not None:
-        proc.log.append("refunds", "refund_order", sources=[order_id], approved_by="founder",
+        proc.log.append("refunds", "refund_order", approved_by="founder",
                         founder_input=approval.reason, gated=True,
-                        outcome=f"MOCKED refund approved by the founder, {revoked} access token revoked, no money moved")
+                        outcome=f"{order_id}: MOCKED refund approved by the founder, {revoked} access token revoked, no money moved")
     else:
-        proc.log.append("refunds", "refund_order", sources=[order_id],
-                        outcome=f"MOCKED refund from provider event, {revoked} access token revoked, no money moved")
+        proc.log.append("refunds", "refund_order",
+                        outcome=f"{order_id}: MOCKED refund from provider event, {revoked} access token revoked, no money moved")
     return "refunded"
 
 

@@ -42,6 +42,6 @@ def reconcile(proc: "PaymentProcessor") -> Report:
         elif proc.payouts[oid] != pay.amount - pay.fee:
             report.mismatches.append(Mismatch(oid, "payout_mismatch",
                 f"MOCKED: payout {proc.payouts[oid]} but expected {pay.amount - pay.fee}"))
-    proc.log.append("reconcile", "reconcile_orders", sources=list(proc.orders),
-                    outcome=f"MOCKED reconcile: {len(report.mismatches)} mismatches")
+    proc.log.append("reconcile", "reconcile_orders",
+                    outcome=f"MOCKED reconcile of {len(proc.orders)} orders: {len(report.mismatches)} mismatches")
     return report

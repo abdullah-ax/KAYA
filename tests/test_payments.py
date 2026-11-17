@@ -164,3 +164,11 @@ def test_reconcile_checks_fee_on_refunded_order_but_not_payout(proc):
     proc.handle_event(paid(fee=999))
     proc.handle_event({"event_id": "r1", "order_id": "o1", "type": "refunded"})
     assert [m.kind for m in reconcile(proc).mismatches] == ["fee_mismatch"]
+
+
+def test_payment_log_sources_hold_only_urls(tmp_path):
+    from scripts.payment_test import run
+    _, proc, _ = run(tmp_path / "log.json")
+    entries = proc.log.entries()
+    assert entries and all(u.startswith("http") for e in entries for u in e["sources"])
+    assert any("order-1" in (e.get("outcome") or "") for e in entries)
