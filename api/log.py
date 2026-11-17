@@ -50,6 +50,7 @@ class DecisionLog:
         outcome: str | None = None,
         gated: bool = False,
         tokens: dict[str, int] | None = None,
+        reasons: list[str] | None = None,
     ) -> dict[str, Any]:
         if gated and (approved_by != "founder" or not (founder_input or "").strip()):
             raise ValueError(
@@ -70,6 +71,8 @@ class DecisionLog:
                                "completion": int(tokens.get("completion", 0))}
         if outcome is not None:
             entry["outcome"] = outcome
+        if reasons:
+            entry["reasons"] = [str(r) for r in reasons]
         with self._lock:  # read, add, write must not interleave with another writer
             self._write([*self.entries(), entry])
         return entry

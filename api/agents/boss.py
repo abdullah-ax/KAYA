@@ -59,5 +59,5 @@ def review(ctx: Ctx, draft: Draft, step: str) -> Review:
             return Review(True, False, reasons)
         reasons = reasons or ["The boss voted fail with no reason given."]
     outcome = "block" if blocked else "fail"
-    ctx.log.append("boss", "reject_draft", outcome=outcome)
+    ctx.log.append("boss", "reject_draft", outcome=outcome, reasons=reasons)
     return Review(False, blocked, reasons)

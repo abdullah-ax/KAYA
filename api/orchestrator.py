@@ -170,7 +170,12 @@ def _reviewed(ctx: Ctx, step: str, make: Callable[[list[str]], Draft]) -> Draft 
     draft = make(review.reasons)
     review = boss.review(ctx, draft, step)
     if review.blocked:
-        ctx.say("The ethics check blocked this draft twice, so the run stops here.")
+        kept = ctx.run_dir / "outputs" / f"{step}_rejected_draft.md"
+        kept.parent.mkdir(parents=True, exist_ok=True)
+        kept.write_text(draft.markdown + "\n## Why it was blocked\n\n" + "\n".join(f"- {r}" for r in review.reasons) + "\n",
+                        encoding="utf-8")
+        top = "; ".join(review.reasons[:2])
+        ctx.say(f"The ethics check blocked this draft twice, so the run stops here. Why: {top}")
         return None
     if not review.passed:
         draft.markdown += "\n## Boss notes (did not pass)\n\n" + "\n".join(f"- {r}" for r in review.reasons) + "\n"
