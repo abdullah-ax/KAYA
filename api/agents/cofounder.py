@@ -91,7 +91,9 @@ def ask_choice(ctx: Ctx, key: str, question: str, options: list[Option]) -> Appr
     option: str | None = None
     for _ in range(MAX_ASKS):
         if option is None:
-            option = ask_founder(ctx, f"{key}_option", "Which option? Type its name.", choice)
+            option = ask_founder(ctx, f"{key}_option", "Which option? Type its name or number.", choice)
+            if option.strip().isdigit() and 1 <= int(option.strip()) <= len(names):
+                option = names[int(option.strip()) - 1]
         reason = ask_founder(ctx, f"{key}_reason", "Why that one? Use your own words.")
         try:
             return check_approval(option, reason, names, ctx.cfg)
