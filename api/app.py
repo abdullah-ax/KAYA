@@ -1,0 +1,319 @@
+"""Web API: the same pipeline as the CLI, one founder step at a time.
+
+Each run's pipeline works in a background thread. When it needs the founder it
+waits, and the web UI reads the pending question or gate with GET /runs/{id}.
+There is no endpoint that publishes or passes a gate: a choice goes through
+check_approval here, and again inside the pipeline before anything runs.
+"""
+from __future__ import annotations
+
+import json
+import os
+import re
+import threading
+import uuid
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Callable, Literal
+
+from fastapi import FastAPI, Header, HTTPException
+from pydantic import BaseModel, Field
+
+from api.approval import ApprovalError, check_approval
+from api.config import Config, load_config
+from api.guardrail import check_answer
+from api.llm import LLM, LLMError, make_llm
+from api.log import DecisionLog
+from api.orchestrator import AnswersExhausted, Ctx, run_pipeline
+from api.research import Search, SearxSearch
+
+ROOT = Path(__file__).resolve().parent.parent
+LLMFactory = Callable[[Config, str, "str | None"], LLM]
+SearchFactory = Callable[[Config], Search]
+_OPTION_LINE = re.compile(r"^- (.+) \(cost: (.*); risk: (.*); source: (.*)\)$")
+
+
+def _default_llm(cfg: Config, provider: str, api_key: str | None) -> LLM:
+    # The key lives only in this adapter's memory. It is never written to disk.
+    return make_llm(cfg, provider, api_key=api_key, base_url=os.environ.get("OPENAI_BASE_URL"),
+                    model=os.environ.get("OPENAI_MODEL"))
+
+
+def _scrub(text: str, secret: str | None) -> str:
+    return text.replace(secret, "[hidden]") if secret else text
+
+
+class NewRun(BaseModel):
+    brief: str = Field(min_length=1)
+    mode: Literal["demo", "full"] = "demo"
+    provider: Literal["ollama", "openai"] = "ollama"
+
+
+class Answer(BaseModel):
+    text: str
+
+
+class Choice(BaseModel):
+    option: str
+    reason: str
+
+
+class ModelTest(BaseModel):
+    provider: Literal["ollama", "openai"] = "ollama"
+
+
+class _Ping(BaseModel):
+    ok: bool
+
+
+class WebAnswers:
+    """An AnswerSource that waits for the founder to answer through the API."""
+
+    def __init__(self, on_change: Callable[[], None]) -> None:
+        self.cv = threading.Condition()
+        self.pending: tuple[str, str] | None = None
+        self.inbox: list[str] = []
+        self.closed = False
+        self._on_change = on_change
+
+    def ask(self, key: str, prompt: str) -> str:
+        with self.cv:
+            self.pending = (key, prompt)
+            self.cv.notify_all()
+            self._on_change()
+            self.cv.wait_for(lambda: bool(self.inbox) or self.closed)
+            if not self.inbox:
+                raise AnswersExhausted(f"The run was closed while waiting for '{key}'.")
+            self.pending = None
+            return self.inbox.pop(0)
+
+
+@dataclass
+class Session:
+    id: str
+    run_dir: Path
+    brief: str
+    mode: str
+    provider: str
+    answers: WebAnswers = field(init=False)
+    messages: list[str] = field(default_factory=list)
+    history: list[dict[str, str]] = field(default_factory=list)
+    notice: dict[str, Any] | None = None
+    done: bool = False
+    outcome: str | None = None
+    error: str | None = None
+
+    def __post_init__(self) -> None:
+        self.answers = WebAnswers(self.save)
+
+    # -- state the UI reads ---------------------------------------------------
+    def pending(self) -> dict[str, Any] | None:
+        if self.done or self.answers.pending is None:
+            return None
+        key, prompt = self.answers.pending
+        if not key.endswith("_option"):
+            return {"kind": "question", "key": key, "prompt": prompt}
+        asked = next((m for m in reversed(self.messages) if _parse_choice(m)[1]), "")
+        question, options = _parse_choice(asked)
+        return {"kind": "gate", "key": key.removesuffix("_option"), "prompt": question, "options": options}
+
+    def status(self) -> str:
+        if self.error:
+            return "error"
+        if self.done:
+            return "done"
+        pending = self.pending()
+        if pending is None or self.answers.inbox:
+            return "working"
+        return "gate" if pending["kind"] == "gate" else "waiting"
+
+    def state(self) -> dict[str, Any]:
+        progress = _read_json(self.run_dir / "state.json") or {}
+        outputs_dir = self.run_dir / "outputs"
+        outputs = sorted(p.name for p in outputs_dir.iterdir()) if outputs_dir.exists() else []
+        return {"id": self.id, "status": self.status(), "stage": self.stage(progress.get("step", "start")),
+                "outcome": self.outcome or progress.get("outcome"), "mode": self.mode,
+                "provider": self.provider, "phase1": progress.get("phase1"), "phase2": progress.get("phase2"),
+                "pending": self.pending(), "notice": self.notice, "messages": self.messages,
+                "outputs": outputs, "sources": _sources(outputs_dir), "error": self.error}
+
+    def stage(self, saved_step: str) -> str:
+        """The step the founder is on. A pending gate names itself; the pipeline saves it only after."""
+        pending = self.pending()
+        if pending and pending["kind"] == "gate":
+            return {"publish": "phase2_step2"}.get(pending["key"], f"{pending['key']}_gate")
+        return saved_step
+
+    def save(self) -> None:
+        """Persist what the UI shows, plus the founder's answers. No keys are ever in here."""
+        self.run_dir.mkdir(parents=True, exist_ok=True)
+        data = {**self.state(), "brief": self.brief, "history": self.history}
+        (self.run_dir / "session.json").write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n",
+                                                   encoding="utf-8")
+
+    # -- founder input --------------------------------------------------------
+    def send(self, texts: list[str], timeout: float) -> None:
+        """Hand answers to the waiting pipeline, then wait until it asks again or ends."""
+        a = self.answers
+        with a.cv:
+            key = a.pending[0] if a.pending else "?"
+            self.history += [{"key": key, "text": t} for t in texts]
+            a.inbox.extend(texts)
+            a.cv.notify_all()
+            a.cv.wait_for(lambda: not a.inbox and (a.pending is not None or self.done), timeout=timeout)
+        self.save()
+
+    def wait_idle(self, timeout: float) -> None:
+        a = self.answers
+        with a.cv:
+            a.cv.wait_for(lambda: a.pending is not None or self.done, timeout=timeout)
+
+
+def _parse_choice(message: str) -> tuple[str, list[dict[str, str]]]:
+    """Split the co-founder's choice message into the question and its option rows."""
+    question, options = [], []
+    for line in message.splitlines():
+        match = _OPTION_LINE.match(line)
+        if match:
+            name, cost, risk, source = match.groups()
+            options.append({"name": name, "cost": cost, "risk": risk, "source": source})
+        elif not options:
+            question.append(line)
+    return "\n".join(question).strip(), options
+
+
+def _read_json(path: Path) -> Any:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def _sources(outputs_dir: Path) -> list[dict[str, Any]]:
+    found: list[dict[str, Any]] = []
+    for path in sorted(outputs_dir.glob("*_sources.json")) if outputs_dir.exists() else []:
+        found += _read_json(path) or []
+    return found
+
+
+def create_app(*, llm_factory: LLMFactory = _default_llm, search_factory: SearchFactory | None = None,
+               config_path: Path = ROOT / "config.yaml", wait_seconds: float | None = None) -> FastAPI:
+    app = FastAPI(title="KAYA API")
+    sessions: dict[str, Session] = {}
+    wait = wait_seconds if wait_seconds is not None else float(os.environ.get("API_WAIT_SECONDS", "30"))
+    make_search = search_factory or (lambda cfg: SearxSearch(cfg.searxng_url))
+
+    def config(mode: str | None = None) -> Config:
+        cfg = load_config(config_path)
+        return cfg.model_copy(update={"mode": mode}) if mode else cfg
+
+    def runs_dir() -> Path:
+        return Path(config().runs_dir)
+
+    def get(run_id: str) -> Session:
+        if run_id not in sessions:
+            raise HTTPException(404, "No run with that id is open.")
+        return sessions[run_id]
+
+    def work(session: Session, ctx: Ctx, key: str | None) -> None:
+        try:
+            result = run_pipeline(ctx, session.brief)
+            session.outcome = result.outcome
+        except Exception as err:  # shown to the founder; the key is scrubbed out
+            session.error = _scrub(f"{type(err).__name__}: {err}", key)
+        with session.answers.cv:
+            session.done = True
+            session.answers.cv.notify_all()
+        session.save()
+
+    @app.get("/health")
+    def health() -> dict[str, str]:
+        return {"status": "ok"}
+
+    @app.post("/runs", status_code=201)
+    def new_run(body: NewRun, x_model_key: str | None = Header(default=None)) -> dict[str, Any]:
+        cfg = config(body.mode)
+        try:
+            llm = llm_factory(cfg, body.provider, x_model_key)
+        except ValueError as err:
+            raise HTTPException(422, _scrub(str(err), x_model_key)) from None
+        run_id = uuid.uuid4().hex[:12]
+        session = Session(run_id, runs_dir() / run_id, body.brief, body.mode, body.provider)
+        ctx = Ctx(cfg=cfg, llm=llm, search=make_search(cfg), log=DecisionLog(session.run_dir / "decision_log.json"),
+                  answers=session.answers, run_dir=session.run_dir, say=session.messages.append)
+        sessions[run_id] = session
+        session.save()
+        threading.Thread(target=work, args=(session, ctx, x_model_key), daemon=True).start()
+        session.wait_idle(wait)
+        return session.state()
+
+    @app.get("/runs/{run_id}")
+    def read_run(run_id: str) -> dict[str, Any]:
+        if run_id in sessions:
+            return sessions[run_id].state()
+        saved = _read_json(runs_dir() / run_id / "session.json") if re.fullmatch(r"\w+", run_id) else None
+        if saved is None:
+            raise HTTPException(404, "No run with that id.")
+        if saved.get("status") != "done":
+            saved.update(status="closed", pending=None)  # the server restarted; start a new run
+        return saved
+
+    @app.post("/runs/{run_id}/answer")
+    def answer(run_id: str, body: Answer) -> dict[str, Any]:
+        session = get(run_id)
+        pending = session.pending()
+        if pending is None or pending["kind"] != "question":
+            raise HTTPException(409, "The run is not waiting for an answer right now.")
+        verdict = check_answer(body.text)
+        if not verdict.allowed:
+            DecisionLog(session.run_dir / "decision_log.json").append(
+                "guardrail", "refuse_request", founder_input=body.text, outcome=verdict.rule)
+            session.notice = {"refused": True, "rule": verdict.rule, "reason": verdict.reason,
+                              "alternative": verdict.alternative}
+            session.save()
+            return session.state()
+        session.notice = None
+        session.send([body.text], wait)
+        return session.state()
+
+    @app.post("/runs/{run_id}/gate")
+    def gate(run_id: str, body: Choice) -> dict[str, Any]:
+        session = get(run_id)
+        pending = session.pending()
+        if pending is None or pending["kind"] != "gate":
+            raise HTTPException(409, "The run is not waiting for a decision right now.")
+        for text in (body.option, body.reason):
+            verdict = check_answer(text)
+            if not verdict.allowed:
+                raise HTTPException(422, f"{verdict.reason}. Instead: {verdict.alternative}.")
+        names = [o["name"] for o in pending["options"]]
+        try:
+            approval = check_approval(body.option, body.reason, names, config(session.mode))
+        except ApprovalError as err:
+            raise HTTPException(422, str(err)) from None
+        session.notice = None
+        session.send([approval.option, approval.reason], wait)
+        return session.state()
+
+    @app.get("/runs/{run_id}/log")
+    def read_log(run_id: str) -> list[dict[str, Any]]:
+        run_dir = sessions[run_id].run_dir if run_id in sessions else runs_dir() / run_id
+        if not re.fullmatch(r"\w+", run_id) or not run_dir.exists():
+            raise HTTPException(404, "No run with that id.")
+        return DecisionLog(run_dir / "decision_log.json").entries()
+
+    @app.post("/model/test")
+    def model_test(body: ModelTest, x_model_key: str | None = Header(default=None)) -> dict[str, Any]:
+        """One tiny model call. The key is used once and never stored, logged or echoed."""
+        cfg = config()
+        try:
+            llm = llm_factory(cfg, body.provider, x_model_key)
+            llm.complete("Reply with JSON only.", 'Reply {"ok": true}.', _Ping)
+        except (LLMError, ValueError, OSError) as err:
+            return {"ok": False, "provider": body.provider, "error": _scrub(str(err), x_model_key)}
+        return {"ok": True, "provider": body.provider, "model": llm.name}
+
+    return app
+
+
+app = create_app()

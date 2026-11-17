@@ -20,20 +20,34 @@ services:
 
   searxng:
     image: searxng/searxng:latest
+    environment:
+      - SEARXNG_SECRET=${SEARXNG_SECRET:-change-me-local-only}
+      - SEARXNG_BASE_URL=http://localhost:8080/
+    volumes:
+      - ./searxng:/etc/searxng
     ports:
       - "8080:8080"
 
   api:
-    build: ./api
+    build:
+      context: .
+      dockerfile: api/Dockerfile
     env_file:
       - path: .env
         required: false
     environment:
       - OLLAMA_URL=http://ollama:11434
       - SEARXNG_URL=http://searxng:8080
+      - RUNS_DIR=/app/runs
     volumes:
       - ./runs:/app/runs
       - ./outputs:/app/outputs
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=4)"]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
     depends_on:
       - ollama
       - searxng
