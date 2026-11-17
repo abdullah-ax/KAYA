@@ -5,6 +5,7 @@ Each file is our own short note on a source, with the source link at the top. Ag
 | File | Summary | Phases | Agents |
 |---|---|---|---|
 | method/talk_to_users.md | YC's five interview questions and rules | 1 | marketing intern, cofounder |
+| method/sistilli_map.md | Sistilli's steps from goals and idea space to MVP and first customers | 1, 2, 3, 5 | profiler, research intern, cofounder |
 | method/mom_test.md | Ask about past behavior, not opinions about your idea | 1 | marketing intern, judges |
 | method/startup_ideas.md | Look for problems, preferably your own | 1 | profiler, research intern |
 | method/do_things_that_dont_scale.md | Recruit first users by hand | 2, 5 | cofounder, marketing intern |
