@@ -1,0 +1,110 @@
+[
+  {
+    "id": "S1",
+    "url": "https://takeielts.britishcouncil.org/prepare/ielts-free-practice-mock-tests/academic/speaking",
+    "title": "IELTS Academic Speaking Practice Tests",
+    "publisher": "takeielts.britishcouncil.org",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "secondary",
+    "trust": "medium",
+    "trust_reason": "Company or general site; may gain from what it says.",
+    "claims_backed": [
+      "Alexandria IELTS students lack daily speaking practice at home."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase1_step2"
+  },
+  {
+    "id": "S8",
+    "url": "https://lingoleap.ai/blog/speaking-practice-tools-ielts",
+    "title": "Speaking Practice for IELTS: 5 Online Tools You Should Be Using",
+    "publisher": "lingoleap.ai",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "vendor",
+    "trust": "medium",
+    "trust_reason": "Company or general site; may gain from what it says.",
+    "claims_backed": [
+      "Alexandria IELTS students lack daily speaking practice at home."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase1_step2"
+  },
+  {
+    "id": "S4",
+    "url": "https://oxfordtefl.com/blog/helping-students-prepare-for-the-ielts-speaking-test-a-task-based-approach/",
+    "title": "Helping students prepare for the IELTS speaking test - Oxford TEFL",
+    "publisher": "oxfordtefl.com",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "vendor",
+    "trust": "medium",
+    "trust_reason": "Company or general site; may gain from what it says.",
+    "claims_backed": [
+      "IELTS test takers in Egypt have no affordable source for short model answers they can compare their recordings against."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase1_step2"
+  },
+  {
+    "id": "S2",
+    "url": "https://ieltsliz.com/ielts-speaking-free-lessons-essential-tips/",
+    "title": "IELTS Speaking: Free Lessons & Essential Tips",
+    "publisher": "ieltsliz.com",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "secondary",
+    "trust": "medium",
+    "trust_reason": "Company or general site; may gain from what it says.",
+    "claims_backed": [
+      "IELTS test takers in Egypt have no affordable source for short model answers they can compare their recordings against."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase1_step2"
+  },
+  {
+    "id": "S7",
+    "url": "https://ihworld.com/ih-journal/issues/issue-54/ielts-speaking-exam-preparation-activities/",
+    "title": "IELTS Speaking - Three Activities - International House",
+    "publisher": "ihworld.com",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "secondary",
+    "trust": "medium",
+    "trust_reason": "Company or general site; may gain from what it says.",
+    "claims_backed": [
+      "Two language centres in Smouha send 20+ IELTS students monthly to Mariam; these students have no structured speaking practice between centre classes."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase1_step2"
+  },
+  {
+    "id": "S10",
+    "url": "https://www.esl-lounge.com/student/ielts-speaking.php",
+    "title": "IELTS Exam - Free Exercises & Tasks For Speaking - ESL Lounge",
+    "publisher": "esl-lounge.com",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "secondary",
+    "trust": "medium",
+    "trust_reason": "Company or general site; may gain from what it says.",
+    "claims_backed": [
+      "Two language centres in Smouha send 20+ IELTS students monthly to Mariam; these students have no structured speaking practice between centre classes."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase1_step2"
+  }
+]

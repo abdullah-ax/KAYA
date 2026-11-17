@@ -1,0 +1,38 @@
+[
+  {
+    "id": "S1",
+    "url": "https://takeielts.britishcouncil.org/prepare/ielts-free-practice-mock-tests/academic/speaking",
+    "title": "IELTS Academic Speaking Practice Tests",
+    "publisher": "takeielts.britishcouncil.org",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "secondary",
+    "trust": "medium",
+    "trust_reason": "Company or general site; may gain from what it says.",
+    "claims_backed": [
+      "Alexandria IELTS students lack daily speaking practice at home. 420 students in WhatsApp group get no structured practice outside class."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase2_step1"
+  },
+  {
+    "id": "S8",
+    "url": "https://lingoleap.ai/blog/speaking-practice-tools-ielts",
+    "title": "Speaking Practice for IELTS: 5 Online Tools You Should Be Using",
+    "publisher": "lingoleap.ai",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "vendor",
+    "trust": "medium",
+    "trust_reason": "Company or general site; may gain from what it says.",
+    "claims_backed": [
+      "WhatsApp sends 10 speaking prompts daily. Students record 2-minute answers. Receive 3-item checklist to self-score."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase2_step1"
+  }
+]

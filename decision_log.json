@@ -130,5 +130,457 @@
     "approved_by": null,
     "founder_input": null,
     "outcome": "MOCKED reconcile: 2 mismatches"
+  },
+  {
+    "timestamp": "2026-11-17T19:32:45Z",
+    "agent": "profiler",
+    "action": "plan_intake_questions",
+    "sources": [],
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "tokens": {
+      "prompt": 1583,
+      "completion": 2538
+    }
+  },
+  {
+    "timestamp": "2026-11-17T19:32:45Z",
+    "agent": "founder",
+    "action": "answer_question",
+    "sources": [],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": "I run a WhatsApp group of 420 IELTS students in Alexandria and I can message them today."
+  },
+  {
+    "timestamp": "2026-11-17T19:32:45Z",
+    "agent": "founder",
+    "action": "answer_question",
+    "sources": [],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": "About 10 hours a week, evenings and Fridays."
+  },
+  {
+    "timestamp": "2026-11-17T19:32:45Z",
+    "agent": "founder",
+    "action": "answer_question",
+    "sources": [],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": "I can spend up to EGP 2,000 of my own money."
+  },
+  {
+    "timestamp": "2026-11-17T19:32:45Z",
+    "agent": "founder",
+    "action": "answer_question",
+    "sources": [],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": "I have coached 300 students since 2021 and scored band 8.5 myself."
+  },
+  {
+    "timestamp": "2026-11-17T19:32:45Z",
+    "agent": "founder",
+    "action": "answer_question",
+    "sources": [],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": "I will never promise a band score or post fake reviews."
+  },
+  {
+    "timestamp": "2026-11-17T19:33:22Z",
+    "agent": "profiler",
+    "action": "write_founder_profile",
+    "sources": [],
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "tokens": {
+      "prompt": 2347,
+      "completion": 8145
+    }
+  },
+  {
+    "timestamp": "2026-11-17T19:33:34Z",
+    "agent": "research_intern",
+    "action": "plan_searches",
+    "sources": [],
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "tokens": {
+      "prompt": 1486,
+      "completion": 1212
+    }
+  },
+  {
+    "timestamp": "2026-11-17T19:33:36Z",
+    "agent": "research_intern",
+    "action": "web_search",
+    "sources": [
+      "https://takeielts.britishcouncil.org/prepare/ielts-free-practice-mock-tests/academic/speaking",
+      "https://ihworld.com/ih-journal/issues/issue-54/ielts-speaking-exam-preparation-activities/",
+      "https://oxfordtefl.com/blog/helping-students-prepare-for-the-ielts-speaking-test-a-task-based-approach/",
+      "https://ieltsliz.com/ielts-speaking-free-lessons-essential-tips/",
+      "https://www.esl-lounge.com/student/ielts-speaking.php",
+      "https://www.edutopia.org/discussion/12-fun-speaking-games-language-learners",
+      "https://hexaszindabazar.com/ielts-speaking-practice-topics/",
+      "https://reflectiveteachingreflectivelearning.com/2015/05/29/ielts-speaking-part-2-fun-practice-activity/",
+      "https://www.ieltsarena.com/blog/ai-ielts-speaking-practice",
+      "https://www.bestmytest.com/ielts/speaking-review",
+      "https://speechful.ai/",
+      "https://ielts-testpro.com/speaking-tips/10-best-ielts-speaking-apps/",
+      "https://ieltsbiz.com/blog/cathoven-vs-testglider",
+      "https://www.lexibot.me/",
+      "https://lingoleap.ai/blog/speaking-practice-tools-ielts",
+      "https://play.google.com/store/apps/details?id=com.finnove.ieltspulse&hl=en_NZ",
+      "https://www.facebook.com/IELTSAdvantage/posts/this-common-mistake-could-be-keeping-you-from-a-higher-ielts-speaking-score/1584224587084516/",
+      "https://www.talkdrill.com/blog/exams/ielts-speaking/mistakes-vietnamese-arabic-tagalog-speakers/",
+      "https://www.youskill.online/ielts-speaking",
+      "https://www.studocu.vn/vn/document/ho-chi-minh-city-university-of-technology/intensive-english-3/elf-practice-for-ielts-reading-bands-65-75/113310670",
+      "https://ieltsliz.com/ielts-speaking-topics-may-aug-2020/",
+      "https://www.studdia.live/ielts-speaking-mock-exam",
+      "https://www.avayeshahir.com/wp-content/uploads/2024/01/McGraw_Hill_Education_IELTS_5_Practice_Tests_%D9%90PDF.pdf",
+      "https://www.facebook.com/groups/1703452083119114/posts/4338495159614780/"
+    ],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null
+  },
+  {
+    "timestamp": "2026-11-17T19:35:08Z",
+    "agent": "research_intern",
+    "action": "draft_opportunities",
+    "sources": [
+      "https://takeielts.britishcouncil.org/prepare/ielts-free-practice-mock-tests/academic/speaking",
+      "https://ihworld.com/ih-journal/issues/issue-54/ielts-speaking-exam-preparation-activities/",
+      "https://oxfordtefl.com/blog/helping-students-prepare-for-the-ielts-speaking-test-a-task-based-approach/",
+      "https://ieltsliz.com/ielts-speaking-free-lessons-essential-tips/",
+      "https://www.esl-lounge.com/student/ielts-speaking.php",
+      "https://www.edutopia.org/discussion/12-fun-speaking-games-language-learners",
+      "https://hexaszindabazar.com/ielts-speaking-practice-topics/",
+      "https://reflectiveteachingreflectivelearning.com/2015/05/29/ielts-speaking-part-2-fun-practice-activity/",
+      "https://www.ieltsarena.com/blog/ai-ielts-speaking-practice",
+      "https://www.bestmytest.com/ielts/speaking-review",
+      "https://speechful.ai/",
+      "https://ielts-testpro.com/speaking-tips/10-best-ielts-speaking-apps/",
+      "https://ieltsbiz.com/blog/cathoven-vs-testglider",
+      "https://www.lexibot.me/",
+      "https://lingoleap.ai/blog/speaking-practice-tools-ielts",
+      "https://play.google.com/store/apps/details?id=com.finnove.ieltspulse&hl=en_NZ",
+      "https://www.facebook.com/IELTSAdvantage/posts/this-common-mistake-could-be-keeping-you-from-a-higher-ielts-speaking-score/1584224587084516/",
+      "https://www.talkdrill.com/blog/exams/ielts-speaking/mistakes-vietnamese-arabic-tagalog-speakers/",
+      "https://www.youskill.online/ielts-speaking",
+      "https://www.studocu.vn/vn/document/ho-chi-minh-city-university-of-technology/intensive-english-3/elf-practice-for-ielts-reading-bands-65-75/113310670",
+      "https://ieltsliz.com/ielts-speaking-topics-may-aug-2020/",
+      "https://www.studdia.live/ielts-speaking-mock-exam",
+      "https://www.avayeshahir.com/wp-content/uploads/2024/01/McGraw_Hill_Education_IELTS_5_Practice_Tests_%D9%90PDF.pdf",
+      "https://www.facebook.com/groups/1703452083119114/posts/4338495159614780/"
+    ],
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "tokens": {
+      "prompt": 3832,
+      "completion": 11710
+    }
+  },
+  {
+    "timestamp": "2026-11-17T19:35:08Z",
+    "agent": "boss",
+    "action": "reject_draft",
+    "sources": [],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "block",
+    "reasons": [
+      "Ethics (block): Disallowed category: physical goods."
+    ]
+  },
+  {
+    "timestamp": "2026-11-17T19:36:50Z",
+    "agent": "research_intern",
+    "action": "draft_opportunities",
+    "sources": [
+      "https://takeielts.britishcouncil.org/prepare/ielts-free-practice-mock-tests/academic/speaking",
+      "https://ihworld.com/ih-journal/issues/issue-54/ielts-speaking-exam-preparation-activities/",
+      "https://oxfordtefl.com/blog/helping-students-prepare-for-the-ielts-speaking-test-a-task-based-approach/",
+      "https://ieltsliz.com/ielts-speaking-free-lessons-essential-tips/",
+      "https://www.esl-lounge.com/student/ielts-speaking.php",
+      "https://www.edutopia.org/discussion/12-fun-speaking-games-language-learners",
+      "https://hexaszindabazar.com/ielts-speaking-practice-topics/",
+      "https://reflectiveteachingreflectivelearning.com/2015/05/29/ielts-speaking-part-2-fun-practice-activity/",
+      "https://www.ieltsarena.com/blog/ai-ielts-speaking-practice",
+      "https://www.bestmytest.com/ielts/speaking-review",
+      "https://speechful.ai/",
+      "https://ielts-testpro.com/speaking-tips/10-best-ielts-speaking-apps/",
+      "https://ieltsbiz.com/blog/cathoven-vs-testglider",
+      "https://www.lexibot.me/",
+      "https://lingoleap.ai/blog/speaking-practice-tools-ielts",
+      "https://play.google.com/store/apps/details?id=com.finnove.ieltspulse&hl=en_NZ",
+      "https://www.facebook.com/IELTSAdvantage/posts/this-common-mistake-could-be-keeping-you-from-a-higher-ielts-speaking-score/1584224587084516/",
+      "https://www.talkdrill.com/blog/exams/ielts-speaking/mistakes-vietnamese-arabic-tagalog-speakers/",
+      "https://www.youskill.online/ielts-speaking",
+      "https://www.studocu.vn/vn/document/ho-chi-minh-city-university-of-technology/intensive-english-3/elf-practice-for-ielts-reading-bands-65-75/113310670",
+      "https://ieltsliz.com/ielts-speaking-topics-may-aug-2020/",
+      "https://www.studdia.live/ielts-speaking-mock-exam",
+      "https://www.avayeshahir.com/wp-content/uploads/2024/01/McGraw_Hill_Education_IELTS_5_Practice_Tests_%D9%90PDF.pdf",
+      "https://www.facebook.com/groups/1703452083119114/posts/4338495159614780/"
+    ],
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "tokens": {
+      "prompt": 3855,
+      "completion": 9803
+    }
+  },
+  {
+    "timestamp": "2026-11-17T19:36:50Z",
+    "agent": "boss",
+    "action": "reject_draft",
+    "sources": [],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "fail",
+    "reasons": [
+      "Reading grade 9.2 is above 8.0."
+    ]
+  },
+  {
+    "timestamp": "2026-11-17T19:36:50Z",
+    "agent": "gate",
+    "action": "phase1_gate",
+    "sources": [],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "go"
+  },
+  {
+    "timestamp": "2026-11-17T19:36:50Z",
+    "agent": "founder",
+    "action": "phase1_decision",
+    "sources": [],
+    "model": null,
+    "cost": 0,
+    "approved_by": "founder",
+    "founder_input": "My students ask for speaking practice every week, so this is the problem I already see up close and can test fast",
+    "outcome": "WhatsApp speaking practice pack"
+  },
+  {
+    "timestamp": "2026-11-17T19:37:15Z",
+    "agent": "research_intern",
+    "action": "draft_interview_script",
+    "sources": [],
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "tokens": {
+      "prompt": 1548,
+      "completion": 3829
+    }
+  },
+  {
+    "timestamp": "2026-11-17T19:37:57Z",
+    "agent": "boss",
+    "action": "review_phase1_step3",
+    "sources": [],
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "tokens": {
+      "prompt": 1110,
+      "completion": 5869
+    }
+  },
+  {
+    "timestamp": "2026-11-17T19:37:57Z",
+    "agent": "boss",
+    "action": "reject_draft",
+    "sources": [],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "fail",
+    "reasons": [
+      "Specific: The script does not name a real kind of customer, a specific number, or a place. It is a generic question template without customer profile data.",
+      "Sourced: No claims, URLs, or `ASSUMPTION` labels are present in the draft. The methodology sources are cited at the top but not integrated as claim sources within the script itself.",
+      "Founder-based: The draft does not reference the founder's profile, words, or any customized context. It is a generic interview script with no founder integration.",
+      "Options: The draft presents a question script, not 2–3 decision options with cost, risk, and source. It lacks any option framework.",
+      "Cut to the bone: Multiple sentences add no fact, number, name, or decision: the \"Before\" line, all five interview questions, the \"Who to ask first\" list, the \"Close\" questions, and the table header. These should be deleted or reformulated into factual statements.",
+      "Delete: Before: don't mention your idea. Ask about their life. Take notes.",
+      "Delete: 1. When was the last time you practiced speaking English by yourself at home? What did you actually do?",
+      "Delete: 2. How many IELTS speaking practice sessions have you completed in the past month, and where did you find the speaking prompts?",
+      "Delete: 3. Tell me about the last time you tried to score or evaluate your own speaking practice. What method did you use?",
+      "Delete: 4. What's the biggest frustration you've faced when trying to get regular speaking practice outside of class?",
+      "Delete: 5. When did you last spend money on IELTS speaking preparation? What did you buy, and did you keep using it?",
+      "Delete: - Ahmed",
+      "Delete: - Sara",
+      "Delete: **Close:** Who else should I talk to? Can I follow up next week?",
+      "Delete: | Date | Person (role, not name) | Strong signals (money, time, intros) | Weak signals (compliments, \"would\") | Quote |"
+    ]
+  },
+  {
+    "timestamp": "2026-11-17T19:40:09Z",
+    "agent": "research_intern",
+    "action": "draft_interview_script",
+    "sources": [],
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "tokens": {
+      "prompt": 1992,
+      "completion": 19621
+    }
+  },
+  {
+    "timestamp": "2026-11-17T19:40:09Z",
+    "agent": "boss",
+    "action": "reject_draft",
+    "sources": [],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "fail",
+    "reasons": [
+      "Reading grade 13.0 is above 8.0."
+    ]
+  },
+  {
+    "timestamp": "2026-11-17T19:40:09Z",
+    "agent": "founder",
+    "action": "write_unfair_advantage",
+    "sources": [],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": "I coached 300 students and scored band 8.5, and the group already trusts my advice"
+  },
+  {
+    "timestamp": "2026-11-17T19:40:47Z",
+    "agent": "research_intern",
+    "action": "draft_lean_canvas",
+    "sources": [],
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "tokens": {
+      "prompt": 1665,
+      "completion": 5309
+    }
+  },
+  {
+    "timestamp": "2026-11-17T19:41:25Z",
+    "agent": "boss",
+    "action": "review_phase2_step1",
+    "sources": [],
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "tokens": {
+      "prompt": 1425,
+      "completion": 5921
+    }
+  },
+  {
+    "timestamp": "2026-11-17T19:41:25Z",
+    "agent": "boss",
+    "action": "reject_draft",
+    "sources": [],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "fail",
+    "reasons": [
+      "Options: Draft presents a single plan without 2–3 options, each with cost, risk, and source for founder choice.",
+      "Cut to the bone: ASSUMPTION sentences in boxes 2 and 6 add no verifiable fact.",
+      "Delete: Box 2: ASSUMPTION: daily practice improves band score",
+      "Delete: Box 6: ASSUMPTION: 30% of 420 students convert after test phase"
+    ]
+  },
+  {
+    "timestamp": "2026-11-17T19:42:39Z",
+    "agent": "research_intern",
+    "action": "draft_lean_canvas",
+    "sources": [],
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "tokens": {
+      "prompt": 1774,
+      "completion": 12129
+    }
+  },
+  {
+    "timestamp": "2026-11-17T19:43:29Z",
+    "agent": "boss",
+    "action": "review_phase2_step1",
+    "sources": [],
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "tokens": {
+      "prompt": 1411,
+      "completion": 8843
+    }
+  },
+  {
+    "timestamp": "2026-11-17T19:43:29Z",
+    "agent": "boss",
+    "action": "reject_draft",
+    "sources": [],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "fail",
+    "reasons": [
+      "Sourced: Box 9 labeled 'founder' in Source/ASSUMPTION column does not match required 'URL or `ASSUMPTION`' label; only 2 of 9 boxes have URLs, others have ASSUMPTION or 'founder', failing the 'every claim' criterion.",
+      "Options: Draft presents a completed Lean Canvas with box contents; no 2–3 real options with cost, risk, and source are offered for founder selection as required by rule 10."
+    ]
+  },
+  {
+    "timestamp": "2026-11-17T19:43:30Z",
+    "agent": "orchestrator",
+    "action": "stop_canvas_failed_review",
+    "sources": [],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "repeat",
+    "reasons": [
+      "Sourced: Box 9 labeled 'founder' in Source/ASSUMPTION column does not match required 'URL or `ASSUMPTION`' label; only 2 of 9 boxes have URLs, others have ASSUMPTION or 'founder', failing the 'every claim' criterion.",
+      "Options: Draft presents a completed Lean Canvas with box contents; no 2–3 real options with cost, risk, and source are offered for founder selection as required by rule 10."
+    ]
   }
 ]
