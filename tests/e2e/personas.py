@@ -32,6 +32,7 @@ class Persona:
     gate_reasons: list[str] = field(default_factory=lambda: [LONG])
     first_try_reason: str | None = None   # e.g. "yes" to test the no-bare-yes rule
     pick: str = "first"              # first | stop | follow
+    after_refusal: str = "Fair enough. Honestly, about 30 students in my faculty asked me for a study planner last term."
     mode: str = "demo"
 
 
@@ -105,6 +106,12 @@ def run_persona(base: str, key: str | None, p: Persona, timeout_s: int = 900) ->
             resp = c.post(f"/runs/{rid}/answer", json={"text": a})
             note = f" -> {resp.status_code} {resp.json().get('detail', '')}" if resp.status_code != 200 else ""
             events.append(f"Q: {q}\n  A: {a}{note}")
+            notice = (resp.json() if resp.status_code == 200 else {}).get("notice") or {}
+            if notice.get("refused"):
+                # A real founder reads the refusal and answers again, honestly this time.
+                events.append(f"  refused: {notice.get('reason')} Instead: {notice.get('alternative')}")
+                c.post(f"/runs/{rid}/answer", json={"text": p.after_refusal})
+                events.append(f"  answered again: {p.after_refusal}")
         else:
             names = [o["name"] for o in pend["options"]]
             stop_rec = pend["prompt"].lower().startswith("stop:")
