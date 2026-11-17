@@ -34,6 +34,15 @@ function sources(dir: string): string[] {
   });
 }
 
+describe("responsive shell (WCAG 1.4.10)", () => {
+  it("uses fixed multi-column grids only from the lg breakpoint up", () => {
+    const offenders = sources(__dirname).flatMap((f) =>
+      readFileSync(f, "utf8").split("\n").flatMap((line, i) => (/(?<!lg:)grid-cols-\[(17rem_1fr_22rem|1fr_22rem)\]/.test(line) ? [`${f.replace(__dirname, "src")}:${i + 1}`] : [])),
+    );
+    expect(offenders).toEqual([]);
+  });
+});
+
 describe("reduced motion", () => {
   it("only spins or pulses under motion-safe", () => {
     const offenders = sources(__dirname).flatMap((f) =>
