@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any, Literal, Sequence
 
 from pydantic import BaseModel, Field, model_validator
 
-from api.research import (UNTRUSTED_NOTE, SearchResult, SourceCard, assumption, claim_sources,
-                          clean_cell, scrub_urls, untrusted)
+from api.research import (UNTRUSTED_NOTE, SearchResult, SourceCard, assumption, cite, claim_sources,
+                          clean_cell, quote_note, quoted_claim, scrub_urls, untrusted)
 
 if TYPE_CHECKING:
     from api.agents.profiler import FounderProfile
@@ -26,6 +26,7 @@ class Opportunity(BaseModel):
     problem: str
     who: str
     evidence_urls: list[str] = []
+    evidence_quote: str = ""  # words copied exactly from the cited result's snippet
     founder_edge: str
     first_10: str
     cost_to_test: str
@@ -85,6 +86,9 @@ def draft_opportunities(ctx: Ctx, brief: str, profile: FounderProfile,
         f"{UNTRUSTED_NOTE}\n\nFounder brief:\n{untrusted(brief)}\n\n"
         f"Profile:\n{profile.model_dump_json()}\n\n"
         f"Search results (cite only these URLs):\n{untrusted(_results_text(results))}\n\n"
+        "For each problem you back with evidence_urls, set evidence_quote to 3 to 25 words copied word for "
+        "word from that result's snippet. Code checks the quote; a problem without a matching quote "
+        "becomes ASSUMPTION.\n\n"
         f"Give 2 or 3 opportunities. Score founder_fit 1 to 5 from the profile.{_notes_text(notes)}",
         OpportunityDraft, sources=[r.url for r in results])
     return _render_opportunities(ctx, draft)
@@ -131,8 +135,10 @@ def _render_opportunities(ctx: Ctx, draft: OpportunityDraft) -> Draft:
     out = Draft(markdown="", texts=[], data=draft)
     lines = ["# Opportunities (Phase 1, step 2)", "", "2-3 options. The founder picks one and says why.", ""]
     for letter, opp, bad in zip("ABC", draft.opportunities, tainted):
-        claim, cards = claim_sources(opp.problem, [] if bad else opp.evidence_urls, ctx.registry)
+        claim, cards = quoted_claim(opp.problem, [] if bad else opp.evidence_urls, opp.evidence_quote,
+                                    ctx.registry)
         source = ", ".join(c.url for c in cards) or "ASSUMPTION"
+        evidence = [f"- Evidence: {source}", *(f"  > {quote_note(c)}" for c in cards if c.quote)]
         out.cards += cards
         out.sourced += _trusted(cards)
         out.options.append(opp.title)
@@ -140,7 +146,7 @@ def _render_opportunities(ctx: Ctx, draft: OpportunityDraft) -> Draft:
         out.founder_fit = min(out.founder_fit or opp.founder_fit, opp.founder_fit)  # weakest option
         out.texts += [opp.title, claim, opp.who, opp.founder_edge, opp.first_10, opp.cost_to_test, opp.risk]
         lines += [f"## Option {letter}: {opp.title}", "",
-                  f"- Problem: {claim}", f"- Evidence: {source}", f"- Who has it: {opp.who}",
+                  f"- Problem: {claim}", *evidence, f"- Who has it: {opp.who}",
                   f"- Founder edge: {opp.founder_edge}", f"- First 10 people to ask: {opp.first_10}",
                   f"- Cost to test this week: {opp.cost_to_test}", f"- Biggest risk: {opp.risk}",
                   f"- Founder fit (model estimate, 1-5): {opp.founder_fit}", ""]
@@ -151,6 +157,7 @@ def _render_opportunities(ctx: Ctx, draft: OpportunityDraft) -> Draft:
 class CanvasBox(BaseModel):
     content: str
     source_url: str | None = None
+    source_quote: str | None = None  # words copied exactly from that source's snippet
 
 
 class LeanCanvas(BaseModel):
@@ -182,8 +189,10 @@ def draft_lean_canvas(ctx: Ctx, opportunity: Opportunity, profile: FounderProfil
     canvas = ctx.complete(
         "research_intern", "draft_lean_canvas", ctx.prompt("intern"),
         f"Chosen opportunity:\n{opportunity.model_dump_json()}\n\nProfile:\n{profile.model_dump_json()}\n\n"
-        "Fill Lean Canvas boxes 1 to 8. Set source_url only to a URL from Phase 1 research, "
-        f"else null.{_notes_text(notes)}", LeanCanvas)
+        "Fill Lean Canvas boxes 1 to 8. Set source_url only to a URL from Phase 1 research, else null. "
+        "When you set source_url, set source_quote to the words copied exactly from that source "
+        "(the opportunity's evidence_quote when it is the same URL). Code checks the quote; "
+        f"a box without a matching quote becomes ASSUMPTION.{_notes_text(notes)}", LeanCanvas)
     out = Draft(markdown="", texts=[], data=canvas)
     lines = ["# Lean Canvas (Phase 2, step 1)", "", f"Opportunity: {opportunity.title}", "",
              "| Box | Content | Source or ASSUMPTION |", "|---|---|---|"]
@@ -193,11 +202,13 @@ def draft_lean_canvas(ctx: Ctx, opportunity: Opportunity, profile: FounderProfil
         if removed:
             box.content = assumption(box.content)
         urls = [box.source_url] if box.source_url and not removed else []
-        _claim, cards = claim_sources(box.content, urls, ctx.registry)
+        claim, cards = quoted_claim(box.content, urls, box.source_quote, ctx.registry)
+        if urls and not cards:
+            box.content = claim  # cited, but the source does not hold the quote
         out.cards += cards
         out.sourced += _trusted(cards)
         out.texts.append(box.content)
-        lines.append(f"| {label} | {box.content} | {cards[0].url if cards else 'ASSUMPTION'} |")
+        lines.append(f"| {label} | {box.content} | {cite(cards[0]) if cards else 'ASSUMPTION'} |")
     lines += [f'| 9. Unfair advantage (founder writes this) | "{unfair_advantage}" | founder |', "",
               f"Boxes with real evidence: {out.sourced} of 9", ""]
     out.markdown = "\n".join(lines)

@@ -157,9 +157,13 @@ class SourceCard:
     trust: Trust
     why: str
     backs: str
+    snippet: str = ""  # the exact text the search engine returned for this URL
+    host: str = ""
+    quote: str = ""  # words from the snippet or title that back the claim, checked by quote_found
 
 
-def make_source_card(result: SearchResult, backs: str, trust: Trust | None = None, n: int = 1) -> SourceCard:
+def make_source_card(result: SearchResult, backs: str, trust: Trust | None = None, n: int = 1,
+                     quote: str = "") -> SourceCard:
     trust = trust or trust_for(result.url)
     return SourceCard(
         n=n,
@@ -169,7 +173,27 @@ def make_source_card(result: SearchResult, backs: str, trust: Trust | None = Non
         trust=trust,
         why=_WHY[trust],
         backs=backs,
+        snippet=result.snippet,
+        host=_host(result.url),
+        quote=" ".join(quote.split()),
     )
+
+
+MIN_QUOTE_WORDS = 3  # a word or two matches almost any snippet, so it proves nothing
+
+
+def _words(text: str) -> str:
+    """Lower case, punctuation as spaces (keeping % and numbers like 1,200 whole), spaces collapsed."""
+    text = re.sub(r"(?<=\d)[.,](?=\d)", "", text.lower())  # 1,200 and 1.5 stay one token
+    return " ".join(re.sub(r"[^\w%]+", " ", text).split())
+
+
+def quote_found(quote: str, text: str) -> bool:
+    """True if the quote appears in the text, ignoring case, spacing and small punctuation differences."""
+    needle = _words(quote)
+    if len(needle.split()) < MIN_QUOTE_WORDS:
+        return False
+    return f" {needle} " in f" {_words(text)} "
 
 
 class SourceRegistry:
@@ -188,12 +212,19 @@ class SourceRegistry:
     def allows(self, url: str | None) -> bool:
         return bool(url) and _norm(url) in self._seen
 
-    def card(self, url: str, backs: str) -> SourceCard:
+    def verify(self, url: str | None, quote: str | None) -> bool:
+        """True if the quote appears in the snippet or title the search returned for this URL."""
+        if not quote or not self.allows(url):
+            return False
+        seen = self._seen[_norm(url or "")]
+        return quote_found(quote, seen.snippet) or quote_found(quote, seen.title)
+
+    def card(self, url: str, backs: str, quote: str = "") -> SourceCard:
         key = _norm(url)
         if key not in self._seen:
             raise KeyError(f"not returned by a search in this run: {url}")
         n = self._numbers.setdefault(key, len(self._numbers) + 1)
-        return make_source_card(self._seen[key], backs, n=n)
+        return make_source_card(self._seen[key], backs, n=n, quote=quote)
 
 
 _URL = re.compile(r"https?://[^\s<>\"'`]+", re.IGNORECASE)
@@ -247,19 +278,40 @@ def claim_sources(claim: str, urls: Iterable[str], registry: SourceRegistry) -> 
     return (claim, cards) if cards else (assumption(claim), [])
 
 
+def quoted_claim(claim: str, urls: Iterable[str], quote: str | None,
+                 registry: SourceRegistry) -> tuple[str, list[SourceCard]]:
+    """Keep only the URLs whose stored snippet or title holds the quote. None left means ASSUMPTION."""
+    held = [u for u in dict.fromkeys(urls) if registry.verify(u, quote)]
+    cards = [registry.card(u, claim, quote=quote or "") for u in held]
+    return (claim, cards) if cards else (assumption(claim), [])
+
+
+def quote_note(card: SourceCard) -> str:
+    """The checked quote and the site it came from, e.g. '"41% are paid late" (bls.gov)'. Empty if none."""
+    quote = " ".join(re.sub(r'[|`"]', " ", card.quote).split())
+    return f'"{quote}" ({card.host})' if quote else ""
+
+
+def cite(card: SourceCard) -> str:
+    """The URL with its checked quote, so a reader can find the words on the page."""
+    note = quote_note(card)
+    return f"{card.url} > {note}" if note else card.url
+
+
 def _card_entry(card: SourceCard, step: str, today: str) -> dict[str, Any]:
     return {
         "id": f"S{card.n}",
         "url": card.url,
         "title": card.title,
-        "publisher": _host(card.url),
+        "publisher": card.host or _host(card.url),
         "date_published": "unknown",
         "date_accessed": today,
         "type": card.type,
         "trust": card.trust,
         "trust_reason": card.why,
         "claims_backed": [card.backs],
-        "quote_or_number": "",
+        "quote_or_number": card.quote,
+        "snippet": card.snippet,
         "conflicts_with": [],
         "used_by": "research_intern",
         "step": step,
