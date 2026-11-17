@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Literal
 
+import httpx
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
@@ -37,6 +38,8 @@ MAX_SESSIONS = 50
 
 def _default_llm(cfg: Config, provider: str, api_key: str | None) -> LLM:
     # The key lives only in this adapter's memory. It is never written to disk.
+    if provider != "openai":
+        return make_llm(cfg, provider)
     return make_llm(cfg, provider, api_key=api_key, base_url=os.environ.get("OPENAI_BASE_URL"),
                     model=os.environ.get("OPENAI_MODEL"))
 
@@ -49,6 +52,7 @@ class NewRun(BaseModel):
     brief: str = Field(min_length=1, max_length=8000)
     mode: Literal["demo", "full"] = "demo"
     provider: Literal["ollama", "openai"] = "ollama"
+    model: str | None = Field(default=None, max_length=100)
 
 
 class Answer(BaseModel):
@@ -62,6 +66,16 @@ class Choice(BaseModel):
 
 class ModelTest(BaseModel):
     provider: Literal["ollama", "openai"] = "ollama"
+    model: str | None = Field(default=None, max_length=100)
+
+
+def with_model(cfg: Config, model: str | None) -> Config:
+    """Per-run config with the founder's model pick. Only listed models are allowed."""
+    if model is None:
+        return cfg
+    if model not in cfg.model.choices:
+        raise HTTPException(422, f"Pick one of: {', '.join(cfg.model.choices)}.")
+    return cfg.model_copy(update={"model": cfg.model.model_copy(update={"default": model})})
 
 
 class _Ping(BaseModel):
@@ -100,6 +114,7 @@ class Session:
     brief: str
     mode: str
     provider: str
+    model: str
     answers: WebAnswers = field(init=False)
     messages: list[str] = field(default_factory=list)
     history: list[dict[str, str]] = field(default_factory=list)
@@ -139,7 +154,7 @@ class Session:
         outputs = sorted(p.name for p in outputs_dir.iterdir()) if outputs_dir.exists() else []
         return {"id": self.id, "status": self.status(), "stage": self.stage(progress.get("step", "start")),
                 "outcome": self.outcome or progress.get("outcome"), "mode": self.mode,
-                "provider": self.provider, "phase1": progress.get("phase1"), "phase2": progress.get("phase2"),
+                "provider": self.provider, "model": self.model, "phase1": progress.get("phase1"), "phase2": progress.get("phase2"),
                 "pending": self.pending(), "notice": self.notice, "messages": self.messages,
                 "outputs": outputs, "sources": _sources(outputs_dir), "error": self.error}
 
@@ -281,13 +296,13 @@ def create_app(*, llm_factory: LLMFactory = _default_llm, search_factory: Search
 
     @app.post("/runs", status_code=201)
     def new_run(body: NewRun, x_model_key: str | None = Header(default=None)) -> dict[str, Any]:
-        cfg = config(body.mode)
+        cfg = with_model(config(body.mode), body.model)
         try:
             llm = llm_factory(cfg, body.provider, x_model_key)
         except ValueError as err:
             raise HTTPException(422, _scrub(str(err), x_model_key)) from None
         run_id = uuid.uuid4().hex[:12]
-        session = Session(run_id, runs_dir() / run_id, body.brief, body.mode, body.provider)
+        session = Session(run_id, runs_dir() / run_id, body.brief, body.mode, body.provider, cfg.model.default)
         ctx = Ctx(cfg=cfg, llm=llm, search=make_search(cfg), log=DecisionLog(session.run_dir / "decision_log.json"),
                   answers=session.answers, run_dir=session.run_dir, say=session.messages.append)
         evict_idle()
@@ -352,10 +367,24 @@ def create_app(*, llm_factory: LLMFactory = _default_llm, search_factory: Search
             raise HTTPException(404, "No run with that id.")
         return DecisionLog(run_dir / "decision_log.json").entries()
 
+    @app.get("/models")
+    def models() -> dict[str, Any]:
+        """The models the founder can pick, and whether Ollama has each one downloaded yet."""
+        cfg = config()
+        try:
+            resp = httpx.get(f"{cfg.model.ollama_url}/api/tags", timeout=3)
+            resp.raise_for_status()
+            have = {m.get("name") for m in resp.json().get("models", []) if isinstance(m, dict)}
+            installed = lambda name: name in have  # noqa: E731
+        except (httpx.HTTPError, ValueError):
+            installed = lambda name: None  # noqa: E731
+        return {"default": cfg.model.default,
+                "choices": [{"name": n, "installed": installed(n)} for n in cfg.model.choices]}
+
     @app.post("/model/test")
     def model_test(body: ModelTest, x_model_key: str | None = Header(default=None)) -> dict[str, Any]:
         """One tiny model call. The key is used once and never stored, logged or echoed."""
-        cfg = config()
+        cfg = with_model(config(), body.model)
         try:
             llm = llm_factory(cfg, body.provider, x_model_key)
             llm.complete("Reply with JSON only.", 'Reply {"ok": true}.', _Ping)

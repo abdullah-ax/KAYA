@@ -1,8 +1,9 @@
 # Settings the founder can change BEFORE a run. Never change gate targets after seeing results.
 
 model:
-  default: gpt-oss:20b
-  fallback: qwen3:8b
+  default: qwen3:8b       # light, runs on a 16 GB laptop
+  fallback: gpt-oss:20b
+  choices: [qwen3:8b, gpt-oss:20b]   # the founder picks one per run
   temperature: 0
   max_retries: 3
   ollama_url: http://ollama:11434

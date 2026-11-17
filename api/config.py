@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class _Section(BaseModel):
@@ -16,9 +16,17 @@ class _Section(BaseModel):
 class ModelConfig(_Section):
     default: str
     fallback: str
+    choices: list[str] = []
     temperature: float = 0
     max_retries: int = 3
     ollama_url: str = "http://localhost:11434"
+
+    @model_validator(mode="after")
+    def _offer_default_and_fallback(self) -> "ModelConfig":
+        for name in (self.default, self.fallback):
+            if name not in self.choices:
+                self.choices.append(name)
+        return self
 
 
 class ModeLimits(_Section):
