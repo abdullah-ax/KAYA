@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import type { ApiProvider, ModelTestResult } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 type Provider = { id: string; name: string; model: string; note: string; needsKey: boolean };
@@ -40,7 +41,12 @@ const STATE_TEXT: Record<ConnState, { text: string; tone: "muted" | "ok" | "bad"
   rate_limited: { text: "Free-tier limit hit. Wait a minute or switch to local.", tone: "warn" },
 };
 
-export function ConnectionStatus({ state }: { state: ConnState }) {
+/** Local runs on Ollama. Every hosted choice is an OpenAI-compatible endpoint. */
+export const apiProviderOf = (id: string): ApiProvider => (id === "ollama" ? "ollama" : "openai");
+
+export type ModelTest = (provider: ApiProvider, key: string) => Promise<ModelTestResult>;
+
+export function ConnectionStatus({ state, detail }: { state: ConnState; detail?: string }) {
   const s = STATE_TEXT[state];
   const Icon = state === "testing" ? Loader2 : state === "connected" ? CheckCircle2 : state === "unset" ? Cpu : TriangleAlert;
   return (
@@ -54,21 +60,35 @@ export function ConnectionStatus({ state }: { state: ConnState }) {
         s.tone === "warn" && "text-amber-800 dark:text-amber-300",
       )}
     >
-      <Icon className={cn("size-4", state === "testing" && "animate-spin")} /> {s.text}
+      <Icon className={cn("size-4 shrink-0", state === "testing" && "animate-spin")} /> {detail || s.text}
     </p>
   );
 }
 
-export function ModelSettings({ current, onChange }: { current: string; onChange: (id: string) => void }) {
+export function ModelSettings({ current, onChange, test: liveTest }: { current: string; onChange: (id: string, key: string) => void; test?: ModelTest }) {
   const [provider, setProvider] = useState(current);
   const [key, setKey] = useState("");
   const [state, setState] = useState<ConnState>("unset");
+  const [detail, setDetail] = useState<string | undefined>();
   const keyId = useId();
   const p = PROVIDERS.find((x) => x.id === provider)!;
 
-  const test = () => {
+  const test = async () => {
     setState("testing");
-    // Mock: a real build calls POST /api/model/test with the key in a header.
+    setDetail(undefined);
+    if (liveTest) {
+      try {
+        const r = await liveTest(apiProviderOf(provider), p.needsKey ? key.trim() : "");
+        if (r.ok) return setState("connected");
+        setDetail(r.error || undefined);
+        setState(/rate|429|quota/i.test(r.error ?? "") ? "rate_limited" : "invalid");
+      } catch (e) {
+        setDetail(e instanceof Error ? e.message : "Can't reach the API.");
+        setState("invalid");
+      }
+      return;
+    }
+    // Demo only: no API is connected, so this is a stand-in.
     setTimeout(() => setState(!p.needsKey ? "connected" : key.trim().length < 20 ? "invalid" : "connected"), 900);
   };
 
@@ -92,6 +112,7 @@ export function ModelSettings({ current, onChange }: { current: string; onChange
           value={provider}
           onValueChange={(v) => {
             setProvider(v);
+            setDetail(undefined);
             setState("unset");
           }}
           className="gap-2"
@@ -123,6 +144,7 @@ export function ModelSettings({ current, onChange }: { current: string; onChange
               aria-invalid={state === "invalid" || undefined}
               onChange={(e) => {
                 setKey(e.target.value);
+                setDetail(undefined);
                 setState("unset");
               }}
               placeholder="Paste your key"
@@ -132,13 +154,13 @@ export function ModelSettings({ current, onChange }: { current: string; onChange
           </div>
         )}
 
-        <ConnectionStatus state={state} />
+        <ConnectionStatus state={state} detail={detail} />
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={test} disabled={state === "testing" || (p.needsKey && !key.trim())}>
             Test connection
           </Button>
-          <Button onClick={() => onChange(provider)} disabled={state !== "connected"}>
+          <Button onClick={() => onChange(provider, p.needsKey ? key.trim() : "")} disabled={state !== "connected"}>
             Use this model
           </Button>
         </DialogFooter>

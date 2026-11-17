@@ -5,10 +5,11 @@
 
 import type { ToolCallMessagePartComponent } from "@assistant-ui/react";
 import { CheckCircle2, Search } from "lucide-react";
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { RadioGroup } from "@/components/ui/radio-group";
+import { ApiError } from "@/lib/api";
 import type { Source } from "./data";
 import { ParodyVerdict } from "./parody";
 import { checkReason, OptionCard, ReasonField, SourceCard, StatusBadge, VerdictCard } from "./ui";
@@ -18,15 +19,38 @@ const MIN_WORDS = 15;
 type GateOption = { id: string; label: string; body: string; cost: string; risk: string };
 type GateArgs = { question: string; recommended: string[]; options: GateOption[] };
 
-function GateDecision({ args }: { args: GateArgs }) {
+/** In live mode the app provides this. It posts the choice and rejects with the API's message. */
+export const GateSubmitContext = createContext<((option: string, reason: string) => Promise<void>) | null>(null);
+
+export function GateDecision({ args }: { args: GateArgs }) {
+  const submit = useContext(GateSubmitContext);
   const [choice, setChoice] = useState<string>("");
   const [reason, setReason] = useState("");
   const [phase, setPhase] = useState<"editing" | "saving" | "recorded">("editing");
+  const [error, setError] = useState<string | null>(null);
 
   const others = args.options.filter((o) => o.id !== choice).map((o) => o.label);
   const check = checkReason(reason, MIN_WORDS, others[others.length - 1]);
   const canConfirm = !!choice && check.state === "valid" && phase === "editing";
   const picked = args.options.find((o) => o.id === choice);
+
+  const confirm = async () => {
+    // The same check as the button: a bare yes or a short reason never leaves the browser.
+    if (!picked || check.state !== "valid" || phase !== "editing") return;
+    setError(null);
+    setPhase("saving");
+    if (!submit) {
+      setTimeout(() => setPhase("recorded"), 900);
+      return;
+    }
+    try {
+      await submit(picked.label, reason.trim());
+      setPhase("recorded");
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Couldn't send that. Check your connection and try again.");
+      setPhase("editing");
+    }
+  };
 
   if (phase === "recorded" && picked) {
     return (
@@ -44,9 +68,9 @@ function GateDecision({ args }: { args: GateArgs }) {
     <div className="my-2 flex flex-col gap-5 rounded-xl border bg-card p-5">
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-2xl font-extrabold tracking-tight">{args.question}</h3>
-        <StatusBadge status="mocked">Demo data</StatusBadge>
+        {!submit && <StatusBadge status="mocked">Demo data</StatusBadge>}
       </div>
-      <RadioGroup value={choice} onValueChange={setChoice} className="grid gap-3 md:grid-cols-3" disabled={phase !== "editing"}>
+      <RadioGroup value={choice} onValueChange={(v) => { setChoice(v); setError(null); }} className="grid gap-3 md:grid-cols-3" disabled={phase !== "editing"}>
         {args.options.map((o) => (
           <OptionCard
             key={o.id}
@@ -61,15 +85,12 @@ function GateDecision({ args }: { args: GateArgs }) {
           />
         ))}
       </RadioGroup>
-      <ReasonField value={reason} onChange={setReason} check={check} minWords={MIN_WORDS} disabled={phase !== "editing"} />
+      <ReasonField value={reason} onChange={(v) => { setReason(v); setError(null); }} check={check} minWords={MIN_WORDS} disabled={phase !== "editing"} error={error} />
       <div className="flex items-center gap-3">
         <Button
           size="lg"
           disabled={!canConfirm}
-          onClick={() => {
-            setPhase("saving");
-            setTimeout(() => setPhase("recorded"), 900);
-          }}
+          onClick={confirm}
           className="h-12 rounded-full px-6 text-base font-bold"
         >
           {phase === "saving" ? "Recording…" : "Confirm decision"}

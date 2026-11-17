@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { ApiError, createRun, type ApiProvider, type Run } from "@/lib/api";
+import { composeBrief } from "./live-model";
 import { checkReason, LearnCard, MascotAvatar } from "./ui";
 
 type Step =
@@ -26,7 +28,11 @@ const STEPS: Step[] = [
   { kind: "text", id: "values", q: "What won't you do, even for money?", hint: "This becomes a rule the agents follow.", minWords: 6, placeholder: "No exaggerated health claims. No fake reviews." },
 ];
 
-export function Onboarding({ onDone }: { onDone?: () => void }) {
+export type LiveStart = { provider: ApiProvider; modelKey: string; onRun: (run: Run) => void };
+
+export function Onboarding({ onDone, live }: { onDone?: () => void; live?: LiveStart }) {
+  const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
   const [i, setI] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [dir, setDir] = useState<1 | -1>(1);
@@ -41,6 +47,17 @@ export function Onboarding({ onDone }: { onDone?: () => void }) {
       : Array.isArray(value) ? value.length > 0 : !!value;
   const textCheck = step.kind === "text" ? checkReason(String(value ?? ""), step.minWords) : null;
 
+  const finish = async () => {
+    if (!live) return go(1);
+    setStarting(true);
+    setStartError(null);
+    try {
+      live.onRun(await createRun({ brief: composeBrief(answers), mode: "demo", provider: live.provider }, live.modelKey || undefined));
+    } catch (e) {
+      setStartError(e instanceof ApiError ? e.message : "Couldn't reach the API. Check that it is running, then try again.");
+      setStarting(false);
+    }
+  };
   const go = (d: 1 | -1) => { setDir(d); setI((x) => x + d); };
   const set = (v: string | string[]) => setAnswers((a) => ({ ...a, [step.id]: v }));
 
@@ -79,7 +96,7 @@ export function Onboarding({ onDone }: { onDone?: () => void }) {
                       autoFocus
                       value={String(value ?? "")}
                       onChange={(e) => set(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && valid) go(1); }}
+                      onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && valid && !starting) { if (i === STEPS.length - 1) void finish(); else go(1); } }}
                       placeholder={step.placeholder}
                       aria-invalid={textCheck?.state === "bare" || undefined}
                       className="min-h-32 rounded-xl border-2 bg-card p-4 pr-14 text-xl md:text-xl"
@@ -120,11 +137,12 @@ export function Onboarding({ onDone }: { onDone?: () => void }) {
 
               <div className="flex items-center gap-3">
                 <Button variant="ghost" size="lg" onClick={() => go(-1)} disabled={i === 0} className="h-12 rounded-full text-base"><ArrowLeft className="size-4" /> Back</Button>
-                <Button size="lg" onClick={() => go(1)} disabled={!valid} className="h-12 rounded-full px-6 text-base font-bold">
-                  {i === STEPS.length - 1 ? "Finish" : "Next"} <ArrowRight className="size-4" />
+                <Button size="lg" onClick={() => (i === STEPS.length - 1 ? finish() : go(1))} disabled={!valid || starting} className="h-12 rounded-full px-6 text-base font-bold">
+                  {starting ? "Starting…" : i === STEPS.length - 1 ? "Finish" : "Next"} <ArrowRight className="size-4" />
                 </Button>
                 {step.kind === "text" && <span className="text-[14px] text-muted-foreground">Ctrl + Enter</span>}
               </div>
+              <p role="alert" className="min-h-6 text-base font-semibold text-destructive">{startError}</p>
             </div>
           )}
         </div>

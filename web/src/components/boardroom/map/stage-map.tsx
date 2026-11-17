@@ -174,14 +174,14 @@ function StageDetails({ stage, onGo }: { stage: Stage; onGo: () => void }) {
   );
 }
 
-export function StageMap({ current, onNavigate }: { current: string; onNavigate: (stageId: string) => void }) {
+export function StageMap({ current, onNavigate, stages = STAGES, founder }: { current: string; onNavigate: (stageId: string) => void; stages?: Stage[]; founder?: { title: string; subtitle: string } }) {
   const [open, setOpen] = useState(false);
   const [agent, setAgent] = useState("all");
   const [selected, setSelected] = useState(current);
-  const roster = useMemo(() => agentRoster(STAGES), []);
-  const visible = useMemo(() => new Set(stageIdsForAgent(STAGES, agent)), [agent]);
-  const { nodes, edges } = useMemo(() => layoutMindMap(STAGES, { agent, selected }), [agent, selected]);
-  const stage = STAGES.find((s) => s.id === selected) ?? STAGES[0];
+  const roster = useMemo(() => agentRoster(stages), [stages]);
+  const visible = useMemo(() => new Set(stageIdsForAgent(stages, agent)), [stages, agent]);
+  const { nodes, edges } = useMemo(() => layoutMindMap(stages, { agent, selected, founder }), [stages, agent, selected, founder]);
+  const stage = stages.find((s) => s.id === selected) ?? stages[0];
 
   const styledEdges = edges.map((e) => ({
     ...e,
@@ -229,7 +229,7 @@ export function StageMap({ current, onNavigate }: { current: string; onNavigate:
         <div className="flex min-h-0 flex-1">
           <nav className="w-60 shrink-0 overflow-y-auto border-r p-3" aria-label="Stage outline">
             <ul aria-label="Stages" className="flex flex-col gap-0.5">
-              {STAGES.map((s) => {
+              {stages.map((s) => {
                 const dimmed = !visible.has(s.id);
                 return (
                   <li key={s.id}>

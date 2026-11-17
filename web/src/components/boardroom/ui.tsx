@@ -206,6 +206,7 @@ export function ReasonField({
   minWords,
   disabled = false,
   label = "Why this option? In your own words.",
+  error,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -213,9 +214,11 @@ export function ReasonField({
   minWords: number;
   disabled?: boolean;
   label?: string;
+  /** A message from the API, shown in the same error state as the local check. */
+  error?: string | null;
 }) {
   const id = useId();
-  const invalid = check.state === "bare" || check.state === "short";
+  const invalid = check.state === "bare" || check.state === "short" || !!error;
   const words = check.state === "valid" || check.state === "short" ? check.words : 0;
   return (
     <div className="flex flex-col gap-2">
@@ -236,8 +239,8 @@ export function ReasonField({
         className="min-h-24 rounded-xl border-2 bg-card text-base md:text-base"
       />
       <p id={`${id}-msg`} aria-live="polite" className="min-h-6 text-base font-semibold">
-        {invalid && <span className="text-destructive">{check.message}</span>}
-        {check.state === "valid" && (
+        {error ? <span className="text-destructive">{error}</span> : (check.state === "bare" || check.state === "short") && <span className="text-destructive">{check.message}</span>}
+        {check.state === "valid" && !error && (
           <span className="inline-flex items-center gap-1.5 text-primary"><Check className="size-4" /> That's a reason.</span>
         )}
       </p>

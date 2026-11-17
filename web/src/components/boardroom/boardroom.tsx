@@ -6,14 +6,17 @@ import {
   type AppendMessage,
   type ThreadMessageLike,
 } from "@assistant-ui/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Thread } from "@/components/assistant-ui/elements/thread.aui";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { health, testModel, useRun, type Run } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { SCREENS, TEAM, type Screen } from "./data";
-import { ModelSettings } from "./model-settings";
+import { LiveChat, LivePanel, LiveRoster } from "./live";
+import { progressStages, stageInfo } from "./live-model";
+import { apiProviderOf, ModelSettings } from "./model-settings";
 import { STAGES } from "./journey";
 import { StageMap } from "./map/stage-map";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -72,41 +75,95 @@ function Chat({ screen, egg }: { screen: Screen; egg: boolean }) {
   );
 }
 
-export function Boardroom({ initialScreen, dark, egg: eggParam }: { initialScreen?: string; dark?: boolean; egg?: boolean }) {
+type Conn = "checking" | "online" | "offline";
+const LIVE_FOUNDER = { title: "You", subtitle: "Your answers, in your words" };
+
+export function Boardroom({ initialScreen, initialRunId, dark, egg: eggParam }: { initialScreen?: string; initialRunId?: string; dark?: boolean; egg?: boolean }) {
+  const [conn, setConn] = useState<Conn>("checking");
+  const [runId, setRunId] = useState<string | null>(initialRunId ?? null);
+  // The model key lives in React state only: never storage, never a URL, never logged.
+  const [modelKey, setModelKey] = useState("");
+  const { run, error: runError, update } = useRun(conn === "online" ? runId : null);
+  useEffect(() => {
+    let alive = true;
+    health().then((ok) => { if (alive) setConn(ok ? "online" : "offline"); });
+    return () => { alive = false; };
+  }, []);
+  const live = conn === "online";
+
   const [egg, setEgg] = useState(!!eggParam);
   const [screenId, setScreenId] = useState<string>(initialScreen ?? "gate");
   const [model, setModel] = useState("ollama");
   const screen = SCREENS.find((s) => s.id === screenId);
   const speaker = TEAM.find((m) => m.id === screen?.speaker);
-  const stageId = STAGE_OF[screenId] ?? "validation";
+  const info = run ? stageInfo(run.stage) : { stageId: "ideation", label: runId ? "Starting" : "Onboarding" };
+  const stageId = live ? info.stageId : (STAGE_OF[screenId] ?? "validation");
+  const stepLabel = live ? info.label : (STEP_LABEL[screenId] ?? "");
+  const liveStages = useMemo(() => progressStages(STAGES, stageId), [stageId]);
+  const startOver = () => setRunId(null);
 
   return (
     <TooltipProvider>
       <div className={cn("flex h-dvh flex-col bg-background text-foreground", dark && "dark")}>
         {/* Top bar: map first, then where you are. Mock-only screen picker sits on the right. */}
         <header className="flex h-16 shrink-0 items-center gap-3 border-b px-4">
-          <StageMap current={stageId} onNavigate={(id) => setScreenId(SCREEN_FOR_STAGE[id] ?? screenId)} />
+          <StageMap
+            current={stageId}
+            onNavigate={(id) => { if (!live) setScreenId(SCREEN_FOR_STAGE[id] ?? screenId); }}
+            stages={live ? liveStages : undefined}
+            founder={live ? LIVE_FOUNDER : undefined}
+          />
           <span className="text-xl font-extrabold tracking-tight">Boardroom</span>
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[15px]">
             <span aria-hidden className="text-muted-foreground/60">/</span>
             <span className="font-semibold">{STAGES.find((s) => s.id === stageId)?.name}</span>
             <span aria-hidden className="text-muted-foreground/60">/</span>
-            <span aria-current="page" className="text-muted-foreground">{STEP_LABEL[screenId] ?? ""}</span>
+            <span aria-current="page" className="text-muted-foreground">{stepLabel}</span>
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            <StatusBadge status="mocked">Mockup</StatusBadge>
-            <Select value={screenId} onValueChange={setScreenId}>
-              <SelectTrigger aria-label="Mock screen" className="h-9 w-40 rounded-full text-[14px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {Object.entries(STEP_LABEL).map(([id, label]) => <SelectItem key={id} value={id}>{label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <ModelSettings current={model} onChange={setModel} />
-            <SettingsDialog tarekMode={egg} onTarekMode={setEgg} />
+            {conn === "checking" && <StatusBadge status="stubbed">Checking API…</StatusBadge>}
+            {conn === "offline" && <StatusBadge status="mocked">Demo data — API not connected</StatusBadge>}
+            {!live && (
+              <Select value={screenId} onValueChange={setScreenId}>
+                <SelectTrigger aria-label="Mock screen" className="h-9 w-40 rounded-full text-[14px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(STEP_LABEL).map(([id, label]) => <SelectItem key={id} value={id}>{label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
+            <ModelSettings
+              current={model}
+              onChange={(id, key) => { setModel(id); setModelKey(key); }}
+              test={live ? (provider, key) => testModel(provider, key || undefined) : undefined}
+            />
+            {!live && <SettingsDialog tarekMode={egg} onTarekMode={setEgg} />}
           </div>
         </header>
 
-        {screenId === "onboarding" ? (
+        {live ? (
+          !runId ? (
+            <Onboarding live={{ provider: apiProviderOf(model), modelKey, onRun: (r: Run) => { setRunId(r.id); update(r); } }} />
+          ) : (
+            <div className="grid min-h-0 flex-1 grid-cols-[17rem_1fr_22rem]">
+              <LiveRoster run={run} />
+              <main className="flex min-h-0 flex-col">
+                <div className="flex shrink-0 items-center gap-3 border-b px-6 py-3">
+                  <MascotAvatar id="warm_skeptic" expression="listening" activity={run?.status === "working" ? "thinking" : "speaking"} size={44} />
+                  <div>
+                    <div className="text-[14px] font-semibold text-muted-foreground">{STAGES.find((s) => s.id === stageId)?.name}</div>
+                    <h1 className="text-xl font-bold">{stepLabel}</h1>
+                  </div>
+                </div>
+                <div className="min-h-0 flex-1">
+                  {run ? <LiveChat key={run.id} run={run} update={update} /> : <p className="p-6 text-base text-muted-foreground">{runError ?? "Loading your run…"}</p>}
+                </div>
+              </main>
+              <aside className="min-h-0 border-l bg-card/40">
+                <ScrollArea className="h-full"><LivePanel run={run} error={runError} onRestart={startOver} /></ScrollArea>
+              </aside>
+            </div>
+          )
+        ) : screenId === "onboarding" ? (
           <Onboarding onDone={() => setScreenId("cofounder")} />
         ) : screenId === "states" || !screen ? (
           <ScrollArea className="min-h-0 flex-1"><StatesGallery /></ScrollArea>
