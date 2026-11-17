@@ -73,4 +73,20 @@ describe("API proxy", () => {
     for (const s of spies) expect(JSON.stringify(s.mock.calls)).not.toContain("sk-secret");
     spies.forEach((s) => s.mockRestore());
   });
+
+  it("forwards X-Netlify-Token on POST and DELETE, and still no cookie", async () => {
+    upstream.mockResolvedValue(new Response("{}", { status: 200 }));
+    const { DELETE } = await import("@/app/api/[...path]/route");
+    const headers = { "x-netlify-token": "nfp_t", cookie: "a=1" };
+    const where = ctx("runs", "r1", "publish", "netlify");
+    await POST(new Request("http://web/api/runs/r1/publish/netlify", { method: "POST", headers }) as never, where);
+    await DELETE(new Request("http://web/api/runs/r1/publish/netlify", { method: "DELETE", headers }) as never, where);
+    for (const [, init] of upstream.mock.calls) {
+      const h = new Headers(init.headers);
+      expect(h.get("x-netlify-token")).toBe("nfp_t");
+      expect(h.has("cookie")).toBe(false);
+    }
+    expect(upstream.mock.calls[1][1].method).toBe("DELETE");
+    expect(upstream.mock.calls[1][1].body).toBeUndefined();
+  });
 });
