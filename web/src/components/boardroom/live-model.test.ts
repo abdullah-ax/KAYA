@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ApiSource } from "@/lib/api";
-import { composeBrief, gateArgsFromPending, progressStages, sourceCardsFrom, stageInfo } from "./live-model";
+import { composeBrief, friendlyFileName, gateArgsFromPending, outcomeSentence, progressStages, sourceCardsFrom, stageInfo } from "./live-model";
 import { STAGES } from "./journey";
 
 describe("composeBrief", () => {
@@ -33,9 +33,16 @@ describe("stageInfo", () => {
     expect(stageInfo("phase2_step2")).toMatchObject({ stageId: "validation" });
     expect(stageInfo("phase2_gate")).toMatchObject({ stageId: "validation" });
   });
-  it("falls back to the phase number for unknown steps", () => {
+  it("falls back to the phase's stage for unknown steps, with a plain label", () => {
     expect(stageInfo("phase2_mystery").stageId).toBe("validation");
     expect(stageInfo("???").stageId).toBe("ideation");
+    expect(stageInfo("phase2_mystery").label).not.toMatch(/phase|\d/i);
+  });
+  it("maps later phases to their real stage", () => {
+    expect(stageInfo("phase3_step1").stageId).toBe("build");
+    expect(stageInfo("phase4_step1").stageId).toBe("setup");
+    expect(stageInfo("phase5_gate").stageId).toBe("distribution");
+    expect(stageInfo("phase6_step2").stageId).toBe("operate");
   });
 });
 
@@ -103,5 +110,28 @@ describe("live gate wording", () => {
   it("shows a source as its site name, not a long url", () => {
     expect(gate("Pick one?").options[0].body).toBe("Source: britishcouncil.org");
     expect(gate("Pick one?", "none").options[0].body).toBe("No source. Treat as an assumption.");
+  });
+});
+
+describe("friendlyFileName", () => {
+  it("shows plain names, never file names", () => {
+    expect(friendlyFileName("phase1_step1_answers.json")).toBe("Your answers");
+    expect(friendlyFileName("phase1_step2_opportunities.md")).toBe("Opportunities report");
+    expect(friendlyFileName("phase1_step2_sources.json")).toBe("Sources list");
+    expect(friendlyFileName("phase2_step1_lean_canvas.md")).toBe("Lean Canvas");
+    expect(friendlyFileName("phase2_step2_signup_page.md")).toBe("Sign-up page");
+    expect(friendlyFileName("decision_log.json")).toBe("Decision");
+    expect(friendlyFileName("something_odd.txt")).toBe("Report");
+  });
+});
+
+describe("outcomeSentence", () => {
+  it("says what is happening in words", () => {
+    expect(outcomeSentence("working", null)).toBe("Working on it");
+    expect(outcomeSentence("waiting", null)).toBe("Waiting for you");
+    expect(outcomeSentence("gate", null)).toBe("Waiting for you");
+    expect(outcomeSentence("done", "stop")).toBe("Finished: stop");
+    expect(outcomeSentence("done", "go")).toBe("Finished: go");
+    expect(outcomeSentence("done", null)).toBe("Finished");
   });
 });
