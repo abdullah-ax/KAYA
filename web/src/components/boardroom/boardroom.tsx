@@ -163,7 +163,7 @@ export function Boardroom({ initialScreen, initialRunId, dark, egg: eggParam }: 
                   </div>
                 </div>
                 <div className="min-h-0 flex-1">
-                  {run ? <LiveChat key={run.id} run={run} update={update} /> : <p className="p-6 text-base text-muted-foreground">{runError ?? "Loading your run…"}</p>}
+                  {run ? <LiveChat key={run.id} run={run} update={update} onRestart={startOver} /> : <p className="p-6 text-base text-muted-foreground">{runError ?? "Loading your run…"}</p>}
                 </div>
               </main>
               <aside className="min-h-0 border-l bg-card/40">

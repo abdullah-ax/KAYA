@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
 import type { Source } from "./data";
 import { ParodyVerdict } from "./parody";
+import { outcomesOf } from "./live-model";
 import { checkReason, OptionCard, ReasonField, SourceCard, StatusBadge, VerdictCard } from "./ui";
 
 const MIN_WORDS = 15;
@@ -43,8 +44,13 @@ function RecommendationNote({ rec }: { rec: Recommendation }) {
 /** In live mode the app provides this. It posts the choice and rejects with the API's message. */
 export const GateSubmitContext = createContext<((option: string, reason: string) => Promise<void>) | null>(null);
 
+/** Live mode tells the card whether the run is over and how to begin again. */
+export const GateNextContext = createContext<{ done: boolean; startOver: () => void } | null>(null);
+
 export function GateDecision({ args }: { args: GateArgs }) {
   const submit = useContext(GateSubmitContext);
+  const next = useContext(GateNextContext);
+  const [noStage, setNoStage] = useState(false);
   const [choice, setChoice] = useState<string>("");
   const [reason, setReason] = useState("");
   const [phase, setPhase] = useState<"editing" | "saving" | "recorded">("editing");
@@ -80,7 +86,17 @@ export function GateDecision({ args }: { args: GateArgs }) {
           <CheckCircle2 className="size-5" /> Decision recorded: {picked.label}
         </div>
         <p className="text-base">“{reason.trim()}”</p>
-        <p className="text-[14px] text-muted-foreground">Saved. You approved this.</p>
+        <p className="text-[14px] text-muted-foreground">{submit ? "Saved. You approved this." : "Saved in this demo only."}</p>
+        {next?.done && (
+          outcomesOf({ id: picked.id, name: picked.label }).includes("stop") ? (
+            <Button onClick={next.startOver} className="w-fit rounded-full">Start over with a new idea</Button>
+          ) : (
+            <>
+              <Button onClick={() => setNoStage(true)} className="w-fit rounded-full">Start Stage 3: Build</Button>
+              {noStage && <p role="status" className="text-[14px] text-muted-foreground">Stage 3 is not open in this version yet. Your decision is saved.</p>}
+            </>
+          )
+        )}
       </div>
     );
   }
@@ -92,7 +108,7 @@ export function GateDecision({ args }: { args: GateArgs }) {
         {!submit && <StatusBadge status="mocked">Demo data</StatusBadge>}
       </div>
       {args.recommendation && <RecommendationNote rec={args.recommendation} />}
-      <RadioGroup value={choice} onValueChange={(v) => { setChoice(v); setError(null); }} className="grid gap-3 md:grid-cols-3" disabled={phase !== "editing"}>
+      <RadioGroup value={choice} onValueChange={(v) => { setChoice(v); setError(null); }} className="grid grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-3" disabled={phase !== "editing"}>
         {args.options.map((o) => (
           <OptionCard
             key={o.id}

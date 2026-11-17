@@ -142,12 +142,25 @@ function splitPrompt(prompt: string): { question: string; recommendation?: { out
   return m ? { question: m[3], recommendation: { outcome: m[1] as Outcome, text: m[2] } } : { question: prompt };
 }
 
+/** Which outcome an option stands for, from its id or its name. */
+export function outcomesOf(o: { id?: string; name: string }): Outcome[] {
+  const t = `${o.id ?? ""} ${o.name}`.toLowerCase();
+  const found: Outcome[] = [];
+  if (/\bstop\b/.test(t)) found.push("stop");
+  if (/\bpivot\b/.test(t)) found.push("pivot");
+  if (/\brepeat\b/.test(t)) found.push("repeat");
+  if (/\bcontinue\b|\bgo\b/.test(t)) found.push("go");
+  return found;
+}
+
 export function gateArgsFromPending(p: Extract<Pending, { kind: "gate" }>): GateArgs {
   const { question, recommendation } = splitPrompt(p.prompt);
   return {
     question,
     recommendation,
-    recommended: recommendation?.outcome === "stop" ? p.options.filter((o) => o.id === "stop").map((o) => o.id) : [],
+    recommended: recommendation
+      ? p.options.flatMap((o, i) => (outcomesOf(o).includes(recommendation.outcome) ? [o.id || `${i}:${o.name}`] : []))
+      : [],
     options: p.options.map((o, i) => {
       const site = o.source && o.source !== "none" ? siteName(o.source) : null;
       const body = site ? `Source: ${site}` : o.source && o.source !== "none" ? `Source: ${o.source}` : "No source. Treat as an assumption.";

@@ -17,7 +17,7 @@ import { ApiError, sendAnswer, sendGate, type Run } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { TEAM } from "./data";
 import { friendlyFileName, gateArgsFromPending, outcomeSentence, sourceCardsFrom, stageInfo } from "./live-model";
-import { BoardroomTool, GateSubmitContext } from "./tools";
+import { BoardroomTool, GateNextContext, GateSubmitContext } from "./tools";
 import { FaceAvatar, PARODY, TarekCard } from "./parody";
 import { PublishCard } from "./publish-card";
 import { tarekMood } from "./tarek-mood";
@@ -69,7 +69,7 @@ function useTranscript(run: Run | null) {
   return { messages, push: (m: ThreadMessageLike) => setMessages((prev) => [...prev, m]) };
 }
 
-export function LiveChat({ run, update }: { run: Run; update: (r: Run) => void }) {
+export function LiveChat({ run, update, onRestart = () => {} }: { run: Run; update: (r: Run) => void; onRestart?: () => void }) {
   const { messages, push } = useTranscript(run);
   const [sending, setSending] = useState(false);
   const counter = useRef(0);
@@ -107,11 +107,15 @@ export function LiveChat({ run, update }: { run: Run; update: (r: Run) => void }
     [run.id, update],
   );
 
+  const nextStep = useMemo(() => ({ done: run.status === "done", startOver: onRestart }), [run.status, onRestart]);
+
   return (
     <GateSubmitContext.Provider value={submitGate}>
-      <AssistantRuntimeProvider runtime={runtime}>
-        <Thread components={{ ToolFallback: BoardroomTool, ToolGroup: InlineToolGroup }} autoFocus={false} />
-      </AssistantRuntimeProvider>
+      <GateNextContext.Provider value={nextStep}>
+        <AssistantRuntimeProvider runtime={runtime}>
+          <Thread components={{ ToolFallback: BoardroomTool, ToolGroup: InlineToolGroup }} autoFocus={false} />
+        </AssistantRuntimeProvider>
+      </GateNextContext.Provider>
     </GateSubmitContext.Provider>
   );
 }
