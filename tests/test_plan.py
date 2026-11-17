@@ -296,7 +296,7 @@ def test_plan_md_has_header_sources_assumptions_and_parody_label(client, tmp_run
 
     assert resp.status_code == 200 and resp.headers["content-type"].startswith("text/markdown")
     assert md.startswith("# Business plan")
-    assert "https://www.reddit.com/r/IELTS/comments/abc/speaking_partner/" in md
+    assert "https://www.ielts-speaking-club.com/partners/speaking-partner" in md
     assert "ASSUMPTION" in md
     assert "Parody" in md and "not affiliated" in md.lower()
     assert "Ahmed Tarek" in md

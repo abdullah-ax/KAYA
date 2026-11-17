@@ -105,7 +105,8 @@ def test_intern_redraft_gets_the_boss_notes(tmp_run):
 
 def test_intern_lean_canvas_labels_boxes_and_keeps_founder_words_in_box_9(tmp_run):
     from api.agents import intern
-    ctx = make_ctx(tmp_run, fx.scripted_llm(fx.strong_opportunities()), ScriptedAnswers({}))
+    ctx = make_ctx(tmp_run, fx.scripted_llm(fx.strong_opportunities(), overrides={"LeanCanvas": [fx.canvas(fx.URLS[0])]}),
+                   ScriptedAnswers({}))
     intern.search(ctx, "brief", _profile())
     opp = intern.Opportunity.model_validate(fx.opportunity("Speaking drills", fx.URLS[0]))
 

@@ -22,10 +22,13 @@ PROFILE: dict[str, Any] = {
     "open_questions": ["How much do students pay for mock tests now?"],
 }
 
+LOW_URL = "https://www.reddit.com/r/IELTS/comments/abc/speaking_partner/"  # forum: low trust
+
 URLS = [
-    "https://www.reddit.com/r/IELTS/comments/abc/speaking_partner/",
+    "https://www.ielts-speaking-club.com/partners/speaking-partner",
     "https://www.britishcouncil.org/exam/ielts/results",
     "https://example.edu/ielts-speaking-study",
+    LOW_URL,
 ]
 
 RESULTS = [SearchResult(f"Source {i}", url, f"Snippet {i} about IELTS speaking.", "duckduckgo")
@@ -59,7 +62,7 @@ def weak_opportunities() -> dict[str, Any]:
                               opportunity("To-do list with AI", URLS[0], fit=2)]}
 
 
-def canvas(url: str = URLS[0]) -> dict[str, Any]:
+def canvas(url: str = LOW_URL) -> dict[str, Any]:
     box = {"content": "Students in the group practice alone.", "source_url": url}
     plain = {"content": "Sell by hand in the WhatsApp group.", "source_url": None}
     return {"customer_segments": box, "problem": box, "uvp": plain, "solution": plain,
