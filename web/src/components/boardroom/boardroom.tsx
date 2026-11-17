@@ -20,6 +20,7 @@ import { progressStages, speakerFor, stageInfo } from "./live-model";
 import { apiProviderOf, localModelOf, ModelSettings } from "./model-settings";
 import { STAGES } from "./journey";
 import { StageMap } from "./map/stage-map";
+import { PlanView } from "./plan/plan-view";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Onboarding } from "./onboarding";
 import { WorkingPanel } from "./panels";
@@ -122,6 +123,7 @@ export function Boardroom({ initialScreen, initialRunId, dark, egg: eggParam, de
             stages={live ? liveStages : undefined}
             founder={live ? LIVE_FOUNDER : undefined}
           />
+          <PlanView runId={runId} live={live} refreshKey={run ? `${run.stage}:${run.status}` : undefined} />
           <span className="text-xl font-extrabold tracking-tight">Boardroom</span>
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[15px]">
             <span aria-hidden className="text-muted-foreground/60">/</span>

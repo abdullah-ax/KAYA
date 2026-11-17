@@ -2,13 +2,13 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { Plan, PlanSnapshot } from "@/lib/api";
+import type { Plan, PlanSection, PlanSnapshot } from "@/lib/api";
 import * as api from "@/lib/api";
 import { PlanView } from "./plan-view";
 
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("@/lib/api")>()), getPlan: vi.fn(), getPlanVersion: vi.fn() }));
 
-const sec = (id: string, title: string, body: string, extra = {}) => ({
+const sec = (id: string, title: string, body: string, extra: Partial<PlanSection> = {}): PlanSection => ({
   id, title, body_markdown: body, sources: [], assumptions: 0, status: body ? "written" : "not_yet", ...extra,
 });
 
