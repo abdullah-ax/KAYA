@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ApiSource } from "@/lib/api";
-import { composeBrief, friendlyFileName, gateArgsFromPending, outcomeSentence, progressLine, progressStages, sourceCardsFrom, stageInfo, STAGE_NAMES, stageNumber, stageTitle } from "./live-model";
+import { composeBrief, doneMessage, friendlyFileName, gateArgsFromPending, outcomeSentence, progressLine, progressStages, sourceCardsFrom, stageInfo, STAGE_NAMES, stageNumber, stageTitle } from "./live-model";
 import { STAGES } from "./journey";
 
 describe("composeBrief", () => {
@@ -192,6 +192,18 @@ describe("outcomeSentence", () => {
     expect(outcomeSentence("done", "stop")).toBe("Finished: stop");
     expect(outcomeSentence("done", "go")).toBe("Finished: go");
     expect(outcomeSentence("done", null)).toBe("Finished");
+  });
+});
+
+describe("doneMessage", () => {
+  it("gives a next step after stop, repeat and pivot", () => {
+    expect(doneMessage("stop")).toBe("The run is finished. Outcome: stop. To go on, start a new run with a different idea or with stronger evidence.");
+    expect(doneMessage("repeat")).toBe("The run is finished. Outcome: repeat. To go on, start a new run and bring more evidence for that step.");
+    expect(doneMessage("pivot")).toBe("The run is finished. Outcome: pivot. To go on, start a new run with the changed idea.");
+  });
+  it("keeps go and a missing outcome short", () => {
+    expect(doneMessage("go")).toBe("The run is finished. Outcome: go.");
+    expect(doneMessage(null)).toBe("The run is finished.");
   });
 });
 

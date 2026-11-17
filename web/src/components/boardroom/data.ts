@@ -169,7 +169,7 @@ export type CaseStudy = { company: string; market: string; lesson: string; fact:
 
 export const LEARN: Record<string, Learn[]> = {
   intake: [
-    { kind: "Video", org: "YC Startup Library", title: "How to get startup ideas", url: "https://www.ycombinator.com/library/8g-how-to-get-startup-ideas", why: "Start from what you know. You already tutor 40 students." },
+    { kind: "Video", org: "YC Startup Library", title: "How to get startup ideas", url: "https://www.ycombinator.com/library/8g-how-to-get-startup-ideas", why: "Start from what you know and the people you already reach." },
     { kind: "Map", org: "map.sistilli.dev", title: "The startup map", url: "https://map.sistilli.dev/", why: "See where you are on the founder path." },
   ],
   cofounder: [

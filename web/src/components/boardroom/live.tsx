@@ -17,7 +17,7 @@ import { ApiError, sendAnswer, sendGate, type Run } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { CASES, LEARN, TEAM } from "./data";
 import { LevelUpDialog, useLevelUp } from "./level-up";
-import { friendlyFileName, gateArgsFromPending, learnKeyFor, outcomeSentence, progressLine, refusalText, sourceCardsFrom, speakerFor, stageInfo, STAGE_NAMES, stageTitle } from "./live-model";
+import { doneMessage, friendlyFileName, gateArgsFromPending, learnKeyFor, outcomeSentence, progressLine, refusalText, sourceCardsFrom, speakerFor, stageInfo, STAGE_NAMES, stageTitle } from "./live-model";
 import { BoardroomTool, GateNextContext, GateSubmitContext, RetryContext } from "./tools";
 import { FaceAvatar, PARODY, TarekCard } from "./parody";
 import { ProgramSection } from "./program-card";
@@ -67,7 +67,7 @@ function useTranscript(run: Run | null) {
     }
     if (run.status === "error") once("error", () => ({ id: "error", role: "assistant", content: [{ type: "tool-call", toolCallId: "run-error", toolName: "run_error", args: {}, result: undefined }] }));
     if (run.status === "closed") once("closed", () => assistant("closed", "This run was closed when the server restarted. Start a new one."));
-    if (run.status === "done") once("done", () => assistant("done", `The run is finished${run.outcome ? `. Outcome: ${run.outcome}` : ""}.`));
+    if (run.status === "done") once("done", () => assistant("done", doneMessage(run.outcome)));
     if (add.length) setMessages((prev) => [...prev, ...add]);
   }, [run]);
 

@@ -85,6 +85,18 @@ export function friendlyFileName(file: string): string {
   return FILE_NAMES.find(([re]) => re.test(file))?.[1] ?? "Report";
 }
 
+const NEXT_STEP: Record<string, string> = {
+  stop: "start a new run with a different idea or with stronger evidence",
+  repeat: "start a new run and bring more evidence for that step",
+  pivot: "start a new run with the changed idea",
+};
+
+/** The last chat message of a run: its outcome, and what to do next when it did not end in go. */
+export function doneMessage(outcome: string | null): string {
+  const next = outcome ? NEXT_STEP[outcome] : undefined;
+  return `The run is finished${outcome ? `. Outcome: ${outcome}` : ""}.${next ? ` To go on, ${next}.` : ""}`;
+}
+
 /** One human sentence for the run's state and outcome. */
 export function outcomeSentence(status: string, outcome: string | null): string {
   if (status === "working") return "Working on it";
