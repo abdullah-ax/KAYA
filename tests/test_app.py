@@ -60,6 +60,23 @@ def next_stage(client, run_id):
     return resp.json()
 
 
+def finish_later_phases(client, run_id):
+    """Phases 4 to 6 through the API, from the Commercial setup level-up to the end."""
+    from test_pipeline import REASON4, REASON5, REASON6, REASON_REFUND
+    state = answer(client, run_id, "400")
+    assert state["pending"]["key"] == "phase4"
+    decide(client, run_id, "Open the MOCKED checkout", REASON4)
+    next_stage(client, run_id)
+    answer(client, run_id, "6")
+    decide(client, run_id, "Approve the refund", REASON_REFUND)
+    state = decide(client, run_id, "Keep selling", REASON5)
+    assert state["pending"]["kind"] == "level_up" and state["pending"]["next"] == "Operate and learn"
+    next_stage(client, run_id)
+    answer(client, run_id, "3")
+    answer(client, run_id, "They want more mock tests and feedback on pronunciation")
+    return decide(client, run_id, "Keep going and grow", REASON6)
+
+
 def to_phase1_gate(client):
     run_id = start(client)
     answer(client, run_id, "I can reach 420 students today")
@@ -91,13 +108,14 @@ def test_full_happy_path_through_the_api_reaches_phase2_go(client, tmp_run):
     assert state["pending"]["key"] == "phase3"
     state = decide(client, run_id, "Build this MVP", REASON3)
     assert state["pending"]["kind"] == "level_up" and state["pending"]["next"] == "Commercial setup"
-    state = next_stage(client, run_id)
+    next_stage(client, run_id)
+    state = finish_later_phases(client, run_id)
 
     assert state["status"] == "done" and state["outcome"] == "go" and state["phase2"] == "go"
     assert {"phase2_gate_decision.md", "phase2_step2_signup_page.md"} <= set(state["outputs"])
     log = client.get(f"/runs/{run_id}/log").json()
     gated = [e for e in log if e["action"].endswith("_decision") or e["action"] == "publish_signup_page"]
-    assert len(gated) == 4 and all(e["approved_by"] == "founder" and e["founder_input"] for e in gated)
+    assert len(gated) == 7 and all(e["approved_by"] == "founder" and e["founder_input"] for e in gated)
     assert (tmp_run / run_id / "outputs" / "phase2_gate_decision.md").exists()
 
 

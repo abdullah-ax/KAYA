@@ -115,6 +115,9 @@ describe("build stage wording", () => {
     expect(stageInfo("phase3_step1")).toEqual({ stageId: "build", label: "User stories" });
     expect(stageInfo("phase3_step2")).toEqual({ stageId: "build", label: "MVP plan" });
     expect(stageInfo("phase3_gate")).toEqual({ stageId: "build", label: "Build gate" });
+    expect(stageInfo("phase4_gate")).toEqual({ stageId: "setup", label: "Checkout gate" });
+    expect(stageInfo("phase5_step1")).toEqual({ stageId: "distribution", label: "Test sales" });
+    expect(stageInfo("phase6_gate")).toEqual({ stageId: "operate", label: "Learning gate" });
   });
 
   it("shows Build as the current stage on the map", () => {

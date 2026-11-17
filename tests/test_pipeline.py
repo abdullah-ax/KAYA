@@ -13,6 +13,12 @@ REASON3 = "The three must-have stories fit in my two weeks so I will build the m
 REASON2 = "We got more sign-ups than the target in two weeks so building is the next step"
 
 
+REASON4 = "Four hundred pounds is what my students already pay for two private lessons, so it feels fair"
+REASON_REFUND = "The buyer booked the wrong exam date and asked within a day, so a refund is the fair thing"
+REASON5 = "Six people paid and the books match, so I will keep selling to the rest of my group"
+REASON6 = "Half of the buyers came back for more practice, so the product is worth growing carefully"
+
+
 def strong_answers(**changes):
     script = {"intake": ["I can reach 420 students today", "I can spend EGP 2,000"],
               "phase1_option": "Speaking drills", "phase1_reason": REASON1,
@@ -20,7 +26,15 @@ def strong_answers(**changes):
               "publish_option": "Publish the sign-up page", "publish_reason": REASON1,
               "signups": "130",
               "phase2_option": "Continue to Build", "phase2_reason": REASON2,
-              "phase3_option": "Build this MVP", "phase3_reason": REASON3}
+              "phase3_option": "Build this MVP", "phase3_reason": REASON3,
+              "price": "400",
+              "phase4_option": "Open the MOCKED checkout", "phase4_reason": REASON4,
+              "buyers": "6",
+              "refund_option": "Approve the refund", "refund_reason": REASON_REFUND,
+              "phase5_option": "Keep selling", "phase5_reason": REASON5,
+              "came_back": "3",
+              "feedback": "They want more mock tests and feedback on pronunciation",
+              "phase6_option": "Keep going and grow", "phase6_reason": REASON6}
     script.update(changes)
     return ScriptedAnswers(script)
 
@@ -105,7 +119,7 @@ def test_every_log_entry_has_required_keys_and_gated_ones_name_the_founder(tmp_r
     entries = ctx.log.entries()
     assert entries and all(REQUIRED <= set(e) for e in entries)
     decisions = [e for e in entries if e["action"].endswith("_decision") or e["action"] == "publish_signup_page"]
-    assert len(decisions) == 4
+    assert len(decisions) == 7
     assert all(e["approved_by"] == "founder" and e["founder_input"] for e in decisions)
     assert {e["model"] for e in entries if e["agent"] in ("profiler", "research_intern", "boss")} >= {"fake"}
 

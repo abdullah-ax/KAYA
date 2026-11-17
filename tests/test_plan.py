@@ -128,8 +128,9 @@ def test_full_run_snapshots_each_draft_and_decision(tmp_path):
     run_dir = strong_run(tmp_path)
     versions = json.loads((run_dir / "plan_versions.json").read_text())
 
-    assert events(run_dir) == ["draft", "decision", "draft", "draft", "decision", "draft", "draft", "decision"]
-    assert [v["n"] for v in versions] == [1, 2, 3, 4, 5, 6, 7, 8]
+    assert events(run_dir) == ["draft", "decision", "draft", "draft", "decision", "draft", "draft", "decision",
+                               "decision", "decision", "decision"]
+    assert [v["n"] for v in versions] == list(range(1, 12))
     assert all(v["at"].endswith("Z") and v["summary"] and v["sections_hash"] for v in versions)
     assert versions[0]["sections"][1]["status"] == "written" and versions[0]["sections"][2]["status"] == "not_yet"
     assert "Speaking drills" in versions[1]["sections"][5]["body_markdown"]
@@ -185,7 +186,7 @@ def test_plan_lists_versions_without_bodies(tmp_path):
 
     versions = build_plan(run_dir, None)["versions"]
 
-    assert len(versions) == 8 and all("sections" not in v for v in versions)
+    assert len(versions) == 11 and all("sections" not in v for v in versions)
 
 
 # -- Tarek critique -----------------------------------------------------------
@@ -266,7 +267,7 @@ def test_get_plan_returns_overview_sections_critique_and_versions(client, tmp_ru
 
     body = client.get(f"/runs/{run_id}/plan").json()
 
-    assert [s["id"] for s in body["sections"]] == IDS and body["critique"] and len(body["versions"]) == 8
+    assert [s["id"] for s in body["sections"]] == IDS and body["critique"] and len(body["versions"]) == 11
     assert "sections" not in body["versions"][0]
 
 
