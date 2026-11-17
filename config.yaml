@@ -1,0 +1,48 @@
+# Settings the founder can change BEFORE a run. Never change gate targets after seeing results.
+
+model:
+  default: gpt-oss:20b
+  fallback: qwen3:8b
+  temperature: 0
+  max_retries: 3
+  ollama_url: http://ollama:11434
+
+mode: demo            # demo | full
+demo:
+  max_intake_questions: 5
+  min_reason_words: 8
+full:
+  max_intake_questions: 30
+  min_reason_words: 15
+
+approval:
+  rejected_answers: ["yes", "y", "ok", "okay", "sure", "fine", "looks good", "lgtm", "go", "next", "approve"]
+  options_per_choice: 3
+  understanding_questions: 2
+
+gates:
+  phase1_discover:
+    min_sourced_problems: 3
+    min_founder_fit_score: 3      # out of 5
+  phase2_validate:
+    signup_target: 100
+    window_days: 14
+    stop_below_fraction: 0.3      # under 30% of target -> recommend stop or pivot
+
+writing:
+  max_reading_grade: 8
+  max_em_dashes_per_paragraph: 2
+  max_words_per_slide: 15
+  max_pages_per_document: 1
+
+context:
+  last_turns: 6
+  last_decisions: 3
+  summary_lines_per_gate: 5
+
+voice:
+  stt: faster-whisper   # MIT; model size "small"
+  tts: kokoro           # Apache-2.0; no Arabic voice, speak English and show Arabic text
+  tts_fallback: browser
+  push_to_talk: true
+  max_spoken_words: 40

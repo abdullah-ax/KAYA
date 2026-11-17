@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shark panel simulation</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FAFAF7}
+a{color:#1E5A3C}a:hover{color:#123826}
+button:focus-visible,textarea:focus,a:focus-visible{outline:3px solid #1E5A3C;outline-offset:2px}
+</style>
+</helmet>
+<main style="min-height: 1000px; display: flex; flex-wrap: wrap; background: #FAFAF7; color: #111111; font-family: 'Public Sans', sans-serif; font-size: 20px; line-height: 1.5">
+<nav aria-label="Your team" style="flex: 1 1 260px; max-width: 300px; box-sizing: border-box; border-right: 1px solid #DAD8D0; padding: 28px 16px; display: flex; flex-direction: column; gap: 6px">
+<p style="margin: 0 12px 20px; font-size: 24px; font-weight: 800">Boardroom</p>
+<p style="margin: 0 12px 6px; font-size: 16px; font-weight: 700; color: #4B4A45">Your team</p>
+<sc-for list="{{team}}" as="m" hint-placeholder-count="7">
+<a href="#" style="{{m.style}}">
+<sc-if value="{{m.hasImg}}" hint-placeholder-val="{{ true }}"><img src="{{m.img}}" alt="" style="width: 44px; height: 44px; flex: none; border-radius: 50%"></sc-if><sc-if value="{{m.noImg}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width: 44px; height: 44px; flex: none; border-radius: 50%; background: #E3E1D8; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700">{{m.initials}}</span></sc-if>
+<span style="display: flex; flex-direction: column; line-height: 1.25">
+<span style="font-size: 20px; font-weight: 700">{{m.name}}</span>
+<span style="font-size: 16px; color: #4B4A45">{{m.role}}</span>
+</span>
+</a>
+</sc-for>
+</nav>
+<section aria-label="Shark panel" style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 48px; display: flex; flex-direction: column; gap: 28px">
+<header style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid #DAD8D0; padding-bottom: 20px">
+<div>
+<h1 style="margin: 0; font-size: 32px; font-weight: 800">Shark panel</h1>
+<p style="margin: 0; font-size: 16px; color: #4B4A45">SIMULATION · practice feedback · no money, no offers, no real people</p>
+</div>
+<p style="margin: 0; font-size: 24px; font-weight: 800">2 in · 3 out</p>
+</header>
+<div style="display: flex; flex-direction: column">
+<sc-for list="{{sharks}}" as="s" hint-placeholder-count="5">
+<div style="display: flex; gap: 20px; align-items: flex-start; padding: 18px 0; border-bottom: 1px solid #DAD8D0">
+<img src="{{s.img}}" alt="" style="width: 64px; height: 64px; flex: none; border-radius: 50%">
+<div style="flex: 1; min-width: 0">
+<p style="margin: 0; font-size: 24px; font-weight: 800">{{s.name}} · <span style="{{s.verdictStyle}}">{{s.verdict}}</span></p>
+<p style="margin: 0; font-size: 20px">{{s.reason}}</p>
+<p style="margin: 0; font-size: 16px; color: #4B4A45"><strong>Would change my mind:</strong> {{s.change}}</p>
+</div>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; max-width: 900px">
+<label for="answer" style="font-size: 20px; font-weight: 700">Answer the strongest “out” in your own words: no one has paid yet.</label>
+<textarea id="answer" rows="3" style="font-family: 'Public Sans', sans-serif; font-size: 24px; line-height: 1.4; padding: 16px 20px; border: 2px solid #111111; border-radius: 12px; background: #FFFFFF; color: #111111; resize: vertical"></textarea>
+</div>
+</section>
+<aside aria-label="What they read" style="flex: 1 1 320px; max-width: 400px; box-sizing: border-box; border-left: 1px solid #DAD8D0; padding: 32px 28px; display: flex; flex-direction: column; gap: 20px; background: #FFFFFF">
+<h2 style="margin: 0; font-size: 24px; font-weight: 800">What they read</h2>
+<p style="margin: 0; font-size: 20px">Lean Canvas · 4 of 9 boxes have evidence</p>
+<p style="margin: 0; font-size: 20px">9 interviews · 2 strong signals</p>
+<p style="margin: 0; font-size: 20px">Sign-ups · 12 of 100 (MOCKED)</p>
+<p style="margin: 0; font-size: 16px; color: #4B4A45; border-top: 1px solid #DAD8D0; padding-top: 20px">Every reason points to a line in your files. Types are drawn from public descriptions of investor styles.</p>
+</aside>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+renderVals() {
+var active = 'Shark panel';
+var base = 'display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; color: #111111; text-decoration: none;';
+var list = [
+{ name: 'Co-founder', role: 'Warm Skeptic', initials: 'CF', img: '/_blob/a38e9df579beab6d940e98464934e75b' },
+{ name: 'Profiler', role: 'Profile done', initials: 'PR', img: '/_blob/ef965d02ef346a3ff586c6bdf0e458a4' },
+{ name: 'Research team', role: 'Intern + boss', initials: 'RT', img: '/_blob/5c1dadf1914a76ed3fb194b0a98de898' },
+{ name: 'Marketing team', role: 'Intern + boss', initials: 'MT', img: '/_blob/2d76a737d59f8455d7bcf536281a0840' },
+{ name: 'Judges', role: 'No new notes', initials: 'JU', img: '/_blob/57c2de3b3026d361dcfc1f45b2bd014f' },
+{ name: 'Shark panel', role: 'Simulation', initials: 'SP', img: '/_blob/7a5a352a64d2cc02125bfdaf72fc4328' },
+{ name: 'Notes', role: 'Everything you said', initials: 'NO' }
+];
+var inStyle = 'color: #1E5A3C;';
+var outStyle = 'color: #9B2C1F;';
+var sharks = [
+{ initials: 'NH', img: '/_blob/f1d1a6e1a65b4bfe035170b9eb19e655', name: 'Numbers Hawk', verdict: 'Out', reason: 'No one has paid yet. Tutor price is an assumption.', change: '3 pre-orders at a set price.' },
+{ initials: 'PR', img: '/_blob/7a5a352a64d2cc02125bfdaf72fc4328', name: 'People Reader', verdict: 'In', reason: 'You ran 9 interviews yourself and owned the weak result.', change: 'Already in.' },
+{ initials: 'BB', img: '/_blob/80fca9fab0cf18d15af3459d35800d0a', name: 'Brand Builder', verdict: 'In', reason: 'You are close to this group and they trust you.', change: 'Already in.' },
+{ initials: 'RP', img: '/_blob/79be18da73b5b02e6049b05404749f79', name: 'Retail Pro', verdict: 'Out', reason: 'Hard to explain in 10 seconds.', change: 'A one-line pitch students repeat.' },
+{ initials: 'TO', img: '/_blob/6f69717205c31b49b7a6c037aafa5870', name: 'Tech Operator', verdict: 'Out', reason: 'Everything is done by hand.', change: 'A plan past the first 50 students.' }
+];
+return {
+team: list.map(function (m) { return Object.assign({}, m, { hasImg: !!m.img, noImg: !m.img, style: base + (m.name === active ? ' background: #ECEBE4;' : '') }); }),
+sharks: sharks.map(function (s) { return Object.assign({}, s, { verdictStyle: s.verdict === 'In' ? inStyle : outStyle }); })
+};
+}
+}
+</script>
+</body>
+</html>

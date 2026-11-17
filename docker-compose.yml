@@ -1,0 +1,53 @@
+# One command: docker compose up
+# Draft: Claude Code adjusts build paths once api/ and web/ exist.
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama:/root/.ollama
+    ports:
+      - "11434:11434"
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    depends_on:
+      - ollama
+    environment:
+      - OLLAMA_HOST=ollama:11434
+    entrypoint: ["/bin/sh", "-c", "ollama pull ${MODEL_DEFAULT:-gpt-oss:20b} || ollama pull ${MODEL_FALLBACK:-qwen3:8b}"]
+    restart: "no"
+
+  searxng:
+    image: searxng/searxng:latest
+    ports:
+      - "8080:8080"
+
+  api:
+    build: ./api
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - SEARXNG_URL=http://searxng:8080
+    volumes:
+      - ./runs:/app/runs
+      - ./outputs:/app/outputs
+    depends_on:
+      - ollama
+      - searxng
+    ports:
+      - "8000:8000"
+
+  web:
+    build: ./web
+    environment:
+      - API_URL=http://api:8000
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+
+volumes:
+  ollama:
