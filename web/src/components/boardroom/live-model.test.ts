@@ -175,6 +175,8 @@ describe("friendlyFileName", () => {
     expect(friendlyFileName("phase2_step1_lean_canvas.md")).toBe("Lean Canvas");
     expect(friendlyFileName("phase2_step2_signup_page.md")).toBe("Sign-up page");
     expect(friendlyFileName("decision_log.json")).toBe("Decision");
+    expect(friendlyFileName("phase3_step1_user_stories.md")).toBe("User stories");
+    expect(friendlyFileName("phase3_step2_mvp_spec.md")).toBe("MVP plan");
     expect(friendlyFileName("something_odd.txt")).toBe("Report");
   });
 });

@@ -63,7 +63,6 @@ export const GateNextContext = createContext<{ done: boolean; startOver: () => v
 export function GateDecision({ args }: { args: GateArgs }) {
   const submit = useContext(GateSubmitContext);
   const next = useContext(GateNextContext);
-  const [noStage, setNoStage] = useState(false);
   const [choice, setChoice] = useState<string>("");
   const [reason, setReason] = useState("");
   const [phase, setPhase] = useState<"editing" | "saving" | "recorded">("editing");
@@ -100,15 +99,8 @@ export function GateDecision({ args }: { args: GateArgs }) {
         </div>
         <p className="text-base">“{reason.trim()}”</p>
         <p className="text-[14px] text-muted-foreground">{submit ? "Saved. You approved this." : "Saved in this demo only."}</p>
-        {next?.done && (
-          outcomesOf({ id: picked.id, name: picked.label }).includes("stop") ? (
-            <Button onClick={next.startOver} className="w-fit rounded-full">Start over with a new idea</Button>
-          ) : (
-            <>
-              <Button onClick={() => setNoStage(true)} className="w-fit rounded-full">Start Stage 3: Build</Button>
-              {noStage && <p role="status" className="text-[14px] text-muted-foreground">Stage 3 is not open in this version yet. Your decision is saved.</p>}
-            </>
-          )
+        {next?.done && outcomesOf({ id: picked.id, name: picked.label }).includes("stop") && (
+          <Button onClick={next.startOver} className="w-fit rounded-full">Start over with a new idea</Button>
         )}
       </div>
     );

@@ -34,6 +34,9 @@ const STEP_LABEL: Record<string, string> = {
   phase2_step1: "Canvas",
   phase2_step2: "Publish",
   phase2_gate: "Sign-up gate",
+  phase3_step1: "User stories",
+  phase3_step2: "MVP plan",
+  phase3_gate: "Build gate",
 };
 
 const STAGE_BY_PHASE = ["ideation", "validation", "build", "setup", "distribution", "operate"];
@@ -51,6 +54,8 @@ const FILE_NAMES: [RegExp, string][] = [
   [/opportunit/i, "Opportunities report"],
   [/canvas/i, "Lean Canvas"],
   [/signup|sign_up/i, "Sign-up page"],
+  [/user_stories/i, "User stories"],
+  [/mvp/i, "MVP plan"],
   [/decision/i, "Decision"],
 ];
 
@@ -129,6 +134,9 @@ const PROGRESS: Record<string, string> = {
   phase2_step1: "Noor is drafting your Lean Canvas...",
   phase2_step2: "Noor is writing your sign-up page...",
   phase2_gate: "Boss is checking the draft...",
+  phase3_step1: "Your team is writing your user stories...",
+  phase3_step2: "Your team is writing your MVP plan...",
+  phase3_gate: "Boss is checking the draft...",
 };
 
 /** Who is working right now, in plain words, from run.stage. */
@@ -186,9 +194,9 @@ export function outcomesOf(o: { id?: string; name: string }): Outcome[] {
   const t = `${o.id ?? ""} ${o.name}`.toLowerCase();
   const found: Outcome[] = [];
   if (/\bstop\b/.test(t)) found.push("stop");
-  if (/\bpivot\b/.test(t)) found.push("pivot");
-  if (/\brepeat\b/.test(t)) found.push("repeat");
-  if (/\bcontinue\b|\bgo\b/.test(t)) found.push("go");
+  if (/\bpivot\b|\bgo back\b|go_back/.test(t)) found.push("pivot");
+  if (/\brepeat\b|\bcut\b/.test(t)) found.push("repeat");
+  if (/\bcontinue\b|\bgo\b(?! back)|\bbuild this\b/.test(t)) found.push("go");
   return found;
 }
 

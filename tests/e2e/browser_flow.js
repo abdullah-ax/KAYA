@@ -58,6 +58,10 @@ const R2 = 'We got more sign-ups than the target in two weeks, so building the p
   await p.getByText('Continue to Build', { exact: true }).first().click();
   await p.getByRole('textbox', { name: /why this option/i }).fill(R2);
   await p.getByRole('button', { name: /Confirm decision/ }).click();
+  await until(s => s.pending && s.pending.key === 'phase3', 'build gate'); await p.waitForTimeout(1200); await snap('07b_live_build_gate');
+  await p.getByText('Build this MVP', { exact: true }).first().click();
+  await p.getByRole('textbox', { name: /why this option/i }).fill(R2);
+  await p.getByRole('button', { name: /Confirm decision/ }).click();
   const done = await until(s => s.status === 'done', 'done');
   await p.waitForTimeout(1500); await snap('08_live_done');
   await p.getByRole('button', { name: 'Open map' }).click(); await p.waitForTimeout(900); await snap('09_live_map');
