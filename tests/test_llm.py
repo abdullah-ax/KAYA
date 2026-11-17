@@ -69,9 +69,9 @@ def test_ollama_posts_chat_with_json_schema_and_temperature_zero(cfg):
     out, usage = llm.complete("You are a researcher.", "Find problems.", Idea)
     assert out == Idea(title="Tutor app", score=3)
     assert (usage.prompt_tokens, usage.completion_tokens) == (12, 5)
-    assert llm.name == "gpt-oss:20b"
+    assert llm.name == cfg.model.default
     body = json.loads(route.calls.last.request.content)
-    assert body["model"] == "gpt-oss:20b"
+    assert body["model"] == cfg.model.default
     assert body["stream"] is False
     assert body["format"] == Idea.model_json_schema()
     assert body["options"]["temperature"] == 0
