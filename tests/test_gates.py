@@ -122,3 +122,19 @@ def test_phase1_reach_check_does_not_block_a_founder_with_a_group():
     from api.gates import phase1_gate
     import pipeline_fakes as fx
     assert phase1_gate(3, 4, fx.config(), reach=2, hours=15).outcome == "go"
+
+
+def test_gate_decision_file_has_no_empty_filler_lines(tmp_run):
+    for result in (phase1_gate(3, 4, make_cfg(), reach=2), phase2_gate(12, make_cfg())):
+        text = write_gate_decision(tmp_run / f"{result.gate}.md", result, None).read_text()
+        for filler in ("not given", "none recorded", "not recorded", "not set", "Judges"):
+            assert filler not in text, f"{result.gate}: {filler}"
+
+
+def test_gate_decision_says_where_each_result_came_from(tmp_run):
+    one = write_gate_decision(tmp_run / "one.md", phase1_gate(3, 4, make_cfg(), reach=2), None).read_text()
+    assert "- Actual: 3 (source: opportunities with a medium or high trust source card" in one
+    assert "- Window:" not in one  # phase 1 has no time window, so the line is left out
+    two = write_gate_decision(tmp_run / "two.md", phase2_gate(12, make_cfg()), None).read_text()
+    assert "- Actual: 12 (source: founder-entered count)" in two
+    assert "- Window: 14 days" in two
