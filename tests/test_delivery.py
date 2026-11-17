@@ -209,7 +209,15 @@ def test_take_down_deletes_logs_and_clears_the_site(client):
     assert TOKEN not in resp.text + json.dumps(log)
 
 
-def test_take_down_without_a_live_page_is_409_and_without_a_token_is_422(client):
+def test_take_down_without_a_live_page_is_409(client):
     run_id = approved_run(client)
     assert client.delete(f"/runs/{run_id}/publish/netlify", headers={"X-Netlify-Token": TOKEN}).status_code == 409
-    assert client.delete(f"/runs/{run_id}/publish/netlify").status_code == 422
+
+
+def test_take_down_without_a_token_is_422_and_the_page_stays_online(client):
+    run_id = approved_run(client)
+    with respx.mock() as router:
+        netlify_ok(router)
+        post(client, run_id)
+        assert client.delete(f"/runs/{run_id}/publish/netlify").status_code == 422
+    assert client.get(f"/runs/{run_id}").json()["delivery"]["url"] == SITE["ssl_url"]

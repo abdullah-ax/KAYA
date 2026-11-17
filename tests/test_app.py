@@ -129,7 +129,9 @@ def test_answer_is_409_when_a_gate_is_pending(client):
 def test_no_route_publishes_or_passes_a_gate_without_a_choice(client):
     paths = {route.path for route in client.app.routes}
 
-    assert not any("publish" in p or "approve" in p or "advance" in p for p in paths)
+    # The one publish route refuses unless the decision log holds the founder's approval (tests/test_delivery.py).
+    assert not any(("publish" in p and p != "/runs/{run_id}/publish/netlify") or "approve" in p or "advance" in p
+                   for p in paths)
 
 
 def test_run_state_is_saved_under_runs_dir_and_readable_after_restart(client, tmp_run):
