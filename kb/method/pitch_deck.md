@@ -12,7 +12,7 @@ type: example
 
 ## YC seed deck
 
-Aaron Harris wrote YC's seed deck template to show founders how to lay out their story in slides ([YC library](https://www.ycombinator.com/library/2u-how-to-build-your-seed-round-pitch-deck)). Read the source for the exact slide order before building the template. Our working order, to check against it: title, problem, solution, traction, insight, business model, market, competition, team, ask.
+Aaron Harris wrote YC's seed deck template to show founders how to lay out their story in slides ([YC library](https://www.ycombinator.com/library/2u-how-to-build-your-seed-round-pitch-deck)). Read the source for the exact slide order before building the template. The template's order: title, problem, solution, traction, insight, business model, market, team, ask.
 
 ## Airbnb 2008 deck
 

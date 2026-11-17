@@ -26,7 +26,7 @@ Starter banned list (extend from the sources): delve, leverage, seamless, game-c
 
 ## Visual habits to remove
 
-From [impeccable's anti-patterns](https://www.mintlify.com/pbakaus/impeccable/concepts/anti-patterns): purple-to-blue gradients, cyan on dark, frosted glass everywhere, overused fonts, the same spacing everywhere, card grids by default.
+From [impeccable](https://github.com/pbakaus/impeccable)'s anti-pattern list: purple-to-blue gradients, cyan on dark, frosted glass everywhere, overused fonts, the same spacing everywhere, card grids by default.
 
 ## Checks
 

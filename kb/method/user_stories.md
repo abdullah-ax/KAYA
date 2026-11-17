@@ -1,6 +1,6 @@
 ---
 title: User stories
-url: https://www.smartsheet.com/writing-user-story
+url: https://s.visual-paradigm.com/guide/how-to-write-good-user-stories-examples-and-best-practices-for-story-writing/
 author: Bill Wake (INVEST, 2003), Mike Cohn (User Stories Applied)
 license: our notes
 phases: [3]
@@ -27,7 +27,7 @@ Acceptance criteria: Given [situation], when [action], then [result].
 
 Slice stories top to bottom (one complete feature through every layer), not one layer at a time.
 
-Sources: [Smartsheet](https://www.smartsheet.com/writing-user-story), [Visual Paradigm guide](https://s.visual-paradigm.com/guide/how-to-write-good-user-stories-examples-and-best-practices-for-story-writing/), [3Pillar on slicing](https://3pillarglobal.com/?p=23088).
+Sources: [Visual Paradigm guide](https://s.visual-paradigm.com/guide/how-to-write-good-user-stories-examples-and-best-practices-for-story-writing/), [Smartsheet](https://www.smartsheet.com/writing-user-story) (blocks automated checks), [3Pillar on slicing](https://3pillarglobal.com/?p=23088).
 
 ## How agents use this
 

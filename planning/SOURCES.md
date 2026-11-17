@@ -4,7 +4,7 @@ Grouped by topic. Every link here was found during research on 17 November 2026.
 
 ## Trust check on this list
 
-Rules are in `repo_seed/templates/source_card.md`. Before any of these backs a claim in the product, give it a source card.
+Rules are in `templates/source_card.md`. Before any of these backs a claim in the product, give it a source card.
 
 - **High trust (primary):** YC, Paul Graham, Antler's own blog, a16z speedrun's own newsletter, Anthropic, Ollama docs, DataReportal, Ahram citing the Central Bank of Egypt, Hugging Face model cards, GitHub repos themselves.
 - **Medium trust:** TechCrunch-style news, well-known summary blogs that link their sources.
@@ -12,7 +12,7 @@ Rules are in `repo_seed/templates/source_card.md`. Before any of these backs a c
 - Star counts and skill counts for repos change daily and differ between listing sites. Don't quote them.
 
 ## Hackathon
-- Organizers' CLAUDE.md (in `repo_seed/`), kickoff slides, and "Problem Statement Explained" (4 pages)
+- Organizers' CLAUDE.md (at the repo root), kickoff slides, and "Problem Statement Explained" (4 pages)
 
 ## Startup method
 - [YC: How to build your seed round pitch deck](https://www.ycombinator.com/library/2u-how-to-build-your-seed-round-pitch-deck)
@@ -20,7 +20,7 @@ Rules are in `repo_seed/templates/source_card.md`. Before any of these backs a c
 - [Paul Graham: How to Get Startup Ideas](https://paulgraham.com/startupideas.html)
 - [Paul Graham: Do Things That Don't Scale](https://paulgraham.com/ds.html)
 - [Paul Graham essays, YC collection](https://ycombinator.com/library/carousel/Essays%20by%20Paul%20Graham)
-- [Startup School for aspiring founders](https://www.startupschool.org/future-founders)
+- [Startup School for aspiring founders](https://www.startupschool.org/aspiring-founders)
 - [How to Talk to Users, five questions](https://www.koji.so/visuals/yc-how-to-talk-to-users-five-questions)
 - [YC: 10 questions to discuss with a potential co-founder](https://www.ycombinator.com/blog/10-questions-to-discuss-with-a-potential-co-founder)
 - [YC: Startup School weekly pressure to launch](https://blog.ycombinator.com/announcing-startup-school-winter-2020)
@@ -48,7 +48,7 @@ Rules are in `repo_seed/templates/source_card.md`. Before any of these backs a c
 - [FTC dark patterns report summary](https://www.huntonprivacyblog.com/2022/09/27/ftc-releases-report-on-dark-patterns/)
 - [Egypt PDPL 151/2020 overview](https://eg.andersen.com/data-protection-egypt-law/)
 - [Egypt Consumer Protection Law 181/2018](https://alp.unescwa.org/plans/1694)
-- Ethics skills: [ethics-safety-impact](https://skills.sh/lyndonkl/claude/ethics-safety-impact), [ethics-review](https://agent-skills.md/skills/melodic-software/claude-code-plugins/ethics-review), [ai-ethics-review](https://www.skills.sh/mohitagw15856/pm-claude-skills/ai-ethics-review)
+- Ethics skills: [ethics-safety-impact](https://skills.sh/lyndonkl/claude/ethics-safety-impact), [ai-ethics-review](https://www.skills.sh/mohitagw15856/pm-claude-skills/ai-ethics-review)
 
 ## Agent engineering
 - [Anthropic: Building effective agents](https://www.anthropic.com/engineering/building-effective-agents)
@@ -68,7 +68,7 @@ Rules are in `repo_seed/templates/source_card.md`. Before any of these backs a c
 ## Writing and design quality
 - [Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing)
 - [stop-slop](https://github.com/hardikpandya/stop-slop), [humanizer](https://github.com/blader/humanizer)
-- [impeccable](https://github.com/pbakaus/impeccable), [impeccable anti-patterns](https://www.mintlify.com/pbakaus/impeccable/concepts/anti-patterns)
+- [impeccable](https://github.com/pbakaus/impeccable)
 - [Mobbin](https://mobbin.com)
 
 ## Dev tools

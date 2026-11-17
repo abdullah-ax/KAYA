@@ -12,7 +12,7 @@ type: method
 
 ## The idea in one line
 
-Win one small group of customers completely, then grow from there. Aulet calls that first group the **beachhead market**, after the Normandy landing ([summary](https://tianpan.co/blog/tags/product-development)).
+Win one small group of customers completely, then grow from there. Aulet calls that first group the **beachhead market**, after the Normandy landing ([summary](https://tianpan.co/blog/2025/06/14/disciplined-entrepreneurship)).
 
 ## Steps (adapted from the first steps of Disciplined Entrepreneurship)
 

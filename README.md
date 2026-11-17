@@ -42,7 +42,7 @@ A fixed workflow in plain Python runs the six phases. Each step is done by small
 
 - Model: `gpt-oss:20b` via Ollama (open weights). Fallback for smaller machines: `qwen3:8b`.
 - Web search: a local SearXNG container, no API key.
-- Voice: faster-whisper (MIT) for speech to text, Kokoro-82M (Apache-2.0) for text to speech, both local.
+- Voice: [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (MIT) for speech to text, Kokoro-82M (Apache-2.0) for text to speech, both local.
 - No paid service is needed. Payments are mocked; nothing is charged.
 
 ## Cost per run

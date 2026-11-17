@@ -133,7 +133,7 @@ export function StatesGallery() {
         <div className="grid grid-cols-3 gap-4">
           <Labeled label="default"><LearnCard kind="Essay" org="Paul Graham" title="Do Things That Don't Scale" url="https://paulgraham.com/ds.html" why="Recruit your next 10 users by hand." /></Labeled>
           <Labeled label="done"><LearnCard kind="Book" org="Rob Fitzpatrick" title="The Mom Test" url="https://www.momtestbook.com/" why="Ask about the past." done /></Labeled>
-          <Labeled label="case study"><CaseStudyCard company="Breadfast" market="Egypt, YC company" lesson="Start tiny, do the unscalable part yourself." fact="Started in 2017 with bread only." url="https://www.ycombinator.com/companies/breadfast" source="Y Combinator" /></Labeled>
+          <Labeled label="case study"><CaseStudyCard company="Breadfast" market="Egypt, YC company" lesson="Start with one small, daily product." fact="In 2017 it only delivered fresh bakery each morning." url="https://www.menabytes.com/breadfast-egypt/" source="MENAbytes, September 2017" /></Labeled>
         </div>
       </Row>
 

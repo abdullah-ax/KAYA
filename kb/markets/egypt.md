@@ -20,8 +20,8 @@ Numbers change. The research intern re-checks each one before using it and cites
 
 ## How people pay
 
-- InstaPay and the Instant Payment Network passed 2.4 billion transactions worth about EGP 7 trillion through September 2026, per the Central Bank of Egypt ([Ahram Online](https://english.ahram.org.eg/News/581997.aspx)).
-- Cash on delivery is still a large share of e-commerce. One source puts it near 40% ([Orchestra](https://www.orchestrapay.com/coverage/africa/egypt)); another says about 31% ([8b](https://www.8b.world/countries/egypt)). Sources disagree, so treat it as a range.
+- InstaPay and the Instant Payment Network passed 2.4 billion transactions worth about EGP 7 trillion through September 2026, per the Central Bank of Egypt ([Ahram Online](https://english.ahram.org.eg/News/581997.aspx), page blocks automated checks; unverified until a second source is added).
+- Cash is still a large share of e-commerce payments. One source puts cash on delivery near 40% ([Orchestra](https://www.orchestrapay.com/coverage/africa/egypt)); another puts all cash at about 31% ([8b](https://www.8b.world/countries/egypt)). Both are payment vendors. Sources disagree, so treat it as a range.
 - Fawry offers online, wallet, and cash payment through a large network of retail points ([8b](https://www.8b.world/countries/egypt)).
 - Common methods: cash, mobile wallets (Vodafone Cash and others), Meeza cards, Fawry ([Shuttle](https://www.shuttleglobal.com/blog/the-most-popular-payment-methods-in-egypt/)).
 

@@ -36,8 +36,8 @@ export type Screen = {
 };
 
 const SOURCES: Source[] = [
-  { n: 1, title: "r/pharmacy: 'how do you memorize dosages?'", url: "https://www.reddit.com/r/pharmacy/", trust: "low", backs: "Students say dosage tables are the hardest part to memorize." },
-  { n: 2, title: "CAPMAS: higher education enrolment, 2024", url: "https://www.capmas.gov.eg/", trust: "high", backs: "Egypt has more than 30 pharmacy faculties." },
+  { n: 1, title: "Example: a pharmacy student forum", url: "https://www.reddit.com/r/pharmacy/", trust: "low", backs: "ASSUMPTION (sample data): students say dosage tables are the hardest part to memorize." },
+  { n: 2, title: "Example: Egypt's statistics agency (CAPMAS)", url: "https://www.capmas.gov.eg/", trust: "medium", backs: "ASSUMPTION (sample data): Egypt has more than 30 pharmacy faculties. Not yet checked against a CAPMAS report." },
   { n: 3, title: "Founder interview #2 (your notes)", url: "notes://interview-2", trust: "medium", backs: "3 of 5 students already buy printed summaries before exams." },
 ];
 
@@ -162,7 +162,7 @@ export const SCREENS: Screen[] = [
   },
 ];
 
-/* ---------- Learning and case studies (all links checked by hand) ---------- */
+/* ---------- Learning and case studies. Each link and claim was checked against the page on 17 Nov 2026. ---------- */
 
 export type Learn = { kind: "Video" | "Essay" | "Book" | "Course" | "Map"; org: string; title: string; url: string; why: string };
 export type CaseStudy = { company: string; market: string; lesson: string; fact: string; url: string; source: string };
@@ -178,14 +178,14 @@ export const LEARN: Record<string, Learn[]> = {
   ],
   gate: [
     { kind: "Essay", org: "Paul Graham", title: "Do Things That Don't Scale", url: "https://paulgraham.com/ds.html", why: "12 sign-ups can still teach you. Recruit the next 10 by hand." },
-    { kind: "Essay", org: "Paul Graham", title: "The 18 Mistakes That Kill Startups", url: "https://paulgraham.com/startupmistakes.html", why: "Mistake #9: not wanting to hear what users say." },
+    { kind: "Essay", org: "Paul Graham", title: "The 18 Mistakes That Kill Startups", url: "https://paulgraham.com/startupmistakes.html", why: "Mistake 5, obstinacy: holding on to your plan when users tell you otherwise." },
   ],
   sharks: [
-    { kind: "Video", org: "YC Startup Library", title: "YC's essential startup advice", url: "https://www.ycombinator.com/library/4D-yc-s-essential-startup-advice", why: "What investors listen for in a 2-minute pitch." },
-    { kind: "Essay", org: "a16z speedrun", title: "What we look for in applications", url: "https://speedrun.substack.com/p/what-we-look-for-in-applications", why: "Proof from strangers beats proof from friends." },
+    { kind: "Essay", org: "YC Startup Library", title: "YC's essential startup advice", url: "https://www.ycombinator.com/library/4D-yc-s-essential-startup-advice", why: "The short list of advice YC repeats to every founder." },
+    { kind: "Essay", org: "a16z speedrun", title: "What we look for in applications", url: "https://speedrun.substack.com/p/what-we-look-for-in-applications", why: "Strong validation early beats a little traction." },
   ],
   daily: [
-    { kind: "Course", org: "Startup School", title: "Startup School for aspiring founders", url: "https://www.startupschool.org/future-founders", why: "Free. One short lesson a day fits your 10 hours." },
+    { kind: "Course", org: "Startup School", title: "Startup School for aspiring founders", url: "https://www.startupschool.org/aspiring-founders", why: "A free 6-week online course with weekly live sessions." },
   ],
 };
 
@@ -194,7 +194,7 @@ export const CASES: Record<string, CaseStudy[]> = {
     company: "Nafham",
     market: "Egypt, edtech",
     lesson: "Students in Egypt will use study help built around their exact curriculum.",
-    fact: "Free curriculum video lessons from Cairo. Came out of Flat6Labs; bought by Tyro in 2021.",
+    fact: "Free, crowdsourced lessons for Egyptian school (K-12) curricula. Tyro agreed to buy it in November 2021.",
     url: "https://cairoscene.com/Business/Tyro-Acquires-Fellow-Egyptian-Edtech-Startup-Nafham",
     source: "CairoScene",
   }, {
@@ -208,15 +208,15 @@ export const CASES: Record<string, CaseStudy[]> = {
   gate: [{
     company: "Breadfast",
     market: "Egypt, YC company",
-    lesson: "Start with one tiny product and do the unscalable part yourself.",
-    fact: "Started in 2017 with bread only, a co-founder as the first driver. Now 3,500+ items in under 60 minutes.",
-    url: "https://www.ycombinator.com/companies/breadfast",
-    source: "Y Combinator",
+    lesson: "Start with one small, daily product and prove people come back.",
+    fact: "In 2017 it only delivered fresh bakery each morning. In its first months: more than 1,000 orders, and over 90% of customers came back.",
+    url: "https://www.menabytes.com/breadfast-egypt/",
+    source: "MENAbytes, September 2017",
   }, {
     company: "Airbnb",
     market: "Global unicorn",
     lesson: "Weak numbers? Go to the users and fix the offer by hand.",
-    fact: "With growth flat, the founders went door to door in New York, signed up hosts and took better photos of their listings themselves.",
+    fact: "The founders went door to door in New York, recruiting hosts and taking professional photos of their apartments themselves.",
     url: "https://paulgraham.com/ds.html",
     source: "Paul Graham",
   }],

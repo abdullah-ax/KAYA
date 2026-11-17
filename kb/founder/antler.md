@@ -17,7 +17,7 @@ type: method
 - Founders fill out a Fingerprint for Success (F4S) profile that shows where each person and a possible co-founder sit on traits and blind spots ([Antler](https://www.antler.co/blog/find-a-co-founder-with-antler)).
 - Matching uses speed-dating sessions and a 50-question survey ([PitchBob](https://pitchbob.io/library/accelerators/how-to-stand-out-in-antler-program-real-advice-from-funded-founders-pitchbob-io)).
 - Teams test how well they work together with design sprints, not just talk ([eChai](https://echai.ventures/startingup/from/antler)).
-- Antler prefers teams of 2–3 founders ([Antler Australia](https://content.antler.co/antler-in-australia-residency-and-terms)).
+- Antler does not invest in solo founders ([Antler Australia](https://content.antler.co/antler-in-australia-residency-and-terms)).
 
 ## How agents use this
 
