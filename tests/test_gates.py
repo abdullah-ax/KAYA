@@ -58,6 +58,23 @@ def test_phase1_gate_pivot_when_founder_fit_is_low():
     assert phase1_gate(5, 2, make_cfg()).outcome == "pivot"
 
 
+def test_phase1_gate_stop_when_both_sourcing_and_fit_are_low():
+    result = phase1_gate(1, 2, make_cfg())
+    assert result.outcome == "stop"
+    assert "stop" in result.recommendation
+
+
+def test_phase1_gate_stop_when_nothing_is_sourced_even_with_good_fit():
+    assert phase1_gate(0, 5, make_cfg()).outcome == "stop"
+
+
+def test_phase1_gate_clamps_fit_and_labels_it_a_model_estimate():
+    high = phase1_gate(3, 99, make_cfg())
+    assert high.evidence["founder_fit"] == 5 and high.outcome == "go"
+    assert phase1_gate(3, -4, make_cfg()).evidence["founder_fit"] == 1
+    assert "model estimate" in high.recommendation
+
+
 def test_write_gate_decision_without_approval_marks_pending(tmp_run):
     path = tmp_run / "outputs" / "phase2_gate_validate.md"
     out = write_gate_decision(path, phase2_gate(12, make_cfg()), None)

@@ -51,20 +51,31 @@ def test_strong_brief_reaches_phase2_go(tmp_run):
     assert json.loads((tmp_run / "state.json").read_text())["outcome"] == "go"
 
 
-def test_weak_brief_honestly_ends_in_stop(tmp_run):
+def test_weak_brief_gets_a_phase1_stop_recommendation_and_ends_in_stop(tmp_run):
+    # One sourced problem (need 3) and founder fit 2 (need 3): both weak, so the gate says stop.
+    answers = strong_answers(phase1_option="Stop here",
+                             phase1_reason="The gate says stop and I agree there is no proof here")
+    ctx, result = run(tmp_run, "weak.md", fx.scripted_llm(fx.weak_opportunities()), answers)
+
+    assert result.phase1.outcome == "stop"
+    assert result.outcome == "stop" and result.stopped_at == "phase1_gate"
+    assert result.phase2 is None
+    assert "ASSUMPTION" in out(tmp_run, "phase1_step2_opportunities.md")
+    assert "stop: 1 sourced problems" in out(tmp_run, "phase1_gate_decision.md")
+    stops = [e for e in ctx.log.entries() if e.get("outcome") == "stop" and e["agent"] == "gate"]
+    assert len(stops) == 1
+
+
+def test_founder_can_override_a_phase1_stop_and_phase2_can_still_stop(tmp_run):
     answers = strong_answers(phase1_option="To-do list with AI",
                              phase1_reason="I still want to test it once with real people before I drop it",
                              signups="12", phase2_option="Stop or pivot",
                              phase2_reason="Twelve sign-ups is far below the target so this idea should stop now")
     ctx, result = run(tmp_run, "weak.md", fx.scripted_llm(fx.weak_opportunities()), answers)
 
-    assert result.phase1.outcome == "pivot"
+    assert result.phase1.outcome == "stop"
     assert result.phase2.outcome == "stop" and result.outcome == "stop"
-    assert "ASSUMPTION" in out(tmp_run, "phase1_step2_opportunities.md")
-    gate2 = out(tmp_run, "phase2_gate_decision.md")
-    assert "stop: 12 of 100 sign-ups in 14 days (12%)" in gate2
-    stops = [e for e in ctx.log.entries() if e.get("outcome") == "stop" and e["agent"] == "gate"]
-    assert len(stops) == 1
+    assert "stop: 12 of 100 sign-ups in 14 days (12%)" in out(tmp_run, "phase2_gate_decision.md")
 
 
 def test_founder_can_stop_at_phase1_gate(tmp_run):

@@ -1,13 +1,14 @@
 """Offline fakes for pipeline tests: canned model replies and search results."""
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from api.config import load_config
 from api.llm import FakeLLM
 from api.research import FakeSearch, SearchResult
 
-ROOT_CONFIG = "config.yaml"
+ROOT_CONFIG = str(Path(__file__).resolve().parent.parent / "config.yaml")
 
 PROFILE: dict[str, Any] = {
     "strengths": [{"strength": "Teaches IELTS speaking", "quote": "I have coached 300 students since 2021"}],
