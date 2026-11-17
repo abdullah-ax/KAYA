@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import json
+import re
+import time
 from urllib.parse import urlparse
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Protocol
@@ -59,27 +61,65 @@ class FakeLLM:
         return parsed, Usage(len(system.split()) + len(user.split()), len(str(reply).split()))
 
 
+def _sleep(seconds: float) -> None:  # patched in tests
+    time.sleep(seconds)
+
+
+_THINK = re.compile(r"<think>.*?</think>", re.S | re.I)
+_FENCE = re.compile(r"^\s*```(?:json)?\s*(.*?)\s*```\s*$", re.S | re.I)
+_NO_RETRY = {400, 401, 403, 404, 422}
+
+
+def clean_reply(content: str) -> str:
+    """Drop reasoning text and code fences that thinking models wrap around their JSON."""
+    content = _THINK.sub("", content or "").strip()
+    fenced = _FENCE.match(content)
+    return fenced.group(1) if fenced else content
+
+
+def _wait_for(exc: httpx.HTTPStatusError, attempt: int) -> float:
+    after = exc.response.headers.get("Retry-After", "")
+    if after.isdigit():
+        return min(float(after), 20.0)
+    return min(0.5 * 2 ** attempt, 8.0)
+
+
 class _HTTPLLM:
-    """Shared retry loop: bad JSON, schema errors and HTTP errors all retry."""
+    """Shared retry loop with backoff. Schema misses are fed back; rejected requests are not retried."""
 
     def __init__(self, model: str, temperature: float, max_retries: int,
                  client: httpx.Client | None) -> None:
         self.name = model
         self._temperature = temperature
         self._max_retries = max_retries
-        self._client = client or httpx.Client(timeout=120)
+        self._client = client or httpx.Client(timeout=httpx.Timeout(90.0, connect=5.0))
 
     def complete(self, system: str, user: str, schema: type[BaseModel]) -> tuple[BaseModel, Usage]:
         last: Exception | None = None
-        for _ in range(self._max_retries + 1):
+        prompt = user
+        for attempt in range(self._max_retries + 1):
             try:
-                content, usage = self._call(system, user, schema)
-                return schema.model_validate_json(content), usage
-            except (httpx.HTTPError, ValidationError, ValueError, KeyError, TypeError) as exc:
+                content, usage = self._call(system, prompt, schema)
+                return schema.model_validate_json(clean_reply(content)), usage
+            except httpx.HTTPStatusError as exc:
+                last = exc
+                if exc.response.status_code in _NO_RETRY:
+                    break
+                if attempt < self._max_retries:
+                    _sleep(_wait_for(exc, attempt))
+            except httpx.TransportError as exc:
+                last = exc
+                if attempt < self._max_retries:
+                    _sleep(min(0.5 * 2 ** attempt, 8.0))
+            except ValidationError as exc:
+                last = exc
+                fields = sorted({".".join(str(p) for p in e["loc"]) for e in exc.errors()})
+                prompt = (f"{user}\n\nYour last reply did not match the schema. Fix these fields: "
+                          f"{', '.join(fields) or 'the JSON format'}. Reply with JSON only.")
+            except (ValueError, KeyError, TypeError) as exc:
                 last = exc
         raise LLMError(
-            f"{self.name} gave no valid {schema.__name__} after {self._max_retries + 1} tries: "
-            f"{type(last).__name__}"
+            f"{self.name} gave no valid {schema.__name__} after {attempt + 1} tries: {type(last).__name__}"
         ) from last
 
     def _call(self, system: str, user: str, schema: type[BaseModel]) -> tuple[str, Usage]:
@@ -142,12 +182,36 @@ class OpenAICompatLLM(_HTTPLLM):
         return data["choices"][0]["message"]["content"], usage
 
 
+class FallbackLLM:
+    """Try the main local model; if it is down or missing, use the configured fallback model."""
+
+    def __init__(self, primary: _HTTPLLM, fallback: _HTTPLLM | None) -> None:
+        self._primary, self._fallback = primary, fallback
+        self.name = primary.name
+
+    def complete(self, system: str, user: str, schema: type[BaseModel]) -> tuple[BaseModel, Usage]:
+        try:
+            out = self._primary.complete(system, user, schema)
+            self.name = self._primary.name
+            return out
+        except LLMError as err:
+            transport = isinstance(err.__cause__, (httpx.TransportError, httpx.HTTPStatusError))
+            if self._fallback is None or not transport:
+                raise
+            out = self._fallback.complete(system, user, schema)
+            self.name = self._fallback.name
+            return out
+
+
 def make_llm(cfg: Config, provider: str = "ollama", api_key: str | None = None,
              base_url: str | None = None, model: str | None = None) -> LLM:
     """Build the adapter the founder picked. Default is the local Ollama model."""
     if provider == "ollama":
-        return OllamaLLM(base_url or cfg.model.ollama_url, model or cfg.model.default,
-                         cfg.model.temperature, cfg.model.max_retries)
+        url, name = base_url or cfg.model.ollama_url, model or cfg.model.default
+        main = OllamaLLM(url, name, cfg.model.temperature, cfg.model.max_retries)
+        backup = cfg.model.fallback if model is None and cfg.model.fallback != name else None
+        spare = OllamaLLM(url, backup, cfg.model.temperature, cfg.model.max_retries) if backup else None
+        return FallbackLLM(main, spare)
     if provider == "openai":
         if not api_key or not base_url:
             raise ValueError("The openai provider needs an API key and a base URL.")
