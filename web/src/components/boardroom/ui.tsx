@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { trustReason } from "./live-model";
 
 /* ---------- StatusBadge: honest labels the rules require ---------- */
 
@@ -263,6 +264,7 @@ export function SourceCard({
   url,
   trust,
   backs,
+  reason,
   state = "ready",
 }: {
   n: number;
@@ -270,6 +272,7 @@ export function SourceCard({
   url: string;
   trust: "high" | "medium" | "low";
   backs: string;
+  reason?: string;
   state?: "ready" | "loading" | "broken";
 }) {
   if (state === "loading") {
@@ -298,6 +301,7 @@ export function SourceCard({
           )}
           <span className={cn("rounded border px-1.5 text-[13px] font-semibold", trustStyle[trust])}>{trust} trust</span>
         </div>
+        <p data-testid="trust-reason" className="mt-0.5 text-[14px] text-muted-foreground">{reason ?? trustReason(url, trust)}</p>
         <p className="mt-1 text-[15px] leading-snug text-muted-foreground">Backs: “{backs}”</p>
         {trust === "low" && state !== "broken" && (
           <p className="mt-1.5 flex items-center gap-1.5 text-[14px] font-semibold text-amber-800 dark:text-amber-300">

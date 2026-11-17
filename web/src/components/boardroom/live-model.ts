@@ -79,14 +79,45 @@ export function progressStages(stages: Stage[], currentId: string): Stage[] {
   }));
 }
 
+function domainOf(url: string): string | null {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+const GENERIC_TITLE = /^\s*(source\s*\d*|s\d+)?\s*$/i;
+const TRUST_FALLBACK = { high: "Established source", medium: "General website", low: "Unverified source" } as const;
+
+/** A short, plain reason for the trust level, from the API's own note or the kind of site. */
+export function trustReason(url: string, trust: ApiSource["trust"], given?: string): string {
+  if (given && given.trim().length > 0 && given.trim().length <= 40) return given.trim();
+  const host = domainOf(url) ?? "";
+  if (/(^|\.)gov(\.|$)|\.edu(\.|$)/.test(host)) return "Government site";
+  if (/reddit|quora|forum|stackexchange|facebook\.com|groups\./.test(host)) return "Forum post";
+  if (/blog|medium\.com|substack/.test(host) || /\/blog\b/.test(url)) return "Company blog";
+  return TRUST_FALLBACK[trust];
+}
+
 export function sourceCardsFrom(sources: ApiSource[]) {
-  return sources.map((s, i) => ({
-    n: i + 1,
-    title: s.title,
-    url: s.url,
-    trust: s.trust,
-    backs: (s.claims_backed ?? []).join("; "),
-  }));
+  return sources.map((s, i) => {
+    const seen = new Set<string>();
+    const claims = (s.claims_backed ?? []).filter((c) => {
+      const k = c.trim().toLowerCase();
+      if (!k || seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+    return {
+      n: i + 1,
+      title: GENERIC_TITLE.test(s.title ?? "") ? (domainOf(s.url) ?? "Web page") : s.title,
+      url: s.url,
+      trust: s.trust,
+      reason: trustReason(s.url, s.trust, s.trust_reason),
+      backs: claims.join("; "),
+    };
+  });
 }
 
 export type Outcome = "go" | "repeat" | "pivot" | "stop";
