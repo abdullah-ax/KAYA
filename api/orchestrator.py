@@ -182,6 +182,7 @@ def _reviewed(ctx: Ctx, step: str, make: Callable[[list[str]], Draft]) -> Draft 
         snapshot(ctx.run_dir, "stop", f"The ethics check blocked the {step} draft twice")
         return None
     if not review.passed:
+        draft.review_failed, draft.review_reasons = True, list(review.reasons)
         draft.markdown += "\n## Boss notes (did not pass)\n\n" + "\n".join(f"- {r}" for r in review.reasons) + "\n"
     return draft
 
@@ -264,6 +265,14 @@ def _run(ctx: Ctx, brief: str, result: RunResult) -> RunResult:
     if canvas is None:
         return _save(ctx, result, "phase2_step1", "stop")
     _write_draft(ctx, 2, 1, "lean_canvas", canvas)
+    if canvas.review_failed:
+        top = "; ".join(canvas.review_reasons[:3])
+        ctx.say("The boss did not pass the Lean Canvas, even after a second try, so we stop here "
+                f"and do not offer a sign-up page. Why: {top}")
+        ctx.log.append("orchestrator", "stop_canvas_failed_review", outcome="repeat",
+                       reasons=canvas.review_reasons)
+        snapshot(ctx.run_dir, "stop", "The Lean Canvas did not pass the boss review twice")
+        return _save(ctx, result, "phase2_step1", "repeat")
     _save(ctx, result, "phase2_step1")
 
     page = _signup_page(chosen, canvas)

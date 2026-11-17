@@ -49,6 +49,8 @@ class Draft:
     founder_fit: int = 0
     data: Any = None
     redrafted: bool = False
+    review_failed: bool = False  # the boss failed it even after a redraft
+    review_reasons: list[str] = field(default_factory=list)
 
 
 def search(ctx: Ctx, brief: str, profile: FounderProfile) -> list[SearchResult]:
