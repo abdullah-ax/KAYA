@@ -109,6 +109,25 @@ export const takeDownNetlify = (id: string, token: string) =>
 export type ModelChoices = { default: string; choices: { name: string; installed: boolean | null }[] };
 export const listModels = () => call<ModelChoices>("/models");
 
+/* The living business plan. Built by the API only from files on disk. */
+export type PlanSource = { id?: string | null; url: string; title: string; trust: "high" | "medium" | "low"; claims: string[] };
+export type PlanSection = {
+  id: string; title: string; body_markdown: string; sources: PlanSource[]; assumptions: number; status: "written" | "not_yet";
+};
+export type PlanIssue = { text: string; section: string; severity: "high" | "medium" | "low" };
+export type PlanCritique = { section: string; emotion: "neutral" | "listening" | "thinking" | "talking" | "pleased" | "skeptical" | "im_out"; line: string };
+export type PlanVersionMeta = { n: number; at: string; event: "draft" | "decision" | "pivot" | "stop" | "redraft"; summary: string; sections_hash: string };
+export type PlanSnapshot = PlanVersionMeta & { sections: PlanSection[] };
+export type Plan = {
+  overview: { stage: string; status_text: string; waiting_on: string | null; next_step: string; issues: PlanIssue[] };
+  sections: PlanSection[];
+  critique: PlanCritique[];
+  versions: PlanVersionMeta[];
+};
+export const getPlan = (id: string) => call<Plan>(`/runs/${encodeURIComponent(id)}/plan`);
+export const getPlanVersion = (id: string, n: number) => call<PlanSnapshot>(`/runs/${encodeURIComponent(id)}/plan/versions/${n}`);
+export const planMarkdownUrl = (id: string) => `/api/runs/${encodeURIComponent(id)}/plan.md`;
+
 /* Onboarding: one personal follow-up question at a time, then a profile. */
 export type OnbAnswer = { key: string; question: string; answer: string };
 export type FollowUp = { key: string; text: string; why: string; kind: "text" | "choice"; options?: string[]; placeholder?: string };
