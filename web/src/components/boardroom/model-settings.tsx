@@ -1,0 +1,148 @@
+"use client";
+
+/* Bring-your-own-key model settings. Local Ollama is the default and needs
+   nothing. A free-tier OpenAI-compatible endpoint is the fallback for
+   machines that can't run the model. The key lives in this browser session
+   only and is sent to our API per request, never stored or logged. */
+
+import { CheckCircle2, Cpu, KeyRound, Loader2, TriangleAlert } from "lucide-react";
+import { useId, useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { cn } from "@/lib/utils";
+
+type Provider = { id: string; name: string; model: string; note: string; needsKey: boolean };
+
+export const PROVIDERS: Provider[] = [
+  { id: "ollama", name: "Local (Ollama)", model: "qwen3:8b", note: "Free. Runs on your machine. Nothing leaves it.", needsKey: false },
+  { id: "groq", name: "Groq free tier", model: "openai/gpt-oss-20b", note: "Free key. Open-weight model, fast. Rate limited.", needsKey: true },
+  { id: "openrouter", name: "OpenRouter free models", model: "qwen/qwen3-8b:free", note: "Free key. Open-weight model. Slower at peak.", needsKey: true },
+];
+
+export type ConnState = "unset" | "testing" | "connected" | "invalid" | "rate_limited";
+
+const STATE_TEXT: Record<ConnState, { text: string; tone: "muted" | "ok" | "bad" | "warn" }> = {
+  unset: { text: "Not tested yet.", tone: "muted" },
+  testing: { text: "Testing with one short request…", tone: "muted" },
+  connected: { text: "Connected. Every log entry will name this model.", tone: "ok" },
+  invalid: { text: "That key was refused. Check it and try again.", tone: "bad" },
+  rate_limited: { text: "Free-tier limit hit. Wait a minute or switch to local.", tone: "warn" },
+};
+
+export function ConnectionStatus({ state }: { state: ConnState }) {
+  const s = STATE_TEXT[state];
+  const Icon = state === "testing" ? Loader2 : state === "connected" ? CheckCircle2 : state === "unset" ? Cpu : TriangleAlert;
+  return (
+    <p
+      aria-live="polite"
+      className={cn(
+        "flex items-center gap-2 text-[15px] font-semibold",
+        s.tone === "muted" && "text-muted-foreground",
+        s.tone === "ok" && "text-primary",
+        s.tone === "bad" && "text-destructive",
+        s.tone === "warn" && "text-amber-800 dark:text-amber-300",
+      )}
+    >
+      <Icon className={cn("size-4", state === "testing" && "animate-spin")} /> {s.text}
+    </p>
+  );
+}
+
+export function ModelSettings({ current, onChange }: { current: string; onChange: (id: string) => void }) {
+  const [provider, setProvider] = useState(current);
+  const [key, setKey] = useState("");
+  const [state, setState] = useState<ConnState>("unset");
+  const keyId = useId();
+  const p = PROVIDERS.find((x) => x.id === provider)!;
+
+  const test = () => {
+    setState("testing");
+    // Mock: a real build calls POST /api/model/test with the key in a header.
+    setTimeout(() => setState(!p.needsKey ? "connected" : key.trim().length < 20 ? "invalid" : "connected"), 900);
+  };
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2 rounded-full text-[14px]">
+          {PROVIDERS.find((x) => x.id === current)?.needsKey ? <KeyRound className="size-4" /> : <Cpu className="size-4" />}
+          {PROVIDERS.find((x) => x.id === current)?.model}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">Model</DialogTitle>
+          <DialogDescription className="text-base">
+            Local is the default and costs nothing. Use a free key if your machine can't run the model.
+          </DialogDescription>
+        </DialogHeader>
+
+        <RadioGroup
+          value={provider}
+          onValueChange={(v) => {
+            setProvider(v);
+            setState("unset");
+          }}
+          className="gap-2"
+        >
+          {PROVIDERS.map((x) => (
+            <Label
+              key={x.id}
+              data-selected={provider === x.id || undefined}
+              className="flex cursor-pointer items-start gap-3 rounded-xl border-2 p-3 font-normal hover:border-foreground/40 data-[selected]:border-foreground has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/40"
+            >
+              <RadioGroupItem value={x.id} className="mt-1" />
+              <span className="flex flex-col gap-0.5">
+                <span className="font-bold">{x.name}</span>
+                <span className="font-mono text-[14px] text-muted-foreground">{x.model}</span>
+                <span className="text-[15px]">{x.note}</span>
+              </span>
+            </Label>
+          ))}
+        </RadioGroup>
+
+        {p.needsKey && (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={keyId} className="font-bold">API key</Label>
+            <input
+              id={keyId}
+              type="password"
+              autoComplete="off"
+              value={key}
+              aria-invalid={state === "invalid" || undefined}
+              onChange={(e) => {
+                setKey(e.target.value);
+                setState("unset");
+              }}
+              placeholder="Paste your key"
+              className="h-11 rounded-lg border-2 bg-card px-3 font-mono text-base outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/40 aria-invalid:border-destructive"
+            />
+            <p className="text-[14px] text-muted-foreground">Kept in this browser tab only. Never saved, never logged.</p>
+          </div>
+        )}
+
+        <ConnectionStatus state={state} />
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={test} disabled={state === "testing" || (p.needsKey && !key.trim())}>
+            Test connection
+          </Button>
+          <Button onClick={() => onChange(provider)} disabled={state !== "connected"}>
+            Use this model
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

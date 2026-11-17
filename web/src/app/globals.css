@@ -1,0 +1,117 @@
+@import "tailwindcss";
+@import "tw-shimmer";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+@custom-variant data-open (&:where([data-state="open"], [data-open]:not([data-open="false"])));
+@custom-variant data-closed (&:where([data-state="closed"], [data-closed]:not([data-closed="false"])));
+
+/* Boardroom tokens mapped onto shadcn's variable names.
+   Ink #111111 on #FAFAF7, accent green #1E5A3C, red #9B2C1F for STOP. */
+:root {
+  --radius: 0.75rem;
+  --background: #fafaf7;
+  --foreground: #111111;
+  --card: #ffffff;
+  --card-foreground: #111111;
+  --popover: #ffffff;
+  --popover-foreground: #111111;
+  --primary: #1e5a3c;
+  --primary-foreground: #fafaf7;
+  --secondary: #efefe9;
+  --secondary-foreground: #111111;
+  --muted: #efefe9;
+  --muted-foreground: #4a4a45;
+  --accent: #e4eee8;
+  --accent-foreground: #1e5a3c;
+  --destructive: #9b2c1f;
+  --destructive-foreground: #ffffff;
+  --border: #dcdcd4;
+  --input: #cfcfc6;
+  --ring: #1e5a3c;
+  --stop-bg: #fbeeec;
+}
+
+.dark {
+  --background: #121211;
+  --foreground: #f2f2ec;
+  --card: #1a1a18;
+  --card-foreground: #f2f2ec;
+  --popover: #1a1a18;
+  --popover-foreground: #f2f2ec;
+  --primary: #5fb488;
+  --primary-foreground: #0c1a12;
+  --secondary: #24241f;
+  --secondary-foreground: #f2f2ec;
+  --muted: #24241f;
+  --muted-foreground: #b4b4aa;
+  --accent: #1d3328;
+  --accent-foreground: #9fd8b8;
+  --destructive: #e07a6c;
+  --destructive-foreground: #1a0d0a;
+  --border: #33332e;
+  --input: #3d3d37;
+  --ring: #5fb488;
+  --stop-bg: #2a1714;
+}
+
+@theme inline {
+  --font-sans: var(--font-public-sans), ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-stop-bg: var(--stop-bg);
+
+  @keyframes collapsible-down {
+    from { height: 0; }
+    to { height: var(--radix-collapsible-content-height, var(--collapsible-panel-height, auto)); }
+  }
+  @keyframes collapsible-up {
+    from { height: var(--radix-collapsible-content-height, var(--collapsible-panel-height, auto)); }
+    to { height: 0; }
+  }
+}
+
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  html { font-size: 18px; }
+  body { @apply bg-background text-foreground font-sans antialiased; }
+}
+
+/* Face-photo emotions for the parody shark. Pure transforms so they work on
+   any cropped face image. Off under reduced motion. */
+@keyframes face-talk { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-2px) scale(1.015) } }
+@keyframes face-listen { 0%,100% { transform: rotate(0) } 50% { transform: rotate(-4deg) } }
+@keyframes face-think { 0%,100% { transform: rotate(0) translateX(0) } 33% { transform: rotate(3deg) translateX(2px) } 66% { transform: rotate(-3deg) translateX(-2px) } }
+@keyframes face-nod { 0%,100% { transform: translateY(0) } 25%,75% { transform: translateY(4px) } 50% { transform: translateY(-2px) } }
+@keyframes face-shake { 0%,100% { transform: translateX(0) } 15%,45%,75% { transform: translateX(-6px) rotate(-3deg) } 30%,60%,90% { transform: translateX(6px) rotate(3deg) } }
+@keyframes stamp-in { 0% { transform: scale(2.2) rotate(-18deg); opacity: 0 } 60% { transform: scale(.92) rotate(-12deg); opacity: 1 } 100% { transform: scale(1) rotate(-12deg); opacity: 1 } }
+@media (prefers-reduced-motion: no-preference) {
+  .face-talking { animation: face-talk .45s ease-in-out infinite }
+  .face-listening { animation: face-listen 2.4s ease-in-out infinite }
+  .face-thinking { animation: face-think 1.8s ease-in-out infinite }
+  .face-pleased { animation: face-nod .9s ease-out 2 }
+  .face-im_out { animation: face-shake .7s ease-out 1 }
+  .stamp-in { animation: stamp-in .45s cubic-bezier(.2,.8,.2,1) both }
+}
+.stamp-in { transform: rotate(-12deg) }
