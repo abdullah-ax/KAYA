@@ -92,9 +92,17 @@ def test_cli_rejects_a_model_not_on_the_list(capsys):
 
 
 def test_compose_downloads_both_models_lighter_first():
-    pull = yaml.safe_load((ROOT / "docker-compose.yml").read_text())["services"]["ollama-pull"]
-    cmd = " ".join(pull["entrypoint"])
-    assert cmd.index("qwen3:8b") < cmd.index("gpt-oss:20b")
+    services = yaml.safe_load((ROOT / "docker-compose.yml").read_text())["services"]
+    required = " ".join(services["ollama-pull"]["entrypoint"])
+    optional = services["ollama-pull-optional"]
+    assert "ollama pull qwen3:8b" in required and "|| true" not in required and ";" not in required
+    assert services["ollama-pull"]["depends_on"]["ollama"]["condition"] == "service_healthy"
+    assert "healthcheck" in services["ollama"]
+    # The larger model follows the light one and its failure is not fatal.
+    assert optional["depends_on"]["ollama-pull"]["condition"] == "service_completed_successfully"
+    assert "gpt-oss:20b" in " ".join(optional["entrypoint"]) and "||" in " ".join(optional["entrypoint"])
+    assert services["api"]["depends_on"]["ollama-pull"]["condition"] == "service_completed_successfully"
+    assert "runs:/app/runs" in services["api"]["volumes"]
 
 
 def test_ollama_runs_ignore_openai_env_overrides(monkeypatch):
