@@ -106,7 +106,7 @@ describe("online", () => {
     await vi.waitFor(() => expect(crumbs().getByText("Canvas")).toBeInTheDocument());
     expect(crumbs().getByText("Validation")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /open map/i }));
-    expect(screen.getByRole("region", { name: /stage details/i })).toHaveTextContent(/stage 2 · you are here/i);
+    expect(screen.getByRole("region", { name: /stage details/i })).toHaveTextContent(/stage 2: you are here/i);
     expect(screen.queryByText(/pharmacy tutor/i)).not.toBeInTheDocument();
   });
 
