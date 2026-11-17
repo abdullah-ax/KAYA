@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Sequence
@@ -201,3 +202,49 @@ def draft_lean_canvas(ctx: Ctx, opportunity: Opportunity, profile: FounderProfil
               f"Boxes with real evidence: {out.sourced} of 9", ""]
     out.markdown = "\n".join(lines)
     return out
+
+
+class InterviewScript(BaseModel):
+    questions: list[str] = Field(min_length=5, max_length=5)
+    first_people: list[str] = Field(min_length=1, max_length=3)
+
+
+TEMPLATE_PATH = Path(__file__).resolve().parent.parent.parent / "templates" / "interview_script.md"
+# A question about what someone would do, not what they did. Mom Test: ask about the past.
+_HYPOTHETICAL = re.compile(
+    r"\b(would|will|could|might) (you|they)\b.{0,25}\b(buy|pay|use|download|subscribe|sign|try|want|like|love)\b|"
+    r"\bhow much (would|will|do you think)\b|\bdo you think (you|they) (would|will)\b|"
+    r"\bif (i|we) (made|built|offered|sold|created)\b|\bwould it be (useful|helpful|good)\b", re.IGNORECASE)
+
+
+def _template_parts() -> tuple[str, str, list[str]]:
+    """Head (before the questions), tail (from the Close line on) and the template's own questions."""
+    text = TEMPLATE_PATH.read_text(encoding="utf-8")
+    head, _, rest = text.partition("\n1. ")
+    body, _, tail = ("1. " + rest).partition("**Close:**")
+    questions = re.findall(r"^\d+\. (.+)$", body, flags=re.MULTILINE)
+    return head, "**Close:**" + tail, questions
+
+
+def draft_interview_script(ctx: Ctx, opportunity: Opportunity, profile: FounderProfile,
+                           notes: Sequence[str] = ()) -> Draft:
+    """Five Mom Test questions about past behaviour, plus who to ask first from the founder's own groups."""
+    script = ctx.complete(
+        "research_intern", "draft_interview_script", ctx.prompt("intern"),
+        f"Chosen opportunity:\n{opportunity.model_dump_json()}\n\nProfile:\n{profile.model_dump_json()}\n\n"
+        "Write an interview script in Mom Test style: exactly 5 questions about what people did in the past, "
+        "never about what they would buy, pay or use. Do not mention the idea. "
+        "In first_people, name the first people to ask, taken from the founder's own groups "
+        f"(profile access).{_notes_text(notes)}", InterviewScript)
+    head, tail, defaults = _template_parts()
+    fallbacks = [q.replace("[the thing]", opportunity.title.lower()) for q in defaults]
+    questions: list[str] = []
+    for i, question in enumerate(script.questions):
+        question = clean_cell(question)
+        if _HYPOTHETICAL.search(question) or question in questions or not question:
+            question = next((f for f in fallbacks[i:] + fallbacks if f not in questions), fallbacks[i])
+        questions.append(question)
+    first = [clean_cell(p) for p in script.first_people]
+    md = "\n".join([head, "", *(f"{n}. {q}" for n, q in enumerate(questions, 1)), "",
+                    "## Who to ask first", "", *(f"- {p}" for p in first), "", tail.rstrip(), ""])
+    return Draft(markdown=md, texts=[*questions, *first], data=script)

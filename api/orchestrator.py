@@ -257,6 +257,13 @@ def _run(ctx: Ctx, brief: str, result: RunResult) -> RunResult:
     _save(ctx, result, "phase1_gate")
     chosen = next(o for o in opps.data.opportunities if o.title == pick.option)
 
+    script = _reviewed(ctx, "phase1_step3",
+                       lambda notes: intern.draft_interview_script(ctx, chosen, profile, notes))
+    if script is None:
+        return _save(ctx, result, "phase1_step3", "stop")
+    ctx.output(1, 3, "interview_script").write_text(script.markdown, encoding="utf-8")
+    _save(ctx, result, "phase1_step3")
+
     advantage = cofounder.ask_founder(
         ctx, "unfair_advantage", "Lean Canvas box 9: what do you have that others can't copy or buy?")
     ctx.log.append("founder", "write_unfair_advantage", founder_input=advantage)
