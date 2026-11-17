@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, createRun, getRun, sendAnswer, sendGate, testModel, useRun, type Run } from "./api";
+import { ApiError, createRun, getRun, nextQuestion, sendAnswer, sendGate, testModel, useRun, type Run } from "./api";
 
 const run = (over: Partial<Run> = {}): Run => ({
   id: "r1", status: "working", stage: "phase1_step1", outcome: null, mode: "demo", provider: "ollama",
@@ -29,6 +29,17 @@ describe("api client", () => {
     expect(JSON.parse(init.body)).toEqual({ brief: "hello", mode: "demo", provider: "openai" });
     expect(new Headers(init.headers).get("x-model-key")).toBe("sk-1");
     expect(init.body).not.toContain("sk-1");
+  });
+
+  it("nextQuestion posts the answers and sends the key only as X-Model-Key", async () => {
+    fetchMock.mockResolvedValue(json({ done: false, question: { key: "problem", text: "T", why: "W", kind: "text" } }));
+    const reply = await nextQuestion({ answers: [{ key: "role", question: "Q", answer: "Student" }], provider: "openai", model: "m" }, "sk-1");
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/onboarding/next");
+    expect(JSON.parse(init.body)).toEqual({ answers: [{ key: "role", question: "Q", answer: "Student" }], mode: "demo", provider: "openai", model: "m" });
+    expect(init.body).not.toContain("sk-1");
+    expect(new Headers(init.headers).get("x-model-key")).toBe("sk-1");
+    expect(reply.done).toBe(false);
   });
 
   it("omits X-Model-Key when there is no key", async () => {

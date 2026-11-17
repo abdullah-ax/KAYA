@@ -54,7 +54,7 @@ describe("offline", () => {
 describe("online", () => {
   it("drops the demo badge and the mock screens, and starts at onboarding", async () => {
     render(<Boardroom />);
-    expect(await screen.findByText(/tell me about you/i)).toBeInTheDocument();
+    expect(await screen.findByText("What do you do most days?")).toBeInTheDocument();
     expect(screen.queryByText(/demo data/i)).not.toBeInTheDocument();
     expect(screen.queryByText("Mockup")).not.toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: /mock screen/i })).not.toBeInTheDocument();
