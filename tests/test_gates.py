@@ -106,3 +106,19 @@ def test_zero_targets_in_config_are_refused():
         phase2_gate(5, make_cfg(signup_target=0))
     with pytest.raises(ValueError):
         phase1_gate(5, 5, make_cfg(min_sourced_problems=0))
+
+
+def test_phase1_recommends_stop_when_the_founder_can_reach_no_one():
+    from api.gates import phase1_gate
+    import pipeline_fakes as fx
+    result = phase1_gate(3, 3, fx.config(), reach=0, hours=3)
+
+    assert result.outcome == "stop"
+    assert "no group or person" in result.recommendation and "3 hours a week" in result.recommendation
+    assert result.evidence["reach"] == 0
+
+
+def test_phase1_reach_check_does_not_block_a_founder_with_a_group():
+    from api.gates import phase1_gate
+    import pipeline_fakes as fx
+    assert phase1_gate(3, 4, fx.config(), reach=2, hours=15).outcome == "go"
