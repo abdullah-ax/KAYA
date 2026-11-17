@@ -15,6 +15,15 @@ The Profiler picks from these. One at a time. Skip anything the brief already an
 - Who trusts your opinion on something? On what?
 - What languages do you speak well enough to sell in?
 
+## Background
+
+- What do you study or what did you study? Which school or university, and which year?
+- What jobs or side jobs have you done? What did you do, and for how long?
+- What do you do for fun that other people notice?
+- Which communities are you in? (Family, neighbourhood, mosque or church, university clubs, WhatsApp or Facebook groups, sports teams, work.) About how many people in each?
+- Who could introduce you to customers or experts?
+- Which cities do you know well? Does your family run a business? Which industries could you get into?
+
 ## Skills
 
 - What have you built, sold, taught, or organized before? What happened?
