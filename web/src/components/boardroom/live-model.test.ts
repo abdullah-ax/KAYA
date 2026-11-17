@@ -57,10 +57,34 @@ describe("progressStages", () => {
 describe("sourceCardsFrom", () => {
   it("turns API sources into SourceCard props", () => {
     const src: ApiSource[] = [{ id: "S1", url: "https://a.org", title: "A", trust: "high", claims_backed: ["c1", "c2"] }];
-    expect(sourceCardsFrom(src)).toEqual([{ n: 1, title: "A", url: "https://a.org", trust: "high", backs: "c1; c2" }]);
+    expect(sourceCardsFrom(src)).toMatchObject([{ n: 1, title: "A", url: "https://a.org", trust: "high", backs: "c1; c2" }]);
   });
   it("handles missing claims", () => {
     expect(sourceCardsFrom([{ id: "S2", url: "u", title: "T", trust: "low" }])[0].backs).toBe("");
+  });
+});
+
+describe("source titles, reasons and duplicate claims", () => {
+  const mk = (over: Partial<ApiSource>): ApiSource => ({ id: "S0", url: "https://www.example.org/a", title: "T", trust: "medium", ...over });
+  it("never titles a card 'Source 0': it uses the domain instead", () => {
+    expect(sourceCardsFrom([mk({ title: "Source 0" })])[0].title).toBe("example.org");
+    expect(sourceCardsFrom([mk({ title: "" })])[0].title).toBe("example.org");
+    expect(sourceCardsFrom([mk({ title: "source 3" }), mk({ title: "Real title" })]).map((c) => c.title)).toEqual(["example.org", "Real title"]);
+  });
+  it("collapses duplicate claims", () => {
+    expect(sourceCardsFrom([mk({ claims_backed: ["Students pay", "students pay ", "Cairo has 40 pharmacies"] })])[0].backs).toBe("Students pay; Cairo has 40 pharmacies");
+  });
+  it("gives every card a short reason for its trust level", () => {
+    const reason = (url: string, trust: ApiSource["trust"]) => sourceCardsFrom([mk({ url, trust })])[0].reason;
+    expect(reason("https://www.cbe.org.eg/x.gov.eg", "high")).toMatch(/\S/);
+    expect(reason("https://www.capmas.gov.eg/a", "high")).toBe("Government site");
+    expect(reason("https://www.reddit.com/r/x", "low")).toBe("Forum post");
+    expect(reason("https://acme.com/blog/post", "medium")).toBe("Company blog");
+    expect(reason("https://example.org", "low")).toMatch(/\S/);
+    expect(reason("not a url", "medium")).toMatch(/\S/);
+  });
+  it("prefers the API's own short reason", () => {
+    expect(sourceCardsFrom([mk({ trust_reason: "Peer reviewed" })])[0].reason).toBe("Peer reviewed");
   });
 });
 
