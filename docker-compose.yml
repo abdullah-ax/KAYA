@@ -9,15 +9,35 @@ services:
       - ollama:/root/.ollama
     ports:
       - "127.0.0.1:11434:11434"
+    # `ollama list` talks to the local server, so it passes only once Ollama answers.
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 5s
+      start_period: 10s
+      retries: 30
 
+  # Required model. A failed pull stops here and the api does not start.
   ollama-pull:
     image: ollama/ollama:0.40.16
     depends_on:
-      - ollama
+      ollama:
+        condition: service_healthy
     environment:
       - OLLAMA_HOST=ollama:11434
-    # Light model first so the app is usable within minutes; the larger one follows.
-    entrypoint: ["/bin/sh", "-c", "ollama pull qwen3:8b; ollama pull gpt-oss:20b || true"]
+    entrypoint: ["/bin/sh", "-c", "ollama pull qwen3:8b && echo 'qwen3:8b ready'"]
+    restart: "no"
+
+  # Optional larger model, pulled after the light one. Failure is reported but not fatal,
+  # and the api does not wait for it.
+  ollama-pull-optional:
+    image: ollama/ollama:0.40.16
+    depends_on:
+      ollama-pull:
+        condition: service_completed_successfully
+    environment:
+      - OLLAMA_HOST=ollama:11434
+    entrypoint: ["/bin/sh", "-c", "ollama pull gpt-oss:20b || echo 'optional gpt-oss:20b pull failed; qwen3:8b still works'"]
     restart: "no"
 
   searxng:
@@ -42,7 +62,8 @@ services:
       - SEARXNG_URL=http://searxng:8080
       - RUNS_DIR=/app/runs
     volumes:
-      - ./runs:/app/runs
+      # Named volume: Docker seeds it from the image, so it is owned by the api user (uid 1000).
+      - runs:/app/runs
       - ./outputs:/app/outputs
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=4)"]
@@ -51,8 +72,12 @@ services:
       start_period: 20s
       retries: 5
     depends_on:
-      - ollama
-      - searxng
+      ollama:
+        condition: service_healthy
+      ollama-pull:
+        condition: service_completed_successfully
+      searxng:
+        condition: service_started
     ports:
       - "127.0.0.1:8000:8000"
 
@@ -67,3 +92,4 @@ services:
 
 volumes:
   ollama:
+  runs:
