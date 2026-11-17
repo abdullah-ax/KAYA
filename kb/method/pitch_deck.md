@@ -18,10 +18,6 @@ Aaron Harris wrote YC's seed deck template to show founders how to lay out their
 
 Often used as the model of a simple, clear deck ([SlideShare](https://www.slideshare.net/slideshow/airbnb-pitch-deck-from-2008/65585661)). Our working list of its slides, to check against the source: welcome, problem, solution, market validation, market size, product, business model, market adoption, competition, competitive advantages, team.
 
-## Uber early deck
-
-TODO: read the original before writing notes. Don't guess its contents.
-
 ## Rules for our decks
 
 - One idea per slide. 15 words at most. Big type.

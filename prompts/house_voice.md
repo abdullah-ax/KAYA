@@ -15,7 +15,5 @@ Every agent follows these rules. Every co-founder type follows them too. The typ
 
 ## Before and after
 
-TODO: add 5 pairs from our own demo runs. Format:
-
 - Before: "This innovative solution will revolutionize how freelancers manage invoices."
 - After: "Freelancers in Cairo send invoices by WhatsApp. 6 of 8 we asked forgot one last month. ASSUMPTION: they'd pay EGP 100 a month to stop that."

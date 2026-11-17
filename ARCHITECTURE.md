@@ -46,37 +46,41 @@ flowchart TD
 ### Phase 2: Validate
 
 - **Agents:** research intern, boss, co-founder.
-- **Tools:** the ethics check.
+- **Tools:** Ollama model, the source cards from Phase 1, the slop and ethics checks.
 - **Method:** the founder writes their unfair advantage. The intern fills Lean Canvas boxes 1 to 8; box 9 is the founder's own words. Code builds the sign-up page from the canvas. If the page fails the ethics check, publishing is not offered. Otherwise the founder picks "Publish" or "Keep it private". Publish writes the page to disk only (STUBBED). The founder then enters the real sign-up count.
 - **Output:** `phase2_step1_lean_canvas.md`, `phase2_step1_sources.json`, `phase2_step2_signup_page.md` (only if the founder chose Publish), `phase2_gate_decision.md`.
 
 ### Phase 3: Build
 
 - **Agents:** research intern, boss.
+- **Tools:** Ollama model, the source cards from Phase 1 (no new web search), the slop and ethics checks in the boss review.
 - **Method:** the intern writes 5 to 8 user stories. Each has 1 to 4 acceptance criteria, a priority (must, should or could, at least one must), an hours guess and the smallest manual way to deliver it. It then writes a 2-week MVP plan for the must stories: what not to build, free tools, a checklist, the first 10 users and one number to watch. Weekly hours come from the profile limits; if none are given, code assumes 5 and says so.
 - **Output:** `phase3_step1_user_stories.md`, `phase3_step1_sources.json`, `phase3_step2_mvp_spec.md`, `phase3_step2_sources.json`, `phase3_gate_decision.md`.
 
 ### Phase 4: Commercial setup
 
 - **Agents:** co-founder. No model call.
+- **Tools:** a fixed offer template in code, the ethics check (`api/ethics.py`).
 - **Method:** the founder enters a price in EGP. Code writes the offer from a fixed template: who it is for, the price, a 7-day refund policy, no promised results, MOCKED checkout, and the price marked `ASSUMPTION`. The ethics check reads it.
 - **Output:** `phase4_step1_offer.md`, `phase4_gate_decision.md`.
 
 ### Phase 5: Sell, deliver, get paid
 
 - **Agents:** co-founder. No model call. All money steps MOCKED.
+- **Tools:** MOCKED `PaymentProcessor` (`api/payments.py`), `api/fulfilment.py`, `api/refunds.py`, `api/reconcile.py`.
 - **Method:** the founder enters how many people said they would buy (at most 20). Code runs that many test orders through `PaymentProcessor` (see Sale to cash), then asks the founder to approve or decline a refund on order-1.
 - **Output:** `phase5_step1_sales_log.md`, `phase5_step2_reconciliation.md`, `phase5_gate_decision.md`.
 
 ### Phase 6: Operate and learn
 
 - **Agents:** co-founder. No model call.
+- **Tools:** the gate code in `api/gates.py`; all numbers are entered by the founder.
 - **Method:** the founder enters how many buyers came back within 2 weeks and what buyers asked for most. Code writes a learning review with the gate's reading and one next experiment.
 - **Output:** `phase6_step1_learning_review.md`, `phase6_gate_decision.md`.
 
 ## Gates
 
-Gate code is in `api/gates.py`. Targets for gates 1 and 2 come from `config.yaml` and are set before the run. Each gate writes `phaseN_gate_decision.md` and logs `phaseN_gate` with its outcome. The founder then picks an option and gives a reason; that is logged as `phaseN_decision` with `approved_by: founder`.
+Gate code is in `api/gates.py`. Targets for gates 1 and 2 come from `config.yaml` and are set before the run. Each gate writes `phaseN_gate_decision.md` (target, result and where it came from, recommendation, the options shown, the founder's pick and reason) and logs `phaseN_gate` with its outcome. The founder then picks an option and gives a reason; that is logged as `phaseN_decision` with `approved_by: founder`.
 
 | Gate | Checks (from code) | Outcomes |
 |---|---|---|
@@ -158,7 +162,7 @@ Kept in sync with the README table.
 | Stage-complete screen: move on or chat with the co-founder | Working |
 | Guardrail, ethics check, decision log | Working |
 | Living business plan with version history | Working |
-| Judges panel | STUBBED (no code; gate files say "none recorded") |
+| Judges panel | STUBBED (no code yet, prompt file only) |
 | Voice input and text to speech | STUBBED |
 
 **Netlify:** `POST /runs/{id}/publish/netlify` puts the saved sign-up page online with the founder's own token. It refuses unless the log holds the founder's publish approval. The token is used for one request and never stored. `DELETE` on the same path takes the page down.
