@@ -14,10 +14,10 @@ from __future__ import annotations
 import re
 from typing import Literal
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 
 from api.config import Config
-from api.llm import LLM, LLMError
+from api.llm import LLM
 
 FIXED_KEYS = ("role", "city", "help", "group", "time", "money")
 MAX_FOLLOWUPS_FULL = 8
@@ -109,7 +109,7 @@ def ask_model(llm: LLM, answers: list[AnswerIn], open_topics: list[str]) -> Ques
     """One question from the model, or None when it cannot give a usable one."""
     try:
         reply, _ = llm.complete(SYSTEM, build_prompt(answers, open_topics), ModelQuestion)
-    except (LLMError, ValidationError, OSError, ValueError):
+    except Exception:  # noqa: BLE001 - onboarding must never block on the model; the bank question takes over
         return None
     if not isinstance(reply, ModelQuestion) or not _valid(reply, open_topics):
         return None
