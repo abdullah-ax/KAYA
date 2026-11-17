@@ -1,0 +1,40 @@
+{
+  "strengths": [
+    {
+      "strength": "interest in new apps",
+      "quote": "I like trying new apps."
+    }
+  ],
+  "access": [],
+  "constraints": [
+    "ASSUMPTION"
+  ],
+  "personality": [
+    {
+      "signal": "hopeful",
+      "quote": "ASSUMPTION"
+    }
+  ],
+  "cofounder_type": "warm_skeptic",
+  "cofounder_why": "ASSUMPTION: limited data on co-founder fit from brief alone",
+  "teaching_level": "baby-steps",
+  "markets": [
+    {
+      "market": "students",
+      "why": "ASSUMPTION: founder guesses students might use productivity app"
+    },
+    {
+      "market": "office workers",
+      "why": "ASSUMPTION: founder mentions office workers as potential users"
+    },
+    {
+      "market": "general productivity seekers",
+      "why": "ASSUMPTION: target market is everyone who wants to get more done"
+    }
+  ],
+  "open_questions": [
+    "ASSUMPTION: who is the primary user?",
+    "ASSUMPTION: what specific problem does the app solve?"
+  ],
+  "intake": []
+}

@@ -56,6 +56,7 @@ Statuses are updated only after a real run. Working = tested end to end. MOCKED 
 | 1 Discover | Find opportunities (research intern + boss) | Working |
 | 1 Discover | Customer interview script | Working |
 | 1 Discover | Gate: founder picks an option and explains why | Working |
+| 1 Discover | STOP on a weak idea: the gate recommends stop when the founder can reach no one (real-model run: `outputs/phase1_gate_weak_idea_decision.md`) | Working |
 | 2 Validate | Lean Canvas (boss review; a second failed review is shown as a warning) | Working |
 | 2 Validate | Sign-up page draft (built and tested; not yet in a committed real run) | STUBBED |
 | 2 Validate | Publish sign-up page to Netlify (founder's own free account; code and tests only, never run against Netlify) | STUBBED |

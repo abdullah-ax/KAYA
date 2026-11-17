@@ -582,5 +582,240 @@
       "Sourced: Box 9 labeled 'founder' in Source/ASSUMPTION column does not match required 'URL or `ASSUMPTION`' label; only 2 of 9 boxes have URLs, others have ASSUMPTION or 'founder', failing the 'every claim' criterion.",
       "Options: Draft presents a completed Lean Canvas with box contents; no 2–3 real options with cost, risk, and source are offered for founder selection as required by rule 10."
     ]
+  },
+  {
+    "timestamp": "2026-11-17T21:27:01Z",
+    "agent": "profiler",
+    "action": "plan_intake_questions",
+    "sources": [],
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "tokens": {
+      "prompt": 1839,
+      "completion": 5422
+    },
+    "run": "weak_idea"
+  },
+  {
+    "timestamp": "2026-11-17T21:28:36Z",
+    "agent": "profiler",
+    "action": "write_founder_profile",
+    "sources": [],
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "tokens": {
+      "prompt": 2405,
+      "completion": 7239
+    },
+    "run": "weak_idea"
+  },
+  {
+    "timestamp": "2026-11-17T21:28:48Z",
+    "agent": "research_intern",
+    "action": "plan_searches",
+    "sources": [],
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "tokens": {
+      "prompt": 1079,
+      "completion": 1508
+    },
+    "run": "weak_idea"
+  },
+  {
+    "timestamp": "2026-11-17T21:28:51Z",
+    "agent": "research_intern",
+    "action": "web_search",
+    "sources": [
+      "https://engineeringanduniversity.wordpress.com/2017/01/06/student-assignments-missed-deadlines-and-the-planning-fallacy/",
+      "https://www.teachhub.com/teaching-strategies/2025/08/teacher-strategies-for-student-deadline-success/",
+      "https://www.edweek.org/teaching-learning/opinion-students-will-miss-deadlines-how-teachers-should-respond/2024/01",
+      "https://www.tandfonline.com/doi/full/10.1080/26939169.2024.2441692",
+      "https://gleamze.com/why-students-miss-assignment-deadlines-simple-guide/",
+      "https://solvingprocrastination.com/student-syndrome/",
+      "https://www.easyassignments.com/blog/never-miss-assignment-deadline-college",
+      "https://summer.harvard.edu/blog/8-time-management-tips-for-students/",
+      "https://www.any.do/blog/team-reminders-how-to-keep-your-team-on-track/",
+      "https://www.yougot.ai/blog/technology/app-comparisons/best-reminder-app-for-remote-workers",
+      "https://slack.com/blog/productivity/reminder-systems",
+      "https://www.microsoft.com/en-us/microsoft-365/microsoft-to-do-list-app",
+      "https://www.float.com/resources/timesheet-reminder",
+      "https://www.timewatch.com/blog/timesheet-reminder/",
+      "https://www.automatebusiness.com/blog/how-to-set-up-whatsapp-reminders-for-team-tasks/",
+      "https://www.calendar.com/blog/7-reasons-reminders-are-crucial-before-meetings/",
+      "https://habi.app/insights/best-productivity-apps/",
+      "https://buffer.com/resources/productivity-tools/",
+      "https://www.timetac.com/en/blog/best-productivity-apps-android/",
+      "https://www.nytimes.com/wirecutter/reviews/best-to-do-list-app/",
+      "https://ilampadmanabhan.medium.com/i-tested-50-productivity-tools-for-2-years-only-6-survived-039f9e85eef9",
+      "https://www.kanbanchi.com/blog/productivity-apps-explained-types-features-and-best-tools",
+      "https://www.godaddy.com/resources/skills/best-productivity-apps",
+      "https://agilityportal.io/blog/best-productivity-apps"
+    ],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "run": "weak_idea"
+  },
+  {
+    "timestamp": "2026-11-17T21:29:42Z",
+    "agent": "research_intern",
+    "action": "draft_opportunities",
+    "sources": [
+      "https://engineeringanduniversity.wordpress.com/2017/01/06/student-assignments-missed-deadlines-and-the-planning-fallacy/",
+      "https://www.teachhub.com/teaching-strategies/2025/08/teacher-strategies-for-student-deadline-success/",
+      "https://www.edweek.org/teaching-learning/opinion-students-will-miss-deadlines-how-teachers-should-respond/2024/01",
+      "https://www.tandfonline.com/doi/full/10.1080/26939169.2024.2441692",
+      "https://gleamze.com/why-students-miss-assignment-deadlines-simple-guide/",
+      "https://solvingprocrastination.com/student-syndrome/",
+      "https://www.easyassignments.com/blog/never-miss-assignment-deadline-college",
+      "https://summer.harvard.edu/blog/8-time-management-tips-for-students/",
+      "https://www.any.do/blog/team-reminders-how-to-keep-your-team-on-track/",
+      "https://www.yougot.ai/blog/technology/app-comparisons/best-reminder-app-for-remote-workers",
+      "https://slack.com/blog/productivity/reminder-systems",
+      "https://www.microsoft.com/en-us/microsoft-365/microsoft-to-do-list-app",
+      "https://www.float.com/resources/timesheet-reminder",
+      "https://www.timewatch.com/blog/timesheet-reminder/",
+      "https://www.automatebusiness.com/blog/how-to-set-up-whatsapp-reminders-for-team-tasks/",
+      "https://www.calendar.com/blog/7-reasons-reminders-are-crucial-before-meetings/",
+      "https://habi.app/insights/best-productivity-apps/",
+      "https://buffer.com/resources/productivity-tools/",
+      "https://www.timetac.com/en/blog/best-productivity-apps-android/",
+      "https://www.nytimes.com/wirecutter/reviews/best-to-do-list-app/",
+      "https://ilampadmanabhan.medium.com/i-tested-50-productivity-tools-for-2-years-only-6-survived-039f9e85eef9",
+      "https://www.kanbanchi.com/blog/productivity-apps-explained-types-features-and-best-tools",
+      "https://www.godaddy.com/resources/skills/best-productivity-apps",
+      "https://agilityportal.io/blog/best-productivity-apps"
+    ],
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "tokens": {
+      "prompt": 3437,
+      "completion": 7510
+    },
+    "run": "weak_idea"
+  },
+  {
+    "timestamp": "2026-11-17T21:29:42Z",
+    "agent": "boss",
+    "action": "reject_draft",
+    "sources": [],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "fail",
+    "reasons": [
+      "Reading grade 10.7 is above 8.0."
+    ],
+    "run": "weak_idea"
+  },
+  {
+    "timestamp": "2026-11-17T21:30:25Z",
+    "agent": "research_intern",
+    "action": "draft_opportunities",
+    "sources": [
+      "https://engineeringanduniversity.wordpress.com/2017/01/06/student-assignments-missed-deadlines-and-the-planning-fallacy/",
+      "https://www.teachhub.com/teaching-strategies/2025/08/teacher-strategies-for-student-deadline-success/",
+      "https://www.edweek.org/teaching-learning/opinion-students-will-miss-deadlines-how-teachers-should-respond/2024/01",
+      "https://www.tandfonline.com/doi/full/10.1080/26939169.2024.2441692",
+      "https://gleamze.com/why-students-miss-assignment-deadlines-simple-guide/",
+      "https://solvingprocrastination.com/student-syndrome/",
+      "https://www.easyassignments.com/blog/never-miss-assignment-deadline-college",
+      "https://summer.harvard.edu/blog/8-time-management-tips-for-students/",
+      "https://www.any.do/blog/team-reminders-how-to-keep-your-team-on-track/",
+      "https://www.yougot.ai/blog/technology/app-comparisons/best-reminder-app-for-remote-workers",
+      "https://slack.com/blog/productivity/reminder-systems",
+      "https://www.microsoft.com/en-us/microsoft-365/microsoft-to-do-list-app",
+      "https://www.float.com/resources/timesheet-reminder",
+      "https://www.timewatch.com/blog/timesheet-reminder/",
+      "https://www.automatebusiness.com/blog/how-to-set-up-whatsapp-reminders-for-team-tasks/",
+      "https://www.calendar.com/blog/7-reasons-reminders-are-crucial-before-meetings/",
+      "https://habi.app/insights/best-productivity-apps/",
+      "https://buffer.com/resources/productivity-tools/",
+      "https://www.timetac.com/en/blog/best-productivity-apps-android/",
+      "https://www.nytimes.com/wirecutter/reviews/best-to-do-list-app/",
+      "https://ilampadmanabhan.medium.com/i-tested-50-productivity-tools-for-2-years-only-6-survived-039f9e85eef9",
+      "https://www.kanbanchi.com/blog/productivity-apps-explained-types-features-and-best-tools",
+      "https://www.godaddy.com/resources/skills/best-productivity-apps",
+      "https://agilityportal.io/blog/best-productivity-apps"
+    ],
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "tokens": {
+      "prompt": 3463,
+      "completion": 6029
+    },
+    "run": "weak_idea"
+  },
+  {
+    "timestamp": "2026-11-17T21:31:45Z",
+    "agent": "boss",
+    "action": "review_phase1_step2",
+    "sources": [],
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "tokens": {
+      "prompt": 1432,
+      "completion": 8857
+    },
+    "run": "weak_idea"
+  },
+  {
+    "timestamp": "2026-11-17T21:31:45Z",
+    "agent": "boss",
+    "action": "reject_draft",
+    "sources": [],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "fail",
+    "reasons": [
+      "Sourced: Problem statements have URLs, but founder edge and founder fit claims lack source links or the `ASSUMPTION` label. For example, 'Founder likes trying new apps' has no source.",
+      "Founder-based: Descriptions are generic inferences about the founder's preferences rather than using the founder's actual profile, quoted words, or verified traits. No founder-specific language or profile references are present.",
+      "Cut to the bone: Sentences adding no fact, number, name, or decision identified: 'Founder edge: Founder likes trying new apps and values simplicity; can build a quick version.', 'Founder edge: Founder wants to help office workers remember tasks.', 'Founder edge: Founder's interest in new apps helps test which tools make using many apps easier.' They breach rule 2 and must be cut.",
+      "Delete: Founder edge: Founder likes trying new apps and values simplicity; can build a quick version.",
+      "Delete: Founder edge: Founder wants to help office workers remember tasks.",
+      "Delete: Founder edge: Founder's interest in new apps helps test which tools make using many apps easier."
+    ],
+    "run": "weak_idea"
+  },
+  {
+    "timestamp": "2026-11-17T21:31:45Z",
+    "agent": "gate",
+    "action": "phase1_gate",
+    "sources": [],
+    "model": null,
+    "cost": 0,
+    "approved_by": null,
+    "founder_input": null,
+    "outcome": "stop",
+    "run": "weak_idea"
+  },
+  {
+    "timestamp": "2026-11-17T21:31:45Z",
+    "agent": "founder",
+    "action": "phase1_decision",
+    "sources": [],
+    "model": null,
+    "cost": 0,
+    "approved_by": "founder",
+    "founder_input": "I have no group to test with, no money and only three hours a week, so I should stop and find a problem I actually know first",
+    "outcome": "Stop here",
+    "run": "weak_idea"
   }
 ]

@@ -1,0 +1,110 @@
+[
+  {
+    "id": "S1",
+    "url": "https://engineeringanduniversity.wordpress.com/2017/01/06/student-assignments-missed-deadlines-and-the-planning-fallacy/",
+    "title": "Student Assignments, Missed Deadlines and the Planning Fallacy ...",
+    "publisher": "engineeringanduniversity.wordpress.com",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "secondary",
+    "trust": "medium",
+    "trust_reason": "Company or general site; may gain from what it says.",
+    "claims_backed": [
+      "University students miss assignment deadlines because they forget small tasks and use separate calendars."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase1_step2"
+  },
+  {
+    "id": "S4",
+    "url": "https://summer.harvard.edu/blog/8-time-management-tips-for-students/",
+    "title": "8 Time Management Tips for Students - Harvard Summer School",
+    "publisher": "summer.harvard.edu",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "primary",
+    "trust": "high",
+    "trust_reason": "Official statistics, research body or major news outlet.",
+    "claims_backed": [
+      "University students miss assignment deadlines because they forget small tasks and use separate calendars."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase1_step2"
+  },
+  {
+    "id": "S2",
+    "url": "https://www.any.do/blog/team-reminders-how-to-keep-your-team-on-track/",
+    "title": "Team Reminders: How to Keep Your Team on Track - Any.do",
+    "publisher": "any.do",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "vendor",
+    "trust": "medium",
+    "trust_reason": "Company or general site; may gain from what it says.",
+    "claims_backed": [
+      "Office workers forget tasks because their calendars and to-do lists are in different apps."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase1_step2"
+  },
+  {
+    "id": "S5",
+    "url": "https://www.microsoft.com/en-us/microsoft-365/microsoft-to-do-list-app",
+    "title": "To Do List and Task Management App | Microsoft To Do",
+    "publisher": "microsoft.com",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "secondary",
+    "trust": "medium",
+    "trust_reason": "Company or general site; may gain from what it says.",
+    "claims_backed": [
+      "Office workers forget tasks because their calendars and to-do lists are in different apps."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase1_step2"
+  },
+  {
+    "id": "S3",
+    "url": "https://habi.app/insights/best-productivity-apps/",
+    "title": "6 Best Productivity Apps in 2026 [We Tested All] - habi.app",
+    "publisher": "habi.app",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "secondary",
+    "trust": "medium",
+    "trust_reason": "Company or general site; may gain from what it says.",
+    "claims_backed": [
+      "People who want to get more done feel overwhelmed by too many productivity apps and no clear daily plan."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase1_step2"
+  },
+  {
+    "id": "S6",
+    "url": "https://buffer.com/resources/productivity-tools/",
+    "title": "I've Tried 50+ Productivity Tools — Here Are My Top 9 - Buffer",
+    "publisher": "buffer.com",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "secondary",
+    "trust": "medium",
+    "trust_reason": "Company or general site; may gain from what it says.",
+    "claims_backed": [
+      "People who want to get more done feel overwhelmed by too many productivity apps and no clear daily plan."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase1_step2"
+  }
+]
