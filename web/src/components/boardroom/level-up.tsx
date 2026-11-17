@@ -55,7 +55,7 @@ export function LevelUpDialog({ pending, open, onGo, onKeepTalking, busy = false
         className="gap-5 rounded-2xl p-8 sm:max-w-xl"
       >
         <DialogHeader>
-          <DialogTitle className="text-[32px] leading-tight font-extrabold">{pending.stage} complete</DialogTitle>
+          <DialogTitle className="text-[32px] leading-tight font-extrabold">{pending.stage === "Build" ? "Build plan ready" : `${pending.stage} complete`}</DialogTitle>
           <DialogDescription className="text-base text-foreground">{pending.proof}</DialogDescription>
         </DialogHeader>
         <p className="text-xl font-semibold">Next level: Stage {pending.done + 1}, {pending.next}</p>

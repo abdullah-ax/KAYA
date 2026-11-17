@@ -33,6 +33,12 @@ describe("level-up dialog", () => {
     expect(screen.getByRole("button", { name: "Keep talking with the co-founder" })).toBeInTheDocument();
   });
 
+  it("says the Build plan is ready, not that the product is built", async () => {
+    chat(run({ stage: "phase3_gate", pending: { ...LEVEL_UP, done: 3, stage: "Build", next: "Commercial setup", proof: "Must-haves fit your hours." } as Run["pending"] }));
+    expect(await screen.findByRole("dialog", { name: "Build plan ready" })).toBeInTheDocument();
+    expect(screen.queryByText("Build complete")).not.toBeInTheDocument();
+  });
+
   it("Go calls nextStage and hands the new run on", async () => {
     const fresh = run({ status: "working", stage: "phase2_step1", pending: null });
     vi.mocked(nextStage).mockResolvedValue(fresh);
