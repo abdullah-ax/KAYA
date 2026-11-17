@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ApiSource } from "@/lib/api";
-import { composeBrief, friendlyFileName, gateArgsFromPending, outcomeSentence, progressStages, sourceCardsFrom, stageInfo } from "./live-model";
+import { composeBrief, friendlyFileName, gateArgsFromPending, outcomeSentence, progressLine, progressStages, sourceCardsFrom, stageInfo } from "./live-model";
 import { STAGES } from "./journey";
 
 describe("composeBrief", () => {
@@ -107,6 +107,36 @@ describe("gate options without ids", () => {
     const ids = args.options.map((o) => o.id);
     expect(new Set(ids).size).toBe(2);
     expect(ids.every(Boolean)).toBe(true);
+  });
+});
+
+describe("build stage wording", () => {
+  it("labels the phase 3 steps in plain words", () => {
+    expect(stageInfo("phase3_step1")).toEqual({ stageId: "build", label: "User stories" });
+    expect(stageInfo("phase3_step2")).toEqual({ stageId: "build", label: "MVP plan" });
+    expect(stageInfo("phase3_gate")).toEqual({ stageId: "build", label: "Build gate" });
+  });
+
+  it("shows Build as the current stage on the map", () => {
+    const stages = ["ideation", "validation", "build", "setup"].map((id) => ({ id, status: "locked", facts: [], issues: [] }) as never);
+    const out = progressStages(stages, stageInfo("phase3_step1").stageId);
+    expect(out.map((s) => s.status)).toEqual(["done", "done", "current", "next"]);
+  });
+
+  it("says who is working on the build steps", () => {
+    expect(progressLine("phase3_step1")).toMatch(/user stories/i);
+    expect(progressLine("phase3_step2")).toMatch(/MVP plan/i);
+  });
+
+  it("marks the matching build option as recommended, not the go-back one", () => {
+    const options = [
+      { id: "build_this_mvp", name: "Build this MVP", cost: "", risk: "", source: "gate result" },
+      { id: "cut_the_scope_further", name: "Cut the scope further", cost: "", risk: "", source: "gate result" },
+      { id: "go_back_to_validation", name: "Go back to validation", cost: "", risk: "", source: "gate result" },
+    ];
+    const rec = (o: string) => gateArgsFromPending({ kind: "gate", key: "phase3", prompt: `${o}: Reason here. Which option, and why?`, options }).recommended;
+    expect(rec("go")).toEqual(["build_this_mvp"]);
+    expect(rec("repeat")).toEqual(["cut_the_scope_further"]);
   });
 });
 

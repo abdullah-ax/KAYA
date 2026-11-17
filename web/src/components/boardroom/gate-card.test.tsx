@@ -71,9 +71,10 @@ describe("after the decision", () => {
     expect(startOver).toHaveBeenCalled();
   });
 
-  it("offers 'Start Stage 3: Build' after a go once the run is done", async () => {
+  it("has no dead 'Start Stage 3' button after a go, because the run continues by itself", async () => {
     await record(goArgs, { done: true, startOver: vi.fn() });
-    expect(screen.getByRole("button", { name: "Start Stage 3: Build" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /start stage/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /start over/i })).not.toBeInTheDocument();
   });
 
   it("shows no next step while the run is still going", async () => {
