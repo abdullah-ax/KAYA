@@ -26,7 +26,7 @@ def reconcile(proc: "PaymentProcessor") -> Report:
     report = Report()
     for oid, order in proc.orders.items():
         pay = proc.payments.get(oid)
-        if pay is None or order.status == "refunded":
+        if pay is None:
             continue
         if pay.amount != order.amount:
             report.mismatches.append(Mismatch(oid, "amount_mismatch",
@@ -35,6 +35,8 @@ def reconcile(proc: "PaymentProcessor") -> Report:
         if pay.fee != want:
             report.mismatches.append(Mismatch(oid, "fee_mismatch",
                 f"MOCKED: fee {pay.fee} but expected {want}"))
+        if order.status == "refunded":
+            continue  # no payout is expected for a refunded order
         if oid not in proc.payouts:
             report.mismatches.append(Mismatch(oid, "missing_payout", "MOCKED: no payout recorded"))
         elif proc.payouts[oid] != pay.amount - pay.fee:
