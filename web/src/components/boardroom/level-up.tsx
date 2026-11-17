@@ -52,7 +52,7 @@ export function LevelUpDialog({ pending, open, onGo, onKeepTalking, busy = false
       <DialogContent
         showCloseButton={false}
         onOpenAutoFocus={(e) => { e.preventDefault(); go.current?.focus(); }}
-        className="gap-5 rounded-2xl p-8"
+        className="gap-5 rounded-2xl p-8 sm:max-w-xl"
       >
         <DialogHeader>
           <DialogTitle className="text-[32px] leading-tight font-extrabold">{pending.stage} complete</DialogTitle>
@@ -60,9 +60,9 @@ export function LevelUpDialog({ pending, open, onGo, onKeepTalking, busy = false
         </DialogHeader>
         <p className="text-xl font-semibold">Next level: Stage {pending.done + 1}, {pending.next}</p>
         {error && <p role="alert" className="text-base font-semibold text-destructive">{error}</p>}
-        <DialogFooter className="gap-3">
-          <Button variant="outline" size="lg" className="rounded-full text-base" onClick={onKeepTalking}>Keep talking with the co-founder</Button>
-          <Button ref={go} size="lg" className="rounded-full text-base font-bold" onClick={onGo} disabled={busy}>Go to {pending.next}</Button>
+        <DialogFooter className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 sm:justify-normal">
+          <Button variant="outline" size="lg" className="w-full rounded-full text-base" onClick={onKeepTalking}>Keep talking with the co-founder</Button>
+          <Button ref={go} size="lg" className="w-full rounded-full text-base font-bold" onClick={onGo} disabled={busy}>Go to {pending.next}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
