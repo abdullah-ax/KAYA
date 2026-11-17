@@ -32,7 +32,8 @@ Statuses are updated only after a real run. Working = tested end to end. MOCKED 
 | 6 Operate | Support, metrics, pivot memo | STUBBED |
 | All | Founder approval enforced in code | STUBBED |
 | All | Ethics bot, guardrail, judges, decision log | STUBBED |
-| All | Voice (local speech to text and text to speech) | STUBBED |
+| Web | Voice input (speech to text in the chat box and onboarding) | REAL in the browser (not run against a live microphone in CI) |
+| All | Text to speech and voice in the Python pipeline | STUBBED |
 
 ## Architecture
 
@@ -42,7 +43,8 @@ A fixed workflow in plain Python runs the six phases. Each step is done by small
 
 - Model: `gpt-oss:20b` via Ollama (open weights). Fallback for smaller machines: `qwen3:8b`.
 - Web search: a local SearXNG container, no API key.
-- Voice: [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (MIT) for speech to text, Kokoro-82M (Apache-2.0) for text to speech, both local.
+- Voice input (web, implemented): a mic button in the chat box and on onboarding free-text answers, in English or Arabic. It records with MediaRecorder and runs open-weight Whisper (`onnx-community/whisper-base`) in the browser through [transformers.js](https://github.com/huggingface/transformers.js) (Apache-2.0), on WebGPU when available and WASM otherwise. The model downloads on first use (with a progress note) and no audio leaves the device. If recording is not available, it falls back to the browser's own speech service (Web Speech API), which is labelled in the UI and may send audio to the browser vendor. The text lands in the box for the founder to edit; nothing is sent automatically.
+- Voice, not built yet: Kokoro-82M (Apache-2.0) text to speech and a server-side faster-whisper path.
 - No paid service is needed. Payments are mocked; nothing is charged.
 
 ## Cost per run
