@@ -170,6 +170,7 @@ class Session:
         return {"id": self.id, "status": self.status(), "stage": self.stage(progress.get("step", "start")),
                 "outcome": self.outcome or progress.get("outcome"), "mode": self.mode,
                 "provider": self.provider, "model": self.model, "phase1": progress.get("phase1"), "phase2": progress.get("phase2"),
+                "phase3": progress.get("phase3"),
                 "pending": self.pending(), "notice": self.notice, "messages": self.messages,
                 "outputs": outputs, "sources": _sources(outputs_dir), "error": self.error,
                 "delivery": {"approved": self.publish_approval() is not None, "url": self.site_url,

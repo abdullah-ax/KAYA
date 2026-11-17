@@ -82,6 +82,26 @@ def phase2_gate(signups: int, cfg: Any) -> GateResult:
                       "Stop or pivot to a new problem.", evidence)
 
 
+def phase3_gate(must_hours: int, capacity_hours: int, hours_per_week: int | None = None) -> GateResult:
+    """Do the must-have stories fit in 2 weeks of the founder's hours? Fits: go. Too big: cut the scope.
+
+    Story hours are model estimates, so the founder checks them. Capacity is two weeks of weekly hours.
+    """
+    if capacity_hours <= 0:
+        raise ValueError("The founder's hours for 2 weeks must be above 0.")
+    weekly = f" ({hours_per_week} hours a week for 2 weeks)" if hours_per_week else ""
+    evidence = {"metric": "hours of must-have work (model estimate)", "target": capacity_hours,
+                "actual": must_hours, "percent": round(must_hours / capacity_hours * 100),
+                "window_days": 14, "source": "model estimates; your hours come from your profile"}
+    if must_hours <= capacity_hours:
+        return GateResult("phase3_build", "go",
+                          f"go: {must_hours} hours of must-have work fits in your {capacity_hours} hours{weekly}.",
+                          evidence)
+    return GateResult("phase3_build", "repeat",
+                      f"repeat: {must_hours} hours of must-have work does not fit in your {capacity_hours} "
+                      f"hours{weekly}. Cut the scope before you build.", evidence)
+
+
 def write_gate_decision(path: str | Path, result: GateResult,
                         approval: Approval | None) -> Path:
     """Write the gate decision as markdown, following templates/gate_decision.md."""

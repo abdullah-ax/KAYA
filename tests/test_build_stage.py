@@ -72,12 +72,11 @@ def test_must_stories_over_two_weeks_of_hours_recommend_cutting_scope(tmp_run):
 
 
 def test_gate_rule_fits_exactly_and_just_over():
-    cfg = fx.config()
 
-    assert phase3_gate(20, 20, cfg).outcome == "go"
-    assert phase3_gate(21, 20, cfg).outcome == "repeat"
+    assert phase3_gate(20, 20).outcome == "go"
+    assert phase3_gate(21, 20).outcome == "repeat"
     with pytest.raises(ValueError):
-        phase3_gate(5, 0, cfg)
+        phase3_gate(5, 0)
 
 
 def test_bare_yes_at_the_build_gate_is_rejected_and_reasked(tmp_run):
@@ -156,3 +155,17 @@ def test_api_phase3_gate_is_pending_with_three_options_then_run_is_done(tmp_run)
         assert bad.status_code == 422
         state = decide(client, run_id, "Build this MVP", REASON3)
         assert state["status"] == "done" and state["outcome"] == "go" and state["phase3"] == "go"
+
+
+@pytest.mark.parametrize("constraints,expected", [
+    (["10 hours a week", "EGP 2,000 to spend"], (10, True)),
+    (["I have 5-8 hrs per week"], (5, True)),
+    (["2 hours a day"], (5, False)),
+    ([], (5, False))])
+def test_weekly_hours_reads_the_profile_and_falls_back_to_five(constraints, expected):
+    from api.agents.intern import weekly_hours
+    from api.agents.profiler import FounderProfile
+
+    profile = FounderProfile.model_validate({**fx.PROFILE, "constraints": constraints})
+
+    assert weekly_hours(profile) == expected

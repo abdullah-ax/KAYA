@@ -17,9 +17,10 @@ from typing import Any
 MAX_VERSIONS = 50
 CANVAS_BOXES = 9
 SECTIONS = [("profile", "Founder profile"), ("opportunity", "Opportunity"), ("canvas", "Lean canvas"),
-            ("signup", "Sign-up page"), ("decisions", "Decisions")]
+            ("signup", "Sign-up page"), ("build", "Build"), ("decisions", "Decisions")]
 TITLES = dict(SECTIONS)
-REJECTED_SECTION = {"phase1_step2": "opportunity", "phase2_step1": "canvas"}
+REJECTED_SECTION = {"phase1_step2": "opportunity", "phase2_step1": "canvas", "phase3_step1": "build",
+                    "phase3_step2": "build"}
 DISCLAIMER = "Parody for fun. Not affiliated with or endorsed by the real person. Not investment advice."
 
 STAGE_NEXT = {
@@ -31,6 +32,9 @@ STAGE_NEXT = {
     "phase2_step1": "Review the lean canvas and the sign-up page.",
     "phase2_step2": "Decide whether to publish the sign-up page, then count real sign-ups.",
     "phase2_gate": "Decide at the Phase 2 gate: continue, repeat the test, or stop.",
+    "phase3_step1": "Wait for your user stories and MVP plan, then read them.",
+    "phase3_step2": "Wait for your MVP plan, then read it.",
+    "phase3_gate": "Decide at the Build gate: build this MVP, cut the scope, or go back to validation.",
 }
 
 
@@ -224,7 +228,8 @@ def _overview(run_dir: Path, state: dict[str, Any] | None, issues: list[dict[str
     if status == "error":
         text = "The run hit an error."
     elif status == "done":
-        text = {"go": "The run is finished: both gates say go.", "stop": "The run stopped here.",
+        text = {"go": "The run is finished: your MVP plan is ready." if stage.startswith("phase3")
+                else "The run is finished: both gates say go.", "stop": "The run stopped here.",
                 "refused": "The brief was refused by the safety check."}.get(outcome or "", f"The run is finished ({outcome}).")
     elif waiting:
         text = "Waiting on you."
@@ -237,7 +242,7 @@ def _overview(run_dir: Path, state: dict[str, Any] | None, issues: list[dict[str
 def _sections(run_dir: Path) -> tuple[list[dict[str, Any]], dict[int, dict[str, Any]], Any, str | None]:
     out = run_dir / "outputs"
     log = _log(run_dir)
-    gates = {p: g for p in (1, 2) if (g := _gate(out, p))}
+    gates = {p: g for p in (1, 2, 3) if (g := _gate(out, p))}
 
     def blank(sid: str) -> dict[str, Any]:
         return {"id": sid, "title": TITLES[sid], "body_markdown": "", "sources": [], "assumptions": 0,
@@ -261,6 +266,13 @@ def _sections(run_dir: Path) -> tuple[list[dict[str, Any]], dict[int, dict[str, 
     page = _text(out / "phase2_step2_signup_page.md")
     if page is not None:
         s["signup"].update(body_markdown=page.strip(), status="written")
+    build = [(title, text) for title, text in (("User stories", _text(out / "phase3_step1_user_stories.md")),
+                                                 ("MVP plan", _text(out / "phase3_step2_mvp_spec.md")))
+             if text is not None]
+    if build:
+        body = "\n\n".join(f"## {title}\n\n" + re.sub(r"^## ", "### ", re.sub(r"^# .*\n", "", text, count=1).strip(),
+                                                    flags=re.M) for title, text in build)
+        s["build"].update(body_markdown=body, sources=_sources(out, "phase3_step1"), status="written")
     if gates:
         s["decisions"].update(body_markdown=_decisions_body(list(gates.values()), log), status="written")
     return [s[sid] for sid, _ in SECTIONS], gates, profile, chosen
@@ -360,6 +372,13 @@ def tarek_critique(plan: dict[str, Any]) -> list[dict[str, str]]:
             lines["signup"] = (base + " Not there, ya basha.", "im_out" if gates.get("phase2") == "stop" else "skeptical")
     else:
         lines["signup"] = ("No sign-up count yet. Count real people, not likes.", "listening")
+    if written.get("build"):
+        lines["build"] = ("The must-have stories fit in your two weeks. Build the small version by hand first."
+                          if gates.get("phase3") == "go"
+                          else "The must-have list is bigger than your two weeks. Cut it, ya basha.",
+                          "neutral" if gates.get("phase3") == "go" else "skeptical")
+    else:
+        lines["build"] = ("No build plan yet.", "listening")
     if gates:
         said = "; ".join(f"{k.replace('phase', 'Phase ')} gate said {v}" for k, v in sorted(gates.items()))
         nums = f" {signups} of {target} sign-ups." if signups is not None else ""

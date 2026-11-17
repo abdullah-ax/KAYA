@@ -5,9 +5,9 @@ import re
 from pathlib import Path
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any, Literal, Sequence
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from api.research import (UNTRUSTED_NOTE, SearchResult, SourceCard, assumption, claim_sources,
                           clean_cell, scrub_urls, untrusted)
@@ -248,3 +248,134 @@ def draft_interview_script(ctx: Ctx, opportunity: Opportunity, profile: FounderP
     md = "\n".join([head, "", *(f"{n}. {q}" for n, q in enumerate(questions, 1)), "",
                     "## Who to ask first", "", *(f"- {p}" for p in first), "", tail.rstrip(), ""])
     return Draft(markdown=md, texts=[*questions, *first], data=script)
+
+
+# -- Phase 3: user stories and the 2-week MVP plan ------------------------------------
+
+class UserStory(BaseModel):
+    who: str
+    want: str
+    why: str
+    criteria: list[str] = Field(min_length=1, max_length=4)
+    priority: Literal["must", "should", "could"]
+    hours: int = Field(ge=1, le=80)  # a model estimate of the work, in hours
+    first_version: str  # the smallest manual or no-code way to deliver it
+    backed_by: str | None = None  # a URL from Phase 1 research, else None
+
+
+class UserStories(BaseModel):
+    stories: list[UserStory] = Field(min_length=5, max_length=8)
+
+    @model_validator(mode="after")
+    def _has_a_must(self) -> UserStories:
+        if not any(s.priority == "must" for s in self.stories):
+            raise ValueError("At least one story must have priority must.")
+        return self
+
+
+class Step(BaseModel):
+    when: str
+    task: str
+
+
+class MvpPlan(BaseModel):
+    not_building: list[str] = Field(min_length=2, max_length=6)
+    tools: list[str] = Field(min_length=1, max_length=6)
+    checklist: list[Step] = Field(min_length=4, max_length=14)
+    first_10: list[str] = Field(min_length=2, max_length=5)
+    one_metric: str
+
+
+DEFAULT_WEEKLY_HOURS = 5
+_HOURS = re.compile(r"(\d+(?:\.\d+)?)\s*(?:(?:-|to)\s*\d+(?:\.\d+)?\s*)?(?:hours?|hrs?)\b", re.IGNORECASE)
+_PRIORITY_ORDER = {"must": 0, "should": 1, "could": 2}
+
+
+def weekly_hours(profile: FounderProfile) -> tuple[int, bool]:
+    """Hours a week the founder gave, read from the profile limits. (hours, known). Unknown means a default."""
+    for line in profile.constraints:
+        if re.search(r"\b(day|month|total)\b", line, re.IGNORECASE):
+            continue
+        found = _HOURS.search(line)
+        if found and float(found.group(1)) >= 1:
+            return int(float(found.group(1))), True
+    return DEFAULT_WEEKLY_HOURS, False
+
+
+def _plain(ctx: Ctx, text: str) -> str:
+    return clean_cell(scrub_urls(text, ctx.registry)[0])
+
+
+def draft_user_stories(ctx: Ctx, opportunity: Opportunity, profile: FounderProfile, canvas: Draft,
+                       signup_page: str, notes: Sequence[str] = ()) -> Draft:
+    """5 to 8 INVEST stories with acceptance criteria, a priority and the smallest manual way to deliver each."""
+    weekly, _ = weekly_hours(profile)
+    drafted = ctx.complete(
+        "research_intern", "draft_user_stories", ctx.prompt("intern"),
+        f"Chosen opportunity:\n{opportunity.model_dump_json()}\n\nProfile:\n{profile.model_dump_json()}\n\n"
+        f"Lean Canvas:\n{canvas.markdown}\n\nSign-up page:\n{signup_page}\n\n"
+        f"Write 5 to 8 user stories for the first version. Each story follows INVEST: it stands alone, is small "
+        f"and can be tested. who is one specific kind of person. want is what they do. why is what they get. "
+        f"Give 1 to 4 acceptance criteria written as Given, when, then. Set priority to must, should or could. "
+        f"At least one must. hours is your honest guess of the work in hours; the founder has {weekly} hours "
+        f"a week. first_version is the smallest way to deliver it by hand or with a free no-code tool, "
+        f"before any code. Set backed_by only to a URL from Phase 1 research, else null. "
+        f"Do not promise income or sign-ups.{_notes_text(notes)}", UserStories)
+    stories = sorted(drafted.stories, key=lambda s: _PRIORITY_ORDER[s.priority])
+    out = Draft(markdown="", texts=[], data=UserStories.model_construct(stories=stories))
+    lines = ["# User stories (Phase 3, step 1)", "", f"Opportunity: {opportunity.title}", "",
+             "Drafted by the intern from your profile, your Lean Canvas and your sign-up page. "
+             "Hours are the model's guess, so check them against your week.", ""]
+    for n, s in enumerate(stories, 1):
+        s.who, s.want, s.why = _plain(ctx, s.who), _plain(ctx, s.want), _plain(ctx, s.why)
+        s.criteria = [_plain(ctx, c) for c in s.criteria]
+        s.first_version = _plain(ctx, s.first_version)
+        _claim, cards = claim_sources(s.want, [s.backed_by] if s.backed_by else [], ctx.registry)
+        out.cards += cards
+        out.texts += [s.who, s.want, s.why, *s.criteria, s.first_version]
+        lines += [f"## Story {n}", "", f"As a {s.who}, I want {s.want}, so that {s.why}.", "",
+                  f"- Priority: {s.priority}", f"- Time (model guess): {s.hours} hours", "- Acceptance criteria:",
+                  *(f"  - {c}" for c in s.criteria),
+                  f"- Smallest way to deliver it first: {s.first_version}",
+                  f"- Backed by: {cards[0].url if cards else 'ASSUMPTION'}", ""]
+    out.markdown = "\n".join(lines)
+    return out
+
+
+def must_hours(stories: Draft) -> int:
+    return sum(s.hours for s in stories.data.stories if s.priority == "must")
+
+
+def draft_mvp_plan(ctx: Ctx, opportunity: Opportunity, profile: FounderProfile, stories: Draft,
+                   notes: Sequence[str] = ()) -> Draft:
+    """A 2-week plan sized to the founder's hours. The scope is the must stories, listed by code."""
+    weekly, known = weekly_hours(profile)
+    musts = [s for s in stories.data.stories if s.priority == "must"]
+    plan = ctx.complete(
+        "research_intern", "draft_mvp_plan", ctx.prompt("intern"),
+        f"Chosen opportunity:\n{opportunity.model_dump_json()}\n\nProfile:\n{profile.model_dump_json()}\n\n"
+        f"Must-have stories:\n{chr(10).join(f'- {s.want} (first version: {s.first_version})' for s in musts)}\n\n"
+        f"Write a 2-week MVP plan for a founder with {weekly} hours a week. not_building lists what to leave out. "
+        "tools lists free or no-code tools first. checklist is the order of work, each step with when "
+        "(a day or a week) and task. first_10 says how to put it in front of the first 10 users, taken from "
+        "the founder's own groups (profile access), before any public post. one_metric is the one number to "
+        f"watch. Do not promise income or sign-ups.{_notes_text(notes)}", MvpPlan)
+    capacity = weekly * 2
+    lines = ["# MVP plan (Phase 3, step 2)", "", f"Opportunity: {opportunity.title}", "",
+             f"Your time: {weekly} hours a week, so {capacity} hours in 2 weeks"
+             + ("." if known else ". ASSUMPTION: you did not say how many hours you have."), "",
+             "## What to build", "", "Only the must-have stories:", ""]
+    lines += [f"- As a {s.who}, I want {s.want} (about {s.hours} hours; first: {s.first_version})" for s in musts]
+    lines += ["", f"Total: about {must_hours(stories)} hours of {capacity} (model guess).", ""]
+    section = [("What not to build", [_plain(ctx, t) for t in plan.not_building]),
+               ("Tools (free or no-code first)", [_plain(ctx, t) for t in plan.tools])]
+    for title, items in section:
+        lines += [f"## {title}", "", *(f"- {i}" for i in items), ""]
+    steps = [(_plain(ctx, s.when), _plain(ctx, s.task)) for s in plan.checklist]
+    first = [_plain(ctx, t) for t in plan.first_10]
+    metric = _plain(ctx, plan.one_metric)
+    lines += ["## Checklist (2 weeks)", "", *(f"- [ ] {w}: {t}" for w, t in steps), "",
+              "## First 10 users", "", *(f"{n}. {t}" for n, t in enumerate(first, 1)), "",
+              "## One number to watch", "", metric, ""]
+    texts = [*(i for _, items in section for i in items), *(f"{w}: {t}" for w, t in steps), *first, metric]
+    return Draft(markdown="\n".join(lines), texts=texts, data=plan)

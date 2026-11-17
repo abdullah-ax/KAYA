@@ -9,7 +9,7 @@ from api.app import create_app
 from api.plan import build_plan, snapshot, tarek_critique
 from test_pipeline import REASON1, REASON2, run, strong_answers
 
-IDS = ["profile", "opportunity", "canvas", "signup", "decisions"]
+IDS = ["profile", "opportunity", "canvas", "signup", "build", "decisions"]
 
 
 def by_id(plan):
@@ -32,7 +32,7 @@ def weak_stop_run(tmp_path):
 
 # -- build_plan ---------------------------------------------------------------
 
-def test_empty_run_has_five_sections_all_not_yet_and_no_versions(tmp_path):
+def test_empty_run_has_six_sections_all_not_yet_and_no_versions(tmp_path):
     plan = build_plan(tmp_path / "nothing", None)
 
     assert [s["id"] for s in plan["sections"]] == IDS
@@ -128,11 +128,11 @@ def test_full_run_snapshots_each_draft_and_decision(tmp_path):
     run_dir = strong_run(tmp_path)
     versions = json.loads((run_dir / "plan_versions.json").read_text())
 
-    assert events(run_dir) == ["draft", "decision", "draft", "draft", "decision"]
-    assert [v["n"] for v in versions] == [1, 2, 3, 4, 5]
+    assert events(run_dir) == ["draft", "decision", "draft", "draft", "decision", "draft", "draft", "decision"]
+    assert [v["n"] for v in versions] == [1, 2, 3, 4, 5, 6, 7, 8]
     assert all(v["at"].endswith("Z") and v["summary"] and v["sections_hash"] for v in versions)
     assert versions[0]["sections"][1]["status"] == "written" and versions[0]["sections"][2]["status"] == "not_yet"
-    assert "Speaking drills" in versions[1]["sections"][4]["body_markdown"]
+    assert "Speaking drills" in versions[1]["sections"][5]["body_markdown"]
 
 
 def test_stop_at_the_gate_is_a_stop_version(tmp_path):
@@ -185,7 +185,7 @@ def test_plan_lists_versions_without_bodies(tmp_path):
 
     versions = build_plan(run_dir, None)["versions"]
 
-    assert len(versions) == 5 and all("sections" not in v for v in versions)
+    assert len(versions) == 8 and all("sections" not in v for v in versions)
 
 
 # -- Tarek critique -----------------------------------------------------------
@@ -266,7 +266,7 @@ def test_get_plan_returns_overview_sections_critique_and_versions(client, tmp_ru
 
     body = client.get(f"/runs/{run_id}/plan").json()
 
-    assert [s["id"] for s in body["sections"]] == IDS and body["critique"] and len(body["versions"]) == 5
+    assert [s["id"] for s in body["sections"]] == IDS and body["critique"] and len(body["versions"]) == 8
     assert "sections" not in body["versions"][0]
 
 
@@ -275,7 +275,7 @@ def test_get_version_returns_the_full_snapshot(client, tmp_run):
 
     snap = client.get(f"/runs/{run_id}/plan/versions/2").json()
 
-    assert snap["n"] == 2 and snap["event"] == "decision" and len(snap["sections"]) == 5
+    assert snap["n"] == 2 and snap["event"] == "decision" and len(snap["sections"]) == 6
     assert client.get(f"/runs/{run_id}/plan/versions/99").status_code == 404
 
 

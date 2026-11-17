@@ -16,7 +16,7 @@ from api.agents.intern import Draft
 from api.approval import Approval, ensure_approved, require_approval
 from api.config import Config
 from api.ethics import check_draft
-from api.gates import GateResult, phase1_gate, phase2_gate, write_gate_decision
+from api.gates import GateResult, phase1_gate, phase2_gate, phase3_gate, write_gate_decision
 from api.guardrail import check_request
 from api.llm import LLM
 from api.log import DecisionLog
@@ -141,6 +141,16 @@ PHASE2 = {"Continue to Build": "go", "Repeat the test": "repeat", "Stop or pivot
 PHASE2_OPTIONS = [Option("Continue to Build", "Your time", "Building before demand is clear", "gate result"),
                   Option("Repeat the test", "14 more days", "Same result twice", "gate result"),
                   Option("Stop or pivot", "EGP 0", "Dropping an idea that needed more time", "gate result")]
+PHASE3 = {"Build this MVP": "go", "Cut the scope further": "repeat", "Go back to validation": "pivot"}
+PHASE3_OPTIONS = [Option("Build this MVP", "Your time, 2 weeks", "The stories may take longer than the guess",
+                         "gate result"),
+                  Option("Cut the scope further", "A few more hours of planning", "A smaller first version",
+                         "gate result"),
+                  Option("Go back to validation", "More time before you build", "Waiting longer for proof",
+                         "gate result")]
+BUILD_DONE = "Your MVP plan is ready. Next: pricing and setup."
+BUILD_CUT = "Cut the must-have list, then plan the build again. Keep only what the first ten users need."
+BUILD_BACK = "Go back to validation: talk to more people before you build."
 
 
 @dataclass
@@ -149,6 +159,7 @@ class RunResult:
     stopped_at: str = "start"
     phase1: GateResult | None = None
     phase2: GateResult | None = None
+    phase3: GateResult | None = None
 
 
 def _save(ctx: Ctx, result: RunResult, step: str, outcome: str | None = None) -> RunResult:
@@ -157,7 +168,8 @@ def _save(ctx: Ctx, result: RunResult, step: str, outcome: str | None = None) ->
     result.outcome = outcome or result.outcome
     state = {"outcome": result.outcome, "step": step,
              "phase1": result.phase1.outcome if result.phase1 else None,
-             "phase2": result.phase2.outcome if result.phase2 else None}
+             "phase2": result.phase2.outcome if result.phase2 else None,
+             "phase3": result.phase3.outcome if result.phase3 else None}
     ctx.run_dir.mkdir(parents=True, exist_ok=True)
     (ctx.run_dir / "state.json").write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
     return result
@@ -302,4 +314,29 @@ def _run(ctx: Ctx, brief: str, result: RunResult) -> RunResult:
     result.phase2 = phase2_gate(signups, ctx.cfg)
     result.phase2.evidence["source"] = "founder-entered count"
     pick = _gate(ctx, 2, result.phase2, PHASE2_OPTIONS)
-    return _save(ctx, result, "phase2_gate", PHASE2[pick.option])
+    _save(ctx, result, "phase2_gate", PHASE2[pick.option])
+    if result.outcome != "go":
+        return result
+    return _build(ctx, result, profile, chosen, canvas, page)
+
+
+def _build(ctx: Ctx, result: RunResult, profile: Any, chosen: intern.Opportunity, canvas: Draft,
+           page: str) -> RunResult:
+    """Phase 3: user stories, a 2-week MVP plan, then the build gate. Only after a Phase 2 go."""
+    stories = _reviewed(ctx, "phase3_step1",
+                        lambda notes: intern.draft_user_stories(ctx, chosen, profile, canvas, page, notes))
+    if stories is None:
+        return _save(ctx, result, "phase3_step1", "stop")
+    _write_draft(ctx, 3, 1, "user_stories", stories)
+    _save(ctx, result, "phase3_step1")
+    mvp = _reviewed(ctx, "phase3_step2", lambda notes: intern.draft_mvp_plan(ctx, chosen, profile, stories, notes))
+    if mvp is None:
+        return _save(ctx, result, "phase3_step2", "stop")
+    _write_draft(ctx, 3, 2, "mvp_spec", mvp)
+    _save(ctx, result, "phase3_step2")
+
+    weekly, _known = intern.weekly_hours(profile)
+    result.phase3 = phase3_gate(intern.must_hours(stories), weekly * 2, weekly)
+    pick = _gate(ctx, 3, result.phase3, PHASE3_OPTIONS)
+    ctx.say({"go": BUILD_DONE, "repeat": BUILD_CUT, "pivot": BUILD_BACK}[PHASE3[pick.option]])
+    return _save(ctx, result, "phase3_gate", PHASE3[pick.option])
