@@ -36,11 +36,36 @@ const STEP_LABEL: Record<string, string> = {
   phase2_gate: "Sign-up gate",
 };
 
+const STAGE_BY_PHASE = ["ideation", "validation", "build", "setup", "distribution", "operate"];
+
 /** Which map stage the founder is on, and a plain name for the step. */
 export function stageInfo(step: string): { stageId: string; label: string } {
-  const phase = /^phase(\d+)/.exec(step)?.[1];
-  const stageId = phase === "2" ? "validation" : "ideation";
-  return { stageId, label: STEP_LABEL[step] ?? (phase ? `Step in phase ${phase}` : "Starting") };
+  const phase = Number(/^phase(\d+)/.exec(step)?.[1]);
+  const stageId = STAGE_BY_PHASE[phase - 1] ?? "ideation";
+  return { stageId, label: STEP_LABEL[step] ?? (phase ? "Working on this stage" : "Starting") };
+}
+
+const FILE_NAMES: [RegExp, string][] = [
+  [/answers/i, "Your answers"],
+  [/sources/i, "Sources list"],
+  [/opportunit/i, "Opportunities report"],
+  [/canvas/i, "Lean Canvas"],
+  [/signup|sign_up/i, "Sign-up page"],
+  [/decision/i, "Decision"],
+];
+
+/** A founder never sees a file name. Known outputs get a plain name; the rest are "Report". */
+export function friendlyFileName(file: string): string {
+  return FILE_NAMES.find(([re]) => re.test(file))?.[1] ?? "Report";
+}
+
+/** One human sentence for the run's state and outcome. */
+export function outcomeSentence(status: string, outcome: string | null): string {
+  if (status === "working") return "Working on it";
+  if (status === "waiting" || status === "gate") return "Waiting for you";
+  if (status === "done") return outcome ? `Finished: ${outcome}` : "Finished";
+  if (status === "error") return "Stopped with an error";
+  return "Closed";
 }
 
 /** The map's stages with status taken from the run. Demo facts and issues are dropped. */
