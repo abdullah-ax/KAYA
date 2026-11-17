@@ -80,3 +80,14 @@ def test_publish_with_valid_approval_runs():
 def test_hand_made_approval_does_not_run():
     with pytest.raises(ApprovalError):
         publish("index.html", approval=Approval(OPTIONS[0], GOOD_REASON))
+
+
+@pytest.mark.parametrize("answer", ["ايوه تمام ماشي", "tamam aywa mashy", "Tamam, aywa, اه!"])
+def test_strings_made_only_of_arabic_and_franco_arabic_fillers_are_rejected_by_the_shipped_config(answer):
+    import yaml
+    from pathlib import Path
+    raw = yaml.safe_load((Path(__file__).resolve().parent.parent / "config.yaml").read_text(encoding="utf-8"))
+    cfg = SimpleNamespace(min_reason_words=1,
+                          approval=SimpleNamespace(rejected_answers=raw["approval"]["rejected_answers"]))
+    with pytest.raises(ApprovalError):
+        check_approval(OPTIONS[0], answer, OPTIONS, cfg)
