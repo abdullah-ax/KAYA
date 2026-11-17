@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 
 import pipeline_fakes as fx
 from api.app import create_app
-from api.delivery import DeliveryError, NetlifyPublisher, render_index
+from api.publish import DeliveryError, NetlifyPublisher, render_index
 from test_app import answer, decide, to_phase1_gate, REASON1
 
 TOKEN = "nfp_SECRETTOKEN1234567890"

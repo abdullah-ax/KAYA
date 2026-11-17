@@ -129,7 +129,7 @@ def test_answer_is_409_when_a_gate_is_pending(client):
 def test_no_route_publishes_or_passes_a_gate_without_a_choice(client):
     paths = {route.path for route in client.app.routes}
 
-    # The one publish route refuses unless the decision log holds the founder's approval (tests/test_delivery.py).
+    # The one publish route refuses unless the decision log holds the founder's approval (tests/test_publish.py).
     assert not any(("publish" in p and p != "/runs/{run_id}/publish/netlify") or "approve" in p or "advance" in p
                    for p in paths)
 
