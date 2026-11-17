@@ -107,8 +107,8 @@ async function type(page, el, text, delay = 18) {
     [/introduce you/, ['A boss or old boss'], 'Two language centre owners in Alexandria'],
     [/languages/, ['Arabic', 'English'], 'I know Alexandria and Cairo'],
     [/hours a week/, ['10–20'], null],
-    [/money/, ['Self-funded, no raise'], 'Up to EGP 3,000'],
     [/never do/, ['Fake reviews', 'Lie to customers'], 'No promises of band scores'],
+    [/money can you risk/, ['Self-funded, no raise'], 'Up to EGP 3,000'],
   ];
   const headings = async () => (await p.locator('h1, h2').allTextContents().catch(() => [])).map((t) => t.trim().toLowerCase()).filter(Boolean);
   const startBtn = () => p.getByRole('button', { name: /^Start(?! voice)/ });
