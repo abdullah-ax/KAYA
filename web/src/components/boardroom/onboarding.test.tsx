@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -244,5 +244,34 @@ describe("offline demo mode (no API)", () => {
     await user.click(screen.getByRole("button", { name: /^start/i }));
     expect(fetchMock).not.toHaveBeenCalled();
     expect(onDone).toHaveBeenCalled();
+  });
+});
+
+describe("voice dictation on free-text answers", () => {
+  it("puts the spoken words into the answer box for editing and does not move on", async () => {
+    class Rec {
+      lang = "";
+      continuous = false;
+      interimResults = false;
+      onresult: ((e: unknown) => void) | null = null;
+      onerror: (() => void) | null = null;
+      onend: (() => void) | null = null;
+      start() {}
+      stop() { this.onresult?.({ results: [[{ transcript: "Pharmacy" }]] }); this.onend?.(); }
+      abort() {}
+    }
+    vi.stubGlobal("SpeechRecognition", Rec);
+    const user = userEvent.setup();
+    render(<Onboarding />);
+    await user.click(screen.getByRole("radio", { name: "Student" }));
+    await user.click(screen.getByRole("button", { name: /start voice input/i }));
+    await user.click(await screen.findByRole("button", { name: /stop voice input/i }));
+    await waitFor(() => expect(screen.getByRole("textbox")).toHaveValue("Pharmacy"));
+    expect(screen.getByText("What do you do most days?")).toBeInTheDocument();
+  });
+
+  it("shows no mic when the browser cannot record or recognise speech", () => {
+    render(<Onboarding />);
+    expect(screen.queryByRole("button", { name: /start voice input/i })).not.toBeInTheDocument();
   });
 });

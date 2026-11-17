@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -141,5 +141,29 @@ describe("run id in the address", () => {
     expect(window.location.search).toBe("?theme=dark&run=abc123");
     rememberRun(null);
     expect(window.location.search).toBe("?theme=dark");
+  });
+});
+
+describe("voice dictation in the composer", () => {
+  it("fills the message box and never sends by itself", async () => {
+    class Rec {
+      onresult: ((e: unknown) => void) | null = null;
+      onend: (() => void) | null = null;
+      lang = "";
+      continuous = false;
+      interimResults = false;
+      start() {}
+      stop() { this.onresult?.({ results: [[{ transcript: "forty students" }]] }); this.onend?.(); }
+      abort() {}
+    }
+    vi.stubGlobal("SpeechRecognition", Rec);
+    const user = userEvent.setup();
+    chat(base());
+    await screen.findByText("Who could you message today, and how many?");
+    await user.click(screen.getByRole("button", { name: /start voice input/i }));
+    await user.click(await screen.findByRole("button", { name: /stop voice input/i }));
+    await waitFor(() => expect(screen.getByRole("textbox", { name: /message input/i })).toHaveValue("forty students"));
+    expect(sendAnswer).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 });
