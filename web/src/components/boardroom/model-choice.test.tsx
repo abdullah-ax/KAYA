@@ -61,3 +61,36 @@ describe("api client model fields", () => {
     expect(m.choices[0]).toEqual({ name: "qwen3:8b", installed: true });
   });
 });
+
+describe("finishing the model dialog", () => {
+  it("closes when the founder picks Use this model", async () => {
+    const user = userEvent.setup();
+    const test = vi.fn().mockResolvedValue({ ok: true, provider: "ollama", model: "qwen3:8b" });
+    render(<ModelSettings current="ollama" onChange={vi.fn()} test={test} />);
+    await user.click(screen.getByRole("button", { name: /qwen3/i }));
+    await user.click(screen.getByRole("button", { name: /test connection/i }));
+    await screen.findByText(/connected/i);
+    await user.click(screen.getByRole("button", { name: /use this model/i }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("shows the model the server actually connected to, not a guess", async () => {
+    const user = userEvent.setup();
+    const test = vi.fn().mockResolvedValue({ ok: true, provider: "openai", model: "nvidia/nemotron-3.5-lightning:free" });
+    render(<ModelSettings current="ollama" onChange={vi.fn()} test={test} />);
+    await user.click(screen.getByRole("button", { name: /qwen3/i }));
+    await user.click(screen.getByRole("radio", { name: /openrouter/i }));
+    await user.type(screen.getByLabelText(/api key/i), "k");
+    await user.click(screen.getByRole("button", { name: /test connection/i }));
+    expect(await screen.findByText(/nvidia\/nemotron-3\.5-lightning:free/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /use this model/i }));
+    expect(screen.getByRole("button", { name: /nemotron/i })).toBeInTheDocument();
+  });
+
+  it("does not claim a hosted model before the server says which one", async () => {
+    const user = userEvent.setup();
+    render(<ModelSettings current="ollama" onChange={vi.fn()} />);
+    await user.click(screen.getByRole("button", { name: /qwen3/i }));
+    expect(screen.getByRole("radio", { name: /openrouter/i }).closest("label")).toHaveTextContent(/set on the server/i);
+  });
+});
