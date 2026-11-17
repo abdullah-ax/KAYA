@@ -36,3 +36,6 @@ models/
 # Run state written next to outputs by the cli
 /state.json
 /plan_versions.json
+
+# Internal planning notes stay local
+/planning/
