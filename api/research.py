@@ -46,6 +46,15 @@ def _matches(host: str, domains: tuple[str, ...]) -> bool:
     return any(host == d or host.endswith("." + d) for d in domains)
 
 
+def has_host(url: str) -> bool:
+    """True for a real web address; false for things like a URL with no host."""
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        return False
+    return parsed.scheme in ("http", "https") and bool(parsed.hostname)
+
+
 def trust_for(url: str) -> Trust:
     """High: official stats, gov/edu, major outlets. Low: forums and social. Else medium."""
     host = _host(url)
@@ -123,7 +132,7 @@ class SearxSearch:
                 engine=i.get("engine"),
             )
             for i in items[:n]
-            if isinstance(i, dict) and i.get("url")
+            if isinstance(i, dict) and i.get("url") and has_host(str(i["url"]))
         ]
 
 
@@ -172,6 +181,8 @@ class SourceRegistry:
 
     def record(self, results: Iterable[SearchResult]) -> None:
         for r in results:
+            if not has_host(r.url):
+                continue
             self._seen.setdefault(_norm(r.url), r)
 
     def allows(self, url: str | None) -> bool:
