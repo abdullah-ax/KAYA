@@ -9,7 +9,9 @@ from api.research import FakeSearch, SearchResult
 
 LINKEDIN = "https://www.linkedin.com/pulse/microbus-routes-cairo"
 BLOG = "https://medium.com/@someone/why-microbus-is-hard"
-LOW_RESULTS = [SearchResult("Post", LINKEDIN, "A post.", None), SearchResult("Blog", BLOG, "A blog.", None)]
+LOW_QUOTE = "nobody has a map of the microbus routes"
+LOW_RESULTS = [SearchResult("Post", LINKEDIN, f"A post: {LOW_QUOTE}.", None),
+               SearchResult("Blog", BLOG, f"A blog: {LOW_QUOTE}.", None)]
 
 
 def _ctx(tmp_run, llm):
@@ -21,6 +23,9 @@ def _ctx(tmp_run, llm):
 
 def _draft(tmp_run, urls, fit=4):
     opps = {"opportunities": [fx.opportunity(f"Idea {i}", u, fit=fit) for i, u in enumerate(urls)]}
+    for opp, url in zip(opps["opportunities"], urls):
+        if url in (LINKEDIN, BLOG):
+            opp["evidence_quote"] = LOW_QUOTE  # a real quote, so only low trust keeps it from counting
     ctx = _ctx(tmp_run, fx.scripted_llm(opps))
     profile = FounderProfile.model_validate(fx.PROFILE)
     return intern.draft_opportunities(ctx, "brief", profile, intern.search(ctx, "brief", profile))

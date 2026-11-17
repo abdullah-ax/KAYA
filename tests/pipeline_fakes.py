@@ -31,7 +31,16 @@ URLS = [
     LOW_URL,
 ]
 
-RESULTS = [SearchResult(f"Source {i}", url, f"Snippet {i} about IELTS speaking.", "duckduckgo")
+# Words each fake result really holds; the fake drafts cite them as their quotes.
+QUOTES = {
+    URLS[0]: "students who practise with a partner every week feel ready for the speaking test",
+    URLS[1]: "speaking is the lowest scoring part for many test takers",
+    URLS[2]: "learners with no speaking partner scored half a band lower",
+    LOW_URL: "I cannot find anyone to practise speaking with",
+}
+
+RESULTS = [SearchResult(f"Source {i}", url, f"Snippet {i} about IELTS speaking. {QUOTES[url].capitalize()}.",
+                        "duckduckgo")
            for i, url in enumerate(URLS)]
 
 UNSEEN = "https://not-in-search.example.com/made-up"
@@ -43,6 +52,7 @@ def opportunity(title: str, url: str, fit: int = 4) -> dict[str, Any]:
         "problem": f"Students fail the speaking part because they lack practice ({title}).",
         "who": "IELTS students in Alexandria who sit the test this year.",
         "evidence_urls": [url],
+        "evidence_quote": QUOTES.get(url, "students fail the speaking test without practice"),
         "founder_edge": "Coached 300 students since 2021.",
         "first_10": "Ten students from the WhatsApp group.",
         "cost_to_test": "EGP 0 and 5 hours.",
@@ -63,7 +73,7 @@ def weak_opportunities() -> dict[str, Any]:
 
 
 def canvas(url: str = LOW_URL) -> dict[str, Any]:
-    box = {"content": "Students in the group practice alone.", "source_url": url}
+    box = {"content": "Students in the group practice alone.", "source_url": url, "source_quote": QUOTES.get(url)}
     plain = {"content": "Sell by hand in the WhatsApp group.", "source_url": None}
     return {"customer_segments": box, "problem": box, "uvp": plain, "solution": plain,
             "channels": plain, "revenue": {"content": "EGP 150 a month.", "source_url": None},
