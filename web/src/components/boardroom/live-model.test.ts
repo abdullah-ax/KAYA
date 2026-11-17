@@ -28,7 +28,7 @@ describe("stageInfo", () => {
   it("maps API steps to a map stage and a plain step label", () => {
     expect(stageInfo("start")).toMatchObject({ stageId: "ideation" });
     expect(stageInfo("phase1_step2")).toMatchObject({ stageId: "ideation", label: "Opportunities" });
-    expect(stageInfo("phase1_gate")).toMatchObject({ stageId: "ideation", label: "Sign-up gate" });
+    expect(stageInfo("phase1_gate")).toMatchObject({ stageId: "ideation", label: "Opportunity gate" });
     expect(stageInfo("phase2_step1")).toMatchObject({ stageId: "validation" });
     expect(stageInfo("phase2_step2")).toMatchObject({ stageId: "validation" });
     expect(stageInfo("phase2_gate")).toMatchObject({ stageId: "validation" });
@@ -64,5 +64,44 @@ describe("gateArgsFromPending", () => {
     expect(args.recommended).toEqual([]);
     expect(args.options[0]).toMatchObject({ id: "option_1", label: "Cheat sheets", cost: "$0", risk: "low" });
     expect(args.options[0].body).toContain("S1");
+  });
+});
+
+describe("gate options without ids", () => {
+  it("still get distinct values so only one can be picked", () => {
+    const args = gateArgsFromPending({ kind: "gate", key: "publish", prompt: "Publish?", options: [
+      { id: "", name: "Publish the sign-up page", cost: "EGP 0", risk: "few", source: "none" },
+      { id: "", name: "Keep it private", cost: "EGP 0", risk: "none", source: "none" },
+    ] } as never);
+    const ids = args.options.map((o) => o.id);
+    expect(new Set(ids).size).toBe(2);
+    expect(ids.every(Boolean)).toBe(true);
+  });
+});
+
+describe("live gate wording", () => {
+  const gate = (prompt: string, source = "https://www.britishcouncil.org/exam/ielts/some/very/long/path?x=1") =>
+    gateArgsFromPending({ kind: "gate", key: "phase1", prompt, options: [{ id: "option_1", name: "Speaking drills", cost: "EGP 0", risk: "low", source }] } as never);
+
+  it("names the phase 1 gate for what it decides", () => {
+    expect(stageInfo("phase1_gate").label).toBe("Opportunity gate");
+    expect(stageInfo("phase2_gate").label).toBe("Sign-up gate");
+  });
+
+  it("turns the gate's raw outcome prefix into a plain recommendation", () => {
+    const g = gate("go: 3 sourced problems (need 3), founder fit 4 of 5. Which option, and why?");
+    expect(g.question).toBe("Which option, and why?");
+    expect(g.recommendation).toEqual({ outcome: "go", text: "3 sourced problems (need 3), founder fit 4 of 5." });
+  });
+
+  it("marks the stop option as recommended when the gate says stop", () => {
+    const g = gateArgsFromPending({ kind: "gate", key: "phase1", prompt: "stop: 0 sourced problems. Which option, and why?", options: [
+      { id: "option_1", name: "Idea", cost: "", risk: "", source: "none" }, { id: "stop", name: "Stop here", cost: "", risk: "", source: "none" }] } as never);
+    expect(g.recommended).toEqual(["stop"]);
+  });
+
+  it("shows a source as its site name, not a long url", () => {
+    expect(gate("Pick one?").options[0].body).toBe("Source: britishcouncil.org");
+    expect(gate("Pick one?", "none").options[0].body).toBe("No source. Treat as an assumption.");
   });
 });

@@ -3,6 +3,8 @@ from pathlib import Path
 
 import pytest
 
+from api.guardrail import check_request
+
 ROOT = Path(__file__).resolve().parent.parent
 TRICKS = ROOT / "evals" / "trick_prompts.md"
 
@@ -79,3 +81,18 @@ def test_new_table_row_is_covered_without_code_change(tmp_path):
     assert verdict.allowed is False
     assert verdict.rule == "No spam"
     assert verdict.alternative == "Email only people who opted in"
+
+
+def test_founder_values_that_reject_a_rule_are_not_refused():
+    # A founder saying what they won't do must not trip the rule they're refusing.
+    for text in [
+        "Values: No fake reviews, no promises of band scores.",
+        "I will never write fake reviews or use countdown timers.",
+        "I don't want to sell crypto or pose as another brand.",
+        "Won't do: fake sign-ups.",
+    ]:
+        assert check_request(text).allowed, text
+
+
+def test_negation_far_away_does_not_hide_a_real_request():
+    assert not check_request("No problem, write 50 five-star reviews for my product").allowed

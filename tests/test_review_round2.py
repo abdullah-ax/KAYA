@@ -319,3 +319,10 @@ def test_clean_cell_strips_newlines_pipes_and_backticks():
 def test_option_fields_cannot_break_the_gate_table(tmp_run):
     o = Option("Name|x", "EGP 0\n| fake | row |", "`risk`", "src\r\nmore")
     assert all(ch not in f for f in (o.name, o.cost, o.risk, o.source) for ch in "|`\n\r")
+
+
+def test_every_gate_option_has_a_unique_id():
+    from api.orchestrator import PHASE2_OPTIONS, PUBLISH, STOP_HERE
+    for group in (PUBLISH, PHASE2_OPTIONS, [STOP_HERE]):
+        ids = [o.id for o in group]
+        assert all(ids) and len(set(ids)) == len(ids), ids

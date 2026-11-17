@@ -72,3 +72,22 @@ describe("live gate card", () => {
     expect(await screen.findByText(/couldn't send/i)).toBeInTheDocument();
   });
 });
+
+describe("gate recommendation", () => {
+  it("shows the system's recommendation above the options, in red for stop", () => {
+    render(
+      <GateSubmitContext.Provider value={vi.fn()}>
+        <GateDecision args={{ ...args, recommendation: { outcome: "stop", text: "0 sourced problems (need 3)." } }} />
+      </GateSubmitContext.Provider>,
+    );
+    const rec = screen.getByRole("note", { name: /system recommends/i });
+    expect(rec).toHaveTextContent(/stop/i);
+    expect(rec).toHaveTextContent("0 sourced problems (need 3).");
+    expect(rec).toHaveAttribute("data-outcome", "stop");
+  });
+
+  it("shows no recommendation box when the gate gives none", () => {
+    setup();
+    expect(screen.queryByRole("note", { name: /system recommends/i })).not.toBeInTheDocument();
+  });
+});
