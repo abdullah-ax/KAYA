@@ -28,7 +28,7 @@ const STEPS: Step[] = [
   { kind: "text", id: "values", q: "What won't you do, even for money?", hint: "This becomes a rule the agents follow.", minWords: 6, placeholder: "No exaggerated health claims. No fake reviews." },
 ];
 
-export type LiveStart = { provider: ApiProvider; modelKey: string; onRun: (run: Run) => void };
+export type LiveStart = { provider: ApiProvider; modelKey: string; model?: string; onRun: (run: Run) => void };
 
 export function Onboarding({ onDone, live }: { onDone?: () => void; live?: LiveStart }) {
   const [starting, setStarting] = useState(false);
@@ -52,7 +52,7 @@ export function Onboarding({ onDone, live }: { onDone?: () => void; live?: LiveS
     setStarting(true);
     setStartError(null);
     try {
-      live.onRun(await createRun({ brief: composeBrief(answers), mode: "demo", provider: live.provider }, live.modelKey || undefined));
+      live.onRun(await createRun({ brief: composeBrief(answers), mode: "demo", provider: live.provider, model: live.model }, live.modelKey || undefined));
     } catch (e) {
       setStartError(e instanceof ApiError ? e.message : "Couldn't reach the API. Check that it is running, then try again.");
       setStarting(false);

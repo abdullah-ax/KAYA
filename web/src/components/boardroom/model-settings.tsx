@@ -26,7 +26,8 @@ import { cn } from "@/lib/utils";
 type Provider = { id: string; name: string; model: string; note: string; needsKey: boolean };
 
 export const PROVIDERS: Provider[] = [
-  { id: "ollama", name: "Local (Ollama)", model: "qwen3:8b", note: "Free. Runs on your machine. Nothing leaves it.", needsKey: false },
+  { id: "ollama", name: "Local · light", model: "qwen3:8b", note: "Free. Runs on a 16 GB laptop. Nothing leaves your machine.", needsKey: false },
+  { id: "ollama-gpt-oss", name: "Local · stronger", model: "gpt-oss:20b", note: "Free. Better answers, slower. Needs about 16 GB free memory.", needsKey: false },
   { id: "groq", name: "Groq free tier", model: "openai/gpt-oss-20b", note: "Free key. Open-weight model, fast. Rate limited.", needsKey: true },
   { id: "openrouter", name: "OpenRouter free models", model: "qwen/qwen3-8b:free", note: "Free key. Open-weight model. Slower at peak.", needsKey: true },
 ];
@@ -42,9 +43,13 @@ const STATE_TEXT: Record<ConnState, { text: string; tone: "muted" | "ok" | "bad"
 };
 
 /** Local runs on Ollama. Every hosted choice is an OpenAI-compatible endpoint. */
-export const apiProviderOf = (id: string): ApiProvider => (id === "ollama" ? "ollama" : "openai");
+export const apiProviderOf = (id: string): ApiProvider => (id.startsWith("ollama") ? "ollama" : "openai");
 
-export type ModelTest = (provider: ApiProvider, key: string) => Promise<ModelTestResult>;
+/** The Ollama model behind a local option; hosted options pick their model on the server. */
+export const localModelOf = (id: string): string | undefined =>
+  id.startsWith("ollama") ? PROVIDERS.find((x) => x.id === id)?.model : undefined;
+
+export type ModelTest = (provider: ApiProvider, key: string, model?: string) => Promise<ModelTestResult>;
 
 export function ConnectionStatus({ state, detail }: { state: ConnState; detail?: string }) {
   const s = STATE_TEXT[state];
@@ -65,7 +70,18 @@ export function ConnectionStatus({ state, detail }: { state: ConnState; detail?:
   );
 }
 
-export function ModelSettings({ current, onChange, test: liveTest }: { current: string; onChange: (id: string, key: string) => void; test?: ModelTest }) {
+export function ModelSettings({
+  current,
+  onChange,
+  test: liveTest,
+  installed,
+}: {
+  current: string;
+  onChange: (id: string, key: string) => void;
+  test?: ModelTest;
+  /** Which local models Ollama has downloaded, from GET /models. */
+  installed?: Record<string, boolean | null>;
+}) {
   const [provider, setProvider] = useState(current);
   const [key, setKey] = useState("");
   const [state, setState] = useState<ConnState>("unset");
@@ -78,7 +94,7 @@ export function ModelSettings({ current, onChange, test: liveTest }: { current: 
     setDetail(undefined);
     if (liveTest) {
       try {
-        const r = await liveTest(apiProviderOf(provider), p.needsKey ? key.trim() : "");
+        const r = await liveTest(apiProviderOf(provider), p.needsKey ? key.trim() : "", localModelOf(provider));
         if (r.ok) return setState("connected");
         setDetail(r.error || undefined);
         setState(/rate|429|quota/i.test(r.error ?? "") ? "rate_limited" : "invalid");
@@ -128,6 +144,9 @@ export function ModelSettings({ current, onChange, test: liveTest }: { current: 
                 <span className="font-bold">{x.name}</span>
                 <span className="font-mono text-[14px] text-muted-foreground">{x.model}</span>
                 <span className="text-[15px]">{x.note}</span>
+                {installed && localModelOf(x.id) && installed[localModelOf(x.id)!] === false && (
+                  <span className="text-[14px] font-semibold text-amber-800 dark:text-amber-300">Still downloading. Pick the light model for now.</span>
+                )}
               </span>
             </Label>
           ))}

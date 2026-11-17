@@ -11,12 +11,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Thread } from "@/components/assistant-ui/elements/thread.aui";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { health, testModel, useRun, type Run } from "@/lib/api";
+import { health, listModels, testModel, useRun, type Run } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { SCREENS, TEAM, type Screen } from "./data";
 import { LiveChat, LivePanel, LiveRoster } from "./live";
 import { progressStages, stageInfo } from "./live-model";
-import { apiProviderOf, ModelSettings } from "./model-settings";
+import { apiProviderOf, localModelOf, ModelSettings } from "./model-settings";
 import { STAGES } from "./journey";
 import { StageMap } from "./map/stage-map";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -90,6 +90,13 @@ export function Boardroom({ initialScreen, initialRunId, dark, egg: eggParam }: 
     return () => { alive = false; };
   }, []);
   const live = conn === "online";
+  const [installed, setInstalled] = useState<Record<string, boolean | null> | undefined>();
+  useEffect(() => {
+    if (!live) return;
+    listModels()
+      .then((m) => setInstalled(Object.fromEntries(m.choices.map((c) => [c.name, c.installed]))))
+      .catch(() => setInstalled(undefined));
+  }, [live]);
 
   const [egg, setEgg] = useState(!!eggParam);
   const [screenId, setScreenId] = useState<string>(initialScreen ?? "gate");
@@ -134,7 +141,8 @@ export function Boardroom({ initialScreen, initialRunId, dark, egg: eggParam }: 
             <ModelSettings
               current={model}
               onChange={(id, key) => { setModel(id); setModelKey(key); }}
-              test={live ? (provider, key) => testModel(provider, key || undefined) : undefined}
+              test={live ? (provider, key, m) => testModel(provider, key || undefined, m) : undefined}
+              installed={installed}
             />
             {!live && <SettingsDialog tarekMode={egg} onTarekMode={setEgg} />}
           </div>
@@ -142,7 +150,7 @@ export function Boardroom({ initialScreen, initialRunId, dark, egg: eggParam }: 
 
         {live ? (
           !runId ? (
-            <Onboarding live={{ provider: apiProviderOf(model), modelKey, onRun: (r: Run) => { setRunId(r.id); update(r); } }} />
+            <Onboarding live={{ provider: apiProviderOf(model), modelKey, model: localModelOf(model), onRun: (r: Run) => { setRunId(r.id); update(r); } }} />
           ) : (
             <div className="grid min-h-0 flex-1 grid-cols-[17rem_1fr_22rem]">
               <LiveRoster run={run} />

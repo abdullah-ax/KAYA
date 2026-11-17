@@ -85,13 +85,20 @@ export async function health(): Promise<boolean> {
   }
 }
 
-export const createRun = (body: { brief: string; mode?: "demo" | "full"; provider?: ApiProvider }, key?: string) =>
-  call<Run>("/runs", { method: "POST", body: { brief: body.brief, mode: body.mode ?? "demo", provider: body.provider ?? "ollama" }, key });
+export const createRun = (body: { brief: string; mode?: "demo" | "full"; provider?: ApiProvider; model?: string }, key?: string) =>
+  call<Run>("/runs", {
+    method: "POST",
+    body: { brief: body.brief, mode: body.mode ?? "demo", provider: body.provider ?? "ollama", ...(body.model ? { model: body.model } : {}) },
+    key,
+  });
 export const getRun = (id: string) => call<Run>(`/runs/${encodeURIComponent(id)}`);
 export const sendAnswer = (id: string, text: string) => call<Run>(`/runs/${encodeURIComponent(id)}/answer`, { method: "POST", body: { text } });
 export const sendGate = (id: string, option: string, reason: string) => call<Run>(`/runs/${encodeURIComponent(id)}/gate`, { method: "POST", body: { option, reason } });
 export const getLog = (id: string) => call<LogEntry[]>(`/runs/${encodeURIComponent(id)}/log`);
-export const testModel = (provider: ApiProvider, key?: string) => call<ModelTestResult>("/model/test", { method: "POST", body: { provider }, key });
+export const testModel = (provider: ApiProvider, key?: string, model?: string) =>
+  call<ModelTestResult>("/model/test", { method: "POST", body: { provider, ...(model ? { model } : {}) }, key });
+export type ModelChoices = { default: string; choices: { name: string; installed: boolean | null }[] };
+export const listModels = () => call<ModelChoices>("/models");
 
 export const POLL_MS = 1000;
 const isLive = (s: RunStatus) => s === "working" || s === "waiting" || s === "gate";
