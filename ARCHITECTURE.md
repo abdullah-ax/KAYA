@@ -104,12 +104,16 @@ Kept in sync with the README table. Updated only after a real run.
 
 | Part | Status |
 |---|---|
-| Phases 1–2 pipeline | STUBBED |
-| Phases 3–6 | STUBBED |
-| Payment and delivery | MOCKED |
-| Approval rules in code | STUBBED |
-| Judges, ethics bot, guardrail | STUBBED |
-| Voice | STUBBED |
+| Phases 1–2 pipeline: intake, research with sources, opportunity gate, interview script, Lean Canvas, sign-up page, sign-up gate with STOP | Working (committed demo run plus live runs on a free open-weight model) |
+| Living business plan with version history | Working |
+| Accelerator stage cards ("This week") | Working |
+| Phases 3–6 agents | STUBBED |
+| Payment and delivery (events, access tokens, refunds, reconciliation) | MOCKED |
+| Netlify publishing of the approved page | STUBBED (code and tests, never run against Netlify) |
+| Approval rules in code | Working |
+| Guardrail, ethics check, decision log | Working |
+| Judges panel | STUBBED |
+| Voice input in the browser | STUBBED (built and unit-tested, not tried with a real microphone) |
 
 ## Roadmap
 
