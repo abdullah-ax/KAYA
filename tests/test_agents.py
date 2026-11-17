@@ -157,3 +157,16 @@ def test_boss_passes_clean_draft_only_when_model_votes_pass(tmp_run):
 
     assert boss.review(ok, _draft(text), "phase1_step2").passed
     assert not boss.review(no, _draft(text), "phase1_step2").passed
+
+
+def test_founder_can_pick_a_gate_option_by_its_number(tmp_run):
+    from api.agents.cofounder import Option, ask_choice
+    from api.log import DecisionLog
+    from api.orchestrator import Ctx, ScriptedAnswers
+    import pipeline_fakes as fx
+    ctx = Ctx(cfg=fx.config(), llm=fx.scripted_llm(fx.strong_opportunities()), search=fx.fake_search(),
+              log=DecisionLog(tmp_run / "decision_log.json"),
+              answers=ScriptedAnswers({"g_option": "2", "g_reason": "The second one fits the students I already teach every single week in Cairo"}),
+              run_dir=tmp_run, say=lambda t: None)
+    picked = ask_choice(ctx, "g", "Which one?", [Option("Alpha", "0", "low", "none"), Option("Beta", "0", "low", "none")])
+    assert picked.option == "Beta"
