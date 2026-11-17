@@ -17,15 +17,23 @@ const R2 = 'We got more sign-ups than the target in two weeks, so building the p
   globalThis.failSnap = () => p.screenshot({ path: 'tests/e2e/screens/zz_fail.png' });
   await p.goto(`${BASE}/`, { waitUntil: 'networkidle' });
   await p.waitForTimeout(800); await snap('01_live_onboarding');
-  const next = () => p.getByRole('button', { name: /^Next/ }).click();
-  await p.getByRole('radio', { name: 'Freelancer' }).click(); await p.getByRole('textbox').first().fill('IELTS tutor'); await next();
-  await p.getByRole('textbox').first().fill('Cairo'); await next();
-  await p.getByRole('checkbox', { name: /Teaching/ }).click(); await next();
-  await p.getByRole('textbox').first().fill('My WhatsApp group of 420 IELTS students'); await next();
-  await p.getByRole('radio', { name: /10–20/ }).click(); await next();
-  await p.getByRole('radio', { name: /Self-funded/ }).click(); await next();
-  // follow-ups: the model (or the standard question) asks up to four, then the profile card
-  for (let k = 0; k < 4; k++) { await p.getByRole('textbox').first().fill('No fake reviews, no promises of band scores, 420 students ask weekly'); await next(); }
+  // Onboarding: answer whatever each screen asks (choice, checkbox, text), skip nothing that can be answered.
+  const texts = ['IELTS tutor', 'Cairo', 'Cairo University, English, 2019', 'Taught at a language centre for 3 years',
+    'Students ask me for speaking practice', 'Book club host', 'My WhatsApp group of 420 IELTS students',
+    'Two language centre owners', 'Arabic and English', 'No fake reviews, no promises of band scores'];
+  let ti = 0;
+  for (let k = 0; k < 30; k++) {
+    if (await p.getByRole('button', { name: /^Start(?! voice)/ }).isVisible().catch(() => false)) break;
+    const r = p.locator('[role=radio]').first();
+    if (await r.isVisible().catch(() => false) && !(await p.locator('[role=radio][data-state=checked],[role=radio][aria-checked=true]').count())) await r.click();
+    const c = p.locator('[role=checkbox]').first();
+    if (await c.isVisible().catch(() => false) && !(await p.locator('[role=checkbox][data-state=checked],[role=checkbox][aria-checked=true]').count())) await c.click();
+    const t = p.locator('textarea').first();
+    if (await t.isVisible().catch(() => false) && !(await t.inputValue())) await t.fill(texts[ti++ % texts.length] + (ti > texts.length ? ' ' + ti : ''));
+    const n = p.getByRole('button', { name: /^Next/ });
+    if (await n.isEnabled().catch(() => false)) await n.click(); else await p.getByRole('button', { name: /skip for now/i }).click();
+    await p.waitForTimeout(500);
+  }
   await p.getByRole('button', { name: /^Start(?! voice)/ }).click();
   await until(s => s.pending, 'first question');
   await p.waitForTimeout(1500); await snap('02_live_first_question');
