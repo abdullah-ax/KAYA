@@ -108,7 +108,7 @@ describe("founderFit", () => {
       expect(e.title && e.why).toBeTruthy();
       expect(e.quote).toBe(OPEN.find((x) => x.key === e.key)!.answer);
     }
-    expect(edges[0].key).toBe("group");
+    expect(edges.map((e) => e.key)).toEqual(["help", "group", "connections"]);
   });
   it("never counts skipped answers", () => {
     const { edges } = founderFit(OPEN.map((x) => (x.key === "help" || x.key === "group" ? skip(x.key) : x)));
