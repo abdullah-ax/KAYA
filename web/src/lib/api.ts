@@ -40,6 +40,8 @@ export type Run = {
   outputs: string[];
   sources: ApiSource[];
   error: string | null;
+  /** Putting the approved sign-up page online. approved comes from the decision log. */
+  delivery?: { approved: boolean; url: string | null; site_id: string | null };
 };
 
 export type ModelTestResult = { ok: boolean; provider: ApiProvider; model?: string; error?: string };
@@ -56,10 +58,11 @@ export class ApiError extends Error {
 
 const FALLBACK = "Something went wrong talking to the API. Try again.";
 
-async function call<T>(path: string, init: { method?: "GET" | "POST"; body?: unknown; key?: string } = {}): Promise<T> {
+async function call<T>(path: string, init: { method?: "GET" | "POST" | "DELETE"; body?: unknown; key?: string; netlifyToken?: string } = {}): Promise<T> {
   const headers: Record<string, string> = {};
   if (init.body !== undefined) headers["content-type"] = "application/json";
   if (init.key) headers["x-model-key"] = init.key;
+  if (init.netlifyToken) headers["x-netlify-token"] = init.netlifyToken;
   const res = await fetch(`/api${path}`, {
     method: init.method ?? "GET",
     headers,
@@ -97,6 +100,12 @@ export const sendGate = (id: string, option: string, reason: string) => call<Run
 export const getLog = (id: string) => call<LogEntry[]>(`/runs/${encodeURIComponent(id)}/log`);
 export const testModel = (provider: ApiProvider, key?: string, model?: string) =>
   call<ModelTestResult>("/model/test", { method: "POST", body: { provider, ...(model ? { model } : {}) }, key });
+export type Delivered = { url: string | null; site_id: string | null };
+/** The Netlify token travels only in the X-Netlify-Token header. It is never stored here. */
+export const publishToNetlify = (id: string, token: string) =>
+  call<Delivered>(`/runs/${encodeURIComponent(id)}/publish/netlify`, { method: "POST", netlifyToken: token });
+export const takeDownNetlify = (id: string, token: string) =>
+  call<Delivered>(`/runs/${encodeURIComponent(id)}/publish/netlify`, { method: "DELETE", netlifyToken: token });
 export type ModelChoices = { default: string; choices: { name: string; installed: boolean | null }[] };
 export const listModels = () => call<ModelChoices>("/models");
 

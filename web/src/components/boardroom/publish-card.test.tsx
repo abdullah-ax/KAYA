@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Run } from "@/lib/api";
+import { LivePanel } from "./live";
 import { PublishCard } from "./publish-card";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -120,5 +121,24 @@ describe("PublishCard", () => {
     await user.click(screen.getByRole("button", { name: /take it down/i }));
     expect(await screen.findByRole("alert")).toHaveTextContent(/did not accept that token/i);
     expect(screen.getByRole("link", { name: "https://live.netlify.app" })).toBeInTheDocument();
+  });
+});
+
+describe("PublishCard in the right panel", () => {
+  const panel = (r: Run) => render(<LivePanel run={r} error={null} onRestart={() => {}} />);
+
+  it("is shown once the founder approved publishing", () => {
+    panel(run());
+    expect(screen.getByRole("button", { name: /publish to netlify/i }).closest("section")).toHaveTextContent(/put your page online/i);
+  });
+
+  it("waits for the decision while the publish gate is open", () => {
+    panel(run({ status: "gate", pending: { kind: "gate", key: "publish", prompt: "Publish this sign-up page?", options: [] } }, { approved: false }));
+    expect(screen.getByText(/waits for your decision/i)).toBeInTheDocument();
+  });
+
+  it("is hidden early in a run, before the publish question", () => {
+    panel(run({ stage: "phase1_step1" }, { approved: false }));
+    expect(screen.queryByRole("heading", { name: /put your page online/i })).not.toBeInTheDocument();
   });
 });

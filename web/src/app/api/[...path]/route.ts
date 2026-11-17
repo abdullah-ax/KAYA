@@ -1,6 +1,6 @@
 /* Server-side proxy to the FastAPI backend. The browser only talks to this
-   origin. Only X-Model-Key and the JSON content type go upstream. The key is
-   never logged and never echoed back. */
+   origin. Only X-Model-Key, X-Netlify-Token and the JSON content type go upstream.
+   Neither secret is ever logged or echoed back. */
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +15,8 @@ async function forward(req: Request, { params }: Ctx): Promise<Response> {
   const headers = new Headers();
   const key = req.headers.get("x-model-key");
   if (key) headers.set("x-model-key", key);
+  const netlify = req.headers.get("x-netlify-token");
+  if (netlify) headers.set("x-netlify-token", netlify);
   const hasBody = req.method === "POST";
   if (hasBody) headers.set("content-type", "application/json");
 
@@ -36,3 +38,4 @@ async function forward(req: Request, { params }: Ctx): Promise<Response> {
 
 export const GET = forward;
 export const POST = forward;
+export const DELETE = forward;

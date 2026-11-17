@@ -19,6 +19,7 @@ import { TEAM } from "./data";
 import { gateArgsFromPending, sourceCardsFrom, stageInfo } from "./live-model";
 import { BoardroomTool, GateSubmitContext } from "./tools";
 import { FaceAvatar, PARODY, TarekCard } from "./parody";
+import { PublishCard } from "./publish-card";
 import { tarekMood } from "./tarek-mood";
 import { EmptyState, RosterItem, SourceCard } from "./ui";
 
@@ -154,6 +155,8 @@ export function LivePanel({ run, error, onRestart, tarek = false }: { run: Run |
         {error && <p role="status" className="text-[15px] font-semibold text-destructive">Lost contact with the API. Trying again.</p>}
         {ended && <Button variant="outline" onClick={onRestart} className="w-fit rounded-full">Start a new run</Button>}
       </Section>
+
+      {(run.delivery?.approved || run.delivery?.url || (run.pending?.kind === "gate" && run.pending.key === "publish")) && <PublishCard run={run} />}
 
       <Section title={`Sources (${cards.length})`}>
         {cards.length ? cards.map((c) => <SourceCard key={c.n} {...c} />) : <p className="text-[15px] text-muted-foreground">None yet. Every claim will show its source here, or the word ASSUMPTION.</p>}
