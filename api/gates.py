@@ -42,7 +42,8 @@ def phase1_gate(sourced_problems: int, founder_fit: int, cfg: Any, reach: int | 
                 "sourced_problems": sourced_problems,
                 "min_sourced_problems": rules.min_sourced_problems,
                 "founder_fit": founder_fit,
-                "min_founder_fit_score": rules.min_founder_fit_score}
+                "min_founder_fit_score": rules.min_founder_fit_score,
+                "source": "opportunities with a medium or high trust source card; founder fit is a model estimate"}
     if reach is not None:
         evidence["reach"] = reach
     got = (f"{sourced_problems} sourced problems (need {rules.min_sourced_problems}), "
@@ -79,7 +80,8 @@ def phase2_gate(signups: int, cfg: Any) -> GateResult:
     _require_positive("signup_target", target)
     fraction = signups / target
     evidence = {"metric": "sign-ups", "target": target, "actual": signups,
-                "percent": round(fraction * 100), "window_days": rules.window_days}
+                "percent": round(fraction * 100), "window_days": rules.window_days,
+                "source": "founder-entered count"}
     got = f"{signups} of {target} sign-ups in {rules.window_days} days ({evidence['percent']}%)"
     if signups >= target:
         return GateResult("phase2_validate", "go",
@@ -158,11 +160,15 @@ def phase6_gate(came_back: int, paid: int) -> GateResult:
 
 def write_gate_decision(path: str | Path, result: GateResult,
                         approval: Approval | None) -> Path:
-    """Write the gate decision as markdown, following templates/gate_decision.md."""
+    """Write the gate decision as markdown, following templates/gate_decision.md.
+
+    A line with nothing to say is left out: no window for a gate without one, no source if none is known.
+    """
     path = Path(path)
     phase, _, name = result.gate.partition("_")
     ev = result.evidence
-    window = f"{ev['window_days']} days" if "window_days" in ev else "not set"
+    window = [f"- Window: {ev['window_days']} days"] if "window_days" in ev else []
+    source = f" (source: {ev['source']})" if ev.get("source") else ""
     if approval is None:
         picked, why, by = "pending", "pending", "pending"
     else:
@@ -173,21 +179,18 @@ def write_gate_decision(path: str | Path, result: GateResult,
         "## Target (set before the run)",
         f"- Metric: {ev.get('metric', 'not set')}",
         f"- Target: {ev.get('target', 'not set')}",
-        f"- Window: {window}", "",
+        *window, "",
         "## Result",
-        f"- Actual: {ev.get('actual', 'unknown')} (source: {ev.get('source', 'not given')})",
+        f"- Actual: {ev.get('actual', 'unknown')}{source}",
         f"- Percent of target: {ev.get('percent', 'unknown')}%", "",
         "## System recommendation",
         result.recommendation, "",
-        "## Judges' top notes",
-        "- none recorded", "",
         "## Options shown to the founder",
         "| Option | Cost | Risk | Source |",
         "|---|---|---|---|", "",
         "## Founder's decision",
         f"- Picked: {picked}",
         f'- Why, in their own words: "{why}"',
-        "- Understanding check answers: not recorded",
         f"- Approved by: {by}", "",
     ]
     path.parent.mkdir(parents=True, exist_ok=True)

@@ -1,4 +1,4 @@
-"""Checkpoint 1 pipeline. Our code owns the loop; agents are small functions."""
+"""The six-phase pipeline. Our code owns the loop; agents are small functions."""
 from __future__ import annotations
 
 import json

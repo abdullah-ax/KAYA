@@ -1,4 +1,4 @@
-"""Run Checkpoint 1 from the terminal.
+"""Run the six-phase pipeline from the terminal.
 
 python -m api.cli --brief briefs/strong.md [--answers answers.yaml]
                   [--provider ollama|openai] [--run-dir runs/<name>]
@@ -25,7 +25,7 @@ def _model_choices() -> list[str]:
 
 
 def _parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="python -m api.cli", description="Run Checkpoint 1 on a founder brief.")
+    p = argparse.ArgumentParser(prog="python -m api.cli", description="Run the six-phase pipeline on a founder brief.")
     p.add_argument("--brief", required=True, type=Path, help="founder brief, e.g. briefs/strong.md")
     p.add_argument("--answers", type=Path, help="YAML file of founder answers to replay a run")
     p.add_argument("--provider", choices=["ollama", "openai"], default="ollama")
