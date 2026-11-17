@@ -16,7 +16,11 @@ from api.agents.intern import Draft
 from api.approval import Approval, ensure_approved, require_approval
 from api.config import Config
 from api.ethics import check_draft
-from api.gates import GateResult, phase1_gate, phase2_gate, phase3_gate, write_gate_decision
+from api.gates import (GateResult, phase1_gate, phase2_gate, phase3_gate, phase4_gate, phase5_gate, phase6_gate,
+                       write_gate_decision)
+from api.payments import Order, PaymentProcessor, expected_fee
+from api.reconcile import reconcile
+from api.refunds import request_refund
 from api.guardrail import check_request
 from api.llm import LLM
 from api.log import DecisionLog
@@ -163,6 +167,9 @@ class RunResult:
     phase1: GateResult | None = None
     phase2: GateResult | None = None
     phase3: GateResult | None = None
+    phase4: GateResult | None = None
+    phase5: GateResult | None = None
+    phase6: GateResult | None = None
 
 
 def _save(ctx: Ctx, result: RunResult, step: str, outcome: str | None = None) -> RunResult:
@@ -172,7 +179,8 @@ def _save(ctx: Ctx, result: RunResult, step: str, outcome: str | None = None) ->
     state = {"outcome": result.outcome, "step": step,
              "phase1": result.phase1.outcome if result.phase1 else None,
              "phase2": result.phase2.outcome if result.phase2 else None,
-             "phase3": result.phase3.outcome if result.phase3 else None}
+             **{f"phase{n}": (g.outcome if g else None) for n, g in
+                ((3, result.phase3), (4, result.phase4), (5, result.phase5), (6, result.phase6))}}
     ctx.run_dir.mkdir(parents=True, exist_ok=True)
     (ctx.run_dir / "state.json").write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
     return result
@@ -363,6 +371,120 @@ def _build(ctx: Ctx, result: RunResult, profile: Any, chosen: intern.Opportunity
     pick = _gate(ctx, 3, result.phase3, PHASE3_OPTIONS)
     ctx.say({"go": BUILD_DONE, "repeat": BUILD_CUT, "pivot": BUILD_BACK}[PHASE3[pick.option]])
     _save(ctx, result, "phase3_gate", PHASE3[pick.option])
-    if result.outcome == "go":
-        level_up(ctx, 3, f"The must-have stories fit in {weekly * 2} hours over two weeks.")
-    return result
+    if result.outcome != "go":
+        return result
+    level_up(ctx, 3, f"The must-have stories fit in {weekly * 2} hours over two weeks.")
+    return _commercial(ctx, result, chosen)
+
+
+# -- Phases 4 to 6: no model calls. Money is MOCKED: no provider, no real payments. ------------
+PHASE4 = {"Open the MOCKED checkout": "go", "Change the price": "repeat", "Stop here": "stop"}
+PHASE4_OPTIONS = [Option("Open the MOCKED checkout", "EGP 0, test mode", "The price may be wrong", "gate result"),
+                  Option("Change the price", "A day of asking buyers", "Waiting longer to sell", "gate result"),
+                  STOP_HERE]
+REFUND = [Option("Approve the refund", "The order amount, MOCKED", "Less revenue", "refund policy"),
+          Option("Keep the order", "EGP 0", "An unhappy buyer", "refund policy")]
+PHASE5 = {"Keep selling": "go", "Fix the offer": "repeat", "Stop here": "stop"}
+PHASE5_OPTIONS = [Option("Keep selling", "Your time", "Selling before delivery is smooth", "gate result"),
+                  Option("Fix the offer", "A week", "Fewer sales this week", "gate result"), STOP_HERE]
+PHASE6 = {"Keep going and grow": "go", "Improve and measure again": "repeat", "Pivot": "pivot", "Stop here": "stop"}
+PHASE6_OPTIONS = [Option("Keep going and grow", "Your time", "Growing before the product is ready", "gate result"),
+                  Option("Improve and measure again", "Two more weeks", "Slower growth", "gate result"),
+                  Option("Pivot", "A new test", "Dropping what works", "gate result"), STOP_HERE]
+MAX_TEST_ORDERS = 20
+
+
+def _offer(chosen: intern.Opportunity, price: int) -> str:
+    return (f"# Offer: {chosen.title}\n\n"
+            f"- For: {chosen.who}\n"
+            f"- Price: EGP {price} per buyer\n"
+            "- Refund policy: a full refund within 7 days if you ask. Access ends when the refund is made.\n"
+            "- Results: we do not promise any score, income or outcome.\n"
+            "- Payment: MOCKED checkout. No payment provider is connected and no real money moves.\n"
+            "- Delivery: an access link per order, issued once after payment (MOCKED).\n"
+            "- Price source: ASSUMPTION, entered by the founder. Check it with 5 buyers before real sales.\n")
+
+
+def _commercial(ctx: Ctx, result: RunResult, chosen: intern.Opportunity) -> RunResult:
+    """Phase 4: price and policies, then the founder decides whether to open the MOCKED checkout."""
+    price = cofounder.ask_number(ctx, "price", "What will you charge per buyer, in EGP? Use a number you would say "
+                                               "out loud to a customer.")
+    offer = _offer(chosen, price)
+    check = check_draft(offer)
+    ctx.output(4, 1, "offer").write_text(offer, encoding="utf-8")
+    ctx.log.append("cofounder", "draft_offer", founder_input=str(price), outcome=check.outcome)
+    ctx.say(offer)
+    _save(ctx, result, "phase4_step1")
+    result.phase4 = phase4_gate(price, check.outcome == "pass")
+    pick = _gate(ctx, 4, result.phase4, PHASE4_OPTIONS)
+    _save(ctx, result, "phase4_gate", PHASE4[pick.option])
+    if result.outcome != "go":
+        return result
+    level_up(ctx, 4, f"Your offer is set at EGP {price} with a 7-day refund policy.")
+    return _sell(ctx, result, chosen, price)
+
+
+def _sell(ctx: Ctx, result: RunResult, chosen: intern.Opportunity, price: int) -> RunResult:
+    """Phase 5: a MOCKED sale-to-cash test. Payment triggers delivery once; a refund needs the founder."""
+    buyers = min(MAX_TEST_ORDERS, cofounder.ask_number(
+        ctx, "buyers", "How many people told you they would buy at that price? We run that many test orders "
+                       f"through the MOCKED checkout (at most {MAX_TEST_ORDERS})."))
+    proc = PaymentProcessor(ctx.log)
+    amount = price * 100  # piastres
+    rows: list[str] = []
+    for i in range(1, buyers + 1):
+        oid = f"order-{i}"
+        proc.create_order(Order(oid, amount, chosen.title))
+        rows.append(f"| {oid} | payment_succeeded | {proc.handle_event({'event_id': f'pay-{i}', 'order_id': oid, 'type': 'payment_succeeded', 'amount': amount, 'fee': expected_fee(amount)})} |")
+        if i == 1:  # the provider sends the same webhook twice: it must not deliver twice
+            rows.append(f"| {oid} | payment_succeeded again (duplicate webhook) | {proc.handle_event({'event_id': 'pay-1', 'order_id': oid, 'type': 'payment_succeeded', 'amount': amount, 'fee': expected_fee(amount)})} |")
+        rows.append(f"| {oid} | payout_paid | {proc.handle_event({'event_id': f'out-{i}', 'order_id': oid, 'type': 'payout_paid', 'amount': amount - expected_fee(amount)})} |")
+    if buyers:
+        ctx.say("A buyer asked for a refund on order-1. Refunds always need your approval.")
+        pick = cofounder.ask_choice(ctx, "refund", "A buyer asked for a refund on order-1. Approve it?", REFUND)
+        if pick.option == REFUND[0].name:
+            rows.append(f"| order-1 | refund (founder approved) | {request_refund(proc, 'order-1', approval=pick)} |")
+        else:
+            ctx.log.append("founder", "keep_order", founder_input=pick.reason, approved_by="founder")
+            rows.append("| order-1 | refund declined by the founder | kept |")
+    report = reconcile(proc)
+    paid = sum(1 for o in proc.orders.values() if o.status in ("paid", "refunded"))
+    refunded = sum(1 for o in proc.orders.values() if o.status == "refunded")
+    active = sum(1 for d in proc.fulfilment.deliveries if d.active)
+    ctx.output(5, 1, "sales_log").write_text(
+        "# Sales log (MOCKED)\n\nMOCKED: simulated checkout events. No payment provider, no real money.\n\n"
+        "| Order | Event | Result |\n|---|---|---|\n" + "\n".join(rows) + "\n\n"
+        f"- Paid orders: {paid}\n- Refunded: {refunded}\n- Access links still active: {active}\n"
+        f"- Duplicate webhooks ignored: {proc.duplicates}\n", encoding="utf-8")
+    ctx.output(5, 2, "reconciliation").write_text(
+        "# Reconciliation (MOCKED)\n\nOrders, payments, fees and payouts matched line by line.\n\n"
+        f"- Orders: {len(proc.orders)}\n- Mismatches: {len(report.mismatches)}\n"
+        + "".join(f"- {m.order_id}: {m.kind}, {m.detail}\n" for m in report.mismatches), encoding="utf-8")
+    _save(ctx, result, "phase5_step2")
+    result.phase5 = phase5_gate(paid, len(report.mismatches))
+    pick = _gate(ctx, 5, result.phase5, PHASE5_OPTIONS)
+    _save(ctx, result, "phase5_gate", PHASE5[pick.option])
+    if result.outcome != "go":
+        return result
+    level_up(ctx, 5, f"{paid} MOCKED orders were paid and delivered once each, {refunded} refunded, and the books match.")
+    return _operate(ctx, result, paid)
+
+
+def _operate(ctx: Ctx, result: RunResult, paid: int) -> RunResult:
+    """Phase 6: what buyers did next, in the founder's numbers and words, then keep, fix, pivot or stop."""
+    came_back = cofounder.ask_number(ctx, "came_back", "Of your buyers, how many came back, renewed or asked for "
+                                                       "more within two weeks?")
+    feedback = cofounder.ask_founder(ctx, "feedback", "What did buyers complain about or ask for most? Use their words.")
+    ctx.log.append("founder", "enter_feedback", founder_input=feedback)
+    result.phase6 = phase6_gate(min(came_back, paid), paid)
+    ctx.output(6, 1, "learning_review").write_text(
+        "# Learning review\n\n"
+        f"- Buyers who came back in 14 days: {min(came_back, paid)} of {paid} (founder-entered)\n"
+        f"- What buyers said most (founder-entered): {feedback}\n"
+        f"- System read: {result.phase6.recommendation}\n"
+        "- Next experiment: fix the most common complaint first, then measure repeat buyers again in 14 days.\n",
+        encoding="utf-8")
+    _save(ctx, result, "phase6_step1")
+    pick = _gate(ctx, 6, result.phase6, PHASE6_OPTIONS)
+    ctx.say("All six stages are done. Open the map to look back at each one.")
+    return _save(ctx, result, "phase6_gate", PHASE6[pick.option])

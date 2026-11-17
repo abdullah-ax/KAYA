@@ -102,6 +102,49 @@ def phase3_gate(must_hours: int, capacity_hours: int, hours_per_week: int | None
                       f"hours{weekly}. Cut the scope before you build.", evidence)
 
 
+def phase4_gate(price: int, ethics_ok: bool) -> GateResult:
+    """Commercial setup: a price above 0 and an offer that passed the ethics check."""
+    evidence = {"metric": "price per buyer in EGP, and the ethics check", "target": "above 0, ethics pass",
+                "actual": f"EGP {price}, ethics {'pass' if ethics_ok else 'fail'}", "percent": 100 if price > 0 else 0,
+                "source": "founder-entered price; ethics check on the offer text"}
+    if price > 0 and ethics_ok:
+        return GateResult("phase4_commercial", "go",
+                          f"go: the offer at EGP {price} passed the ethics check. Checkout stays MOCKED.", evidence)
+    why = "the price is 0" if price <= 0 else "the offer failed the ethics check"
+    return GateResult("phase4_commercial", "repeat", f"repeat: {why}. Fix the offer before anyone pays.", evidence)
+
+
+def phase5_gate(paid: int, mismatches: int) -> GateResult:
+    """Sell, deliver, get paid: at least one paid order and books that match."""
+    evidence = {"metric": "paid MOCKED orders, and reconciliation mismatches", "target": "1+ paid, 0 mismatches",
+                "actual": f"{paid} paid, {mismatches} mismatches", "percent": 100 if paid and not mismatches else 0,
+                "source": "MOCKED checkout events; founder-entered buyer count"}
+    if paid > 0 and mismatches == 0:
+        return GateResult("phase5_sell", "go",
+                          f"go: {paid} MOCKED orders were paid and delivered once each, and the books match.", evidence)
+    why = "no one paid" if paid == 0 else f"{mismatches} reconciliation mismatches"
+    return GateResult("phase5_sell", "repeat", f"repeat: {why}. Fix this before selling more.", evidence)
+
+
+def phase6_gate(came_back: int, paid: int) -> GateResult:
+    """Operate and learn: how many buyers came back. 40%+ go, 15%+ repeat, under that pivot, none paid stop."""
+    pct = round(came_back / paid * 100) if paid else 0
+    evidence = {"metric": "buyers who came back within 2 weeks", "target": "40% of buyers", "actual": came_back,
+                "percent": pct, "window_days": 14, "source": "founder-entered count"}
+    if paid == 0:
+        return GateResult("phase6_operate", "stop", "stop: no buyers to learn from. Do not grow this.", evidence)
+    if pct >= 40:
+        return GateResult("phase6_operate", "go", f"go: {came_back} of {paid} buyers came back ({pct}%). Grow carefully.",
+                          evidence)
+    if pct >= 15:
+        return GateResult("phase6_operate", "repeat",
+                          f"repeat: {came_back} of {paid} buyers came back ({pct}%). Fix the top complaint, then measure again.",
+                          evidence)
+    return GateResult("phase6_operate", "pivot",
+                      f"pivot: only {came_back} of {paid} buyers came back ({pct}%). Change the offer or the customer.",
+                      evidence)
+
+
 def write_gate_decision(path: str | Path, result: GateResult,
                         approval: Approval | None) -> Path:
     """Write the gate decision as markdown, following templates/gate_decision.md."""

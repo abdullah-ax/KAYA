@@ -37,6 +37,13 @@ const STEP_LABEL: Record<string, string> = {
   phase3_step1: "User stories",
   phase3_step2: "MVP plan",
   phase3_gate: "Build gate",
+  phase4_step1: "Offer and price",
+  phase4_gate: "Checkout gate",
+  phase5_step1: "Test sales",
+  phase5_step2: "Books check",
+  phase5_gate: "Sales gate",
+  phase6_step1: "Learning review",
+  phase6_gate: "Learning gate",
 };
 
 const STAGE_BY_PHASE = ["ideation", "validation", "build", "setup", "distribution", "operate"];

@@ -176,7 +176,8 @@ class Session:
         return {"id": self.id, "status": self.status(), "stage": self.stage(progress.get("step", "start")),
                 "outcome": self.outcome or progress.get("outcome"), "mode": self.mode,
                 "provider": self.provider, "model": self.model, "phase1": progress.get("phase1"), "phase2": progress.get("phase2"),
-                "phase3": progress.get("phase3"),
+                "phase3": progress.get("phase3"), "phase4": progress.get("phase4"),
+                "phase5": progress.get("phase5"), "phase6": progress.get("phase6"),
                 "pending": self.pending(), "notice": self.notice, "messages": self.messages,
                 "outputs": outputs, "sources": _sources(outputs_dir), "error": self.error,
                 "delivery": {"approved": self.publish_approval() is not None, "url": self.site_url,
@@ -194,7 +195,7 @@ class Session:
         """The step the founder is on. A pending gate names itself; the pipeline saves it only after."""
         pending = self.pending()
         if pending and pending["kind"] == "gate":
-            return {"publish": "phase2_step2"}.get(pending["key"], f"{pending['key']}_gate")
+            return {"publish": "phase2_step2", "refund": "phase5_step1"}.get(pending["key"], f"{pending['key']}_gate")
         return saved_step
 
     def save(self) -> None:
