@@ -128,7 +128,10 @@ function PointNode({ data }: NodeProps & { data: PointData }) {
 
 const nodeTypes: NodeTypes = { founder: FounderNode, stage: StageNode, point: PointNode } as NodeTypes;
 
-function StageDetails({ stage, onGo }: { stage: Stage; onGo: () => void }) {
+/** Fit so the stage cards' 15px text stays near 12px or more. The founder can still zoom out. */
+export const FIT_OPTIONS = { padding: 0.06, minZoom: 0.8, maxZoom: 1.2 };
+
+function StageDetails({ stage, here, canGo, onGo }: { stage: Stage; here: boolean; canGo: boolean; onGo: () => void }) {
   const locked = stage.status === "locked";
   return (
     <section aria-label="Stage details" className="flex w-[22rem] shrink-0 flex-col gap-5 overflow-y-auto border-l bg-background p-6">
@@ -160,9 +163,15 @@ function StageDetails({ stage, onGo }: { stage: Stage; onGo: () => void }) {
         ))}
       </div>
       <div className="mt-auto pt-2">
-        {locked ? (
+        {here ? (
+          <Button disabled size="lg" className="h-12 w-full rounded-full text-base">You are here</Button>
+        ) : locked ? (
           <Button disabled size="lg" className="h-12 w-full rounded-full text-base">
             <Lock className="size-4" /> Locked until the gate before it passes
+          </Button>
+        ) : !canGo ? (
+          <Button disabled size="lg" className="h-12 w-full rounded-full text-base">
+            {stage.status === "done" ? "Already finished" : "Not built yet"}
           </Button>
         ) : (
           <Button size="lg" onClick={onGo} className="h-12 w-full rounded-full text-base font-bold">
@@ -174,7 +183,7 @@ function StageDetails({ stage, onGo }: { stage: Stage; onGo: () => void }) {
   );
 }
 
-export function StageMap({ current, onNavigate, stages = STAGES, founder }: { current: string; onNavigate: (stageId: string) => void; stages?: Stage[]; founder?: { title: string; subtitle: string } }) {
+export function StageMap({ current, onNavigate, stages = STAGES, founder, canGo = () => true }: { current: string; onNavigate: (stageId: string) => void; stages?: Stage[]; founder?: { title: string; subtitle: string }; canGo?: (stageId: string) => boolean }) {
   const [open, setOpen] = useState(false);
   const [agent, setAgent] = useState("all");
   const [selected, setSelected] = useState(current);
@@ -262,7 +271,9 @@ export function StageMap({ current, onNavigate, stages = STAGES, founder }: { cu
                 nodeTypes={nodeTypes}
                 onNodeClick={(_, n) => { if (n.type === "stage") setSelected(n.id); }}
                 fitView
-                fitViewOptions={{ padding: 0.06 }}
+                fitViewOptions={FIT_OPTIONS}
+                nodesFocusable={false}
+                edgesFocusable={false}
                 minZoom={0.3}
                 maxZoom={1.5}
                 nodesConnectable={false}
@@ -274,7 +285,7 @@ export function StageMap({ current, onNavigate, stages = STAGES, founder }: { cu
             </ReactFlowProvider>
           </div>
 
-          <StageDetails stage={stage} onGo={() => { onNavigate(stage.id); setOpen(false); }} />
+          <StageDetails stage={stage} here={stage.id === current} canGo={canGo(stage.id)} onGo={() => { onNavigate(stage.id); setOpen(false); }} />
         </div>
       </DialogContent>
     </Dialog>
