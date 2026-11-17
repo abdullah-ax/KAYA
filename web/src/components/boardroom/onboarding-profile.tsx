@@ -4,13 +4,12 @@
    until the founder has read it and, where it is wrong, fixed it. */
 
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { Profile } from "@/lib/api";
-import { COFOUNDERS, countOf } from "@/lib/onboarding";
+import { ASSUMPTION, COFOUNDERS, countOf, type Item, type Profile } from "@/lib/onboarding";
 import { MascotAvatar } from "./ui";
 
 function Line({ label, value, onChange, hint }: { label: string; value: string; onChange: (v: string) => void; hint?: string }) {
@@ -30,10 +29,56 @@ function Line({ label, value, onChange, hint }: { label: string; value: string; 
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
+  const id = useId();
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border bg-card/60 p-5">
-      <h2 className="text-[14px] font-bold tracking-wide text-muted-foreground uppercase">{title}</h2>
+    <section aria-labelledby={id} className="flex flex-col gap-3 rounded-2xl border bg-card/60 p-5">
+      <h2 id={id} className="text-[14px] font-bold tracking-wide text-muted-foreground uppercase">{title}</h2>
       {children}
+    </section>
+  );
+}
+
+const SKIPPED_HINT = "ASSUMPTION: you skipped this. Add it if you like.";
+
+/** Editable lines for one group. An empty group is a skipped group. */
+function Items({ items, onChange }: { items: Item[] | undefined; onChange: (next: Item[]) => void }) {
+  if (!items?.length) return <p className="text-[18px] text-muted-foreground">Nothing yet. {ASSUMPTION}</p>;
+  return (
+    <>
+      {items.map((it, i) => (
+        <Line key={it.key ?? i} label={it.text} value={it.quote} hint={it.quote === ASSUMPTION ? SKIPPED_HINT : undefined} onChange={(quote) => onChange(swap(items, i, { ...it, quote }))} />
+      ))}
+    </>
+  );
+}
+
+/** The answer an edge points to, as the founder has it now (they may have edited the line). */
+function currentQuote(p: Profile, key: string, fallback: string): string {
+  if (key === "group") return p.access[0]?.group || fallback;
+  const all = [...p.strengths, ...(p.network ?? []), ...(p.experience ?? []), ...(p.interests ?? [])];
+  const hit = all.find((x) => x.key === key);
+  return hit && hit.quote !== ASSUMPTION ? hit.quote : fallback;
+}
+
+function FounderFit({ profile }: { profile: Profile }) {
+  const id = useId();
+  const edges = profile.fit?.edges ?? [];
+  return (
+    <section aria-labelledby={id} className="flex flex-col gap-3 rounded-2xl border-2 border-foreground/20 bg-accent/30 p-5">
+      <h2 id={id} className="text-[14px] font-bold tracking-wide text-muted-foreground uppercase">Founder fit</h2>
+      {edges.length === 0 ? (
+        <p className="text-[18px]">Nothing shows an edge yet. {ASSUMPTION}: we will find it as we work.</p>
+      ) : (
+        <ol className="flex flex-col gap-3">
+          {edges.map((e) => (
+            <li key={e.key} className="flex flex-col gap-0.5">
+              <span className="text-[18px] font-bold">{e.title}</span>
+              <span className="text-[16px]">{e.why}</span>
+              <span className="text-[15px] text-muted-foreground">From your answer: {`“${currentQuote(profile, e.key, e.quote)}”`}</span>
+            </li>
+          ))}
+        </ol>
+      )}
     </section>
   );
 }
@@ -65,39 +110,50 @@ export function ProfileCard({
         <Line label="About you" value={profile.about} onChange={(about) => onChange({ ...profile, about })} />
       </Section>
 
-      <Section title="Strengths, in your words">
-        {profile.strengths.length === 0 && <p className="text-[18px] text-muted-foreground">Nothing yet. ASSUMPTION: we will learn this as we work.</p>}
+      <FounderFit profile={profile} />
+
+      <Section title="Strengths">
+        {profile.strengths.length === 0 && <p className="text-[18px] text-muted-foreground">Nothing yet. {ASSUMPTION}: we will learn this as we work.</p>}
         {profile.strengths.map((s, i) => (
           <div key={i} className="flex flex-col gap-1">
             <span className="text-[15px] font-semibold">{s.text}</span>
-            <Line label={`Strength ${i + 1}`} value={s.quote} onChange={(quote) => onChange({ ...profile, strengths: swap(profile.strengths, i, { ...s, quote }) })} />
+            <Line label={`Strength ${i + 1}`} value={s.quote} hint={s.quote === ASSUMPTION ? SKIPPED_HINT : undefined} onChange={(quote) => onChange({ ...profile, strengths: swap(profile.strengths, i, { ...s, quote }) })} />
           </div>
         ))}
       </Section>
 
-      <Section title="Who you can reach">
+      <Section title="Access and network">
         {profile.access.map((a, i) => {
           const n = countOf(a.group);
           return (
             <Line
               key={i}
-              label="Group you can message today"
+              label="Groups you can message today"
               value={a.group}
-              hint={n === null ? "No number yet. ASSUMPTION: we will ask you to count." : `About ${n.toLocaleString("en-US")} people`}
+              hint={a.group === ASSUMPTION ? SKIPPED_HINT : n === null ? "No number yet. ASSUMPTION: we will ask you to count." : `About ${n.toLocaleString("en-US")} people`}
               onChange={(group) => onChange({ ...profile, access: swap(profile.access, i, { ...a, group, count: countOf(group) }) })}
             />
           );
         })}
+        <Items items={profile.network} onChange={(network) => onChange({ ...profile, network })} />
       </Section>
 
-      <Section title="Your limits">
-        <Line label="Hours per week" value={profile.constraints.hours} onChange={(hours) => onChange({ ...profile, constraints: { ...profile.constraints, hours } })} />
-        <Line label="Money" value={profile.constraints.money} onChange={(money) => onChange({ ...profile, constraints: { ...profile.constraints, money } })} />
+      <Section title="Experience">
+        <Items items={profile.experience} onChange={(experience) => onChange({ ...profile, experience })} />
       </Section>
 
-      <Section title="What you won't do">
+      <Section title="Interests">
+        <Items items={profile.interests} onChange={(interests) => onChange({ ...profile, interests })} />
+      </Section>
+
+      <Section title="Constraints">
+        <Line label="Hours per week" value={profile.constraints.hours} hint={profile.constraints.hours === ASSUMPTION ? SKIPPED_HINT : undefined} onChange={(hours) => onChange({ ...profile, constraints: { ...profile.constraints, hours } })} />
+        <Line label="Money" value={profile.constraints.money} hint={profile.constraints.money === ASSUMPTION ? SKIPPED_HINT : undefined} onChange={(money) => onChange({ ...profile, constraints: { ...profile.constraints, money } })} />
+      </Section>
+
+      <Section title="Values">
         {profile.values.map((v, i) => (
-          <Line key={i} label={`Value ${i + 1}`} value={v} onChange={(x) => onChange({ ...profile, values: swap(profile.values, i, x) })} />
+          <Line key={i} label={`Value ${i + 1}`} value={v} hint={v === ASSUMPTION ? SKIPPED_HINT : undefined} onChange={(x) => onChange({ ...profile, values: swap(profile.values, i, x) })} />
         ))}
       </Section>
 

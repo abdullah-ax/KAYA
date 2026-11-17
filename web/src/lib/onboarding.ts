@@ -13,7 +13,7 @@ export type Item = { text: string; quote: string; key?: string };
 /** An edge: what shows the founder's fit, and the answer that shows it. */
 export type Edge = { title: string; why: string; key: string; quote: string };
 /** The profile from the API, plus the groups added for founder fit (older replies may lack them). */
-export type Profile = ApiProfile & { network?: Item[]; experience?: Item[]; interests?: Item[]; fit?: { edges: Edge[] } };
+export type Profile = Omit<ApiProfile, "strengths"> & { strengths: Item[]; network?: Item[]; experience?: Item[]; interests?: Item[]; fit?: { edges: Edge[] } };
 
 export const MAX_FOLLOWUPS = 4;
 const MAX_BRIEF = 8000;

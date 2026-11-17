@@ -30,7 +30,7 @@ const skip = (user: User) => user.click(screen.getByRole("button", { name: /skip
 /** One screen: optional chip, optional text, then Next. */
 async function fill(user: User, chip: { role: "radio" | "checkbox"; name: string | RegExp } | null, text?: string) {
   if (chip) await user.click(screen.getByRole(chip.role, { name: chip.name }));
-  if (text) await user.type(screen.getByRole("textbox"), text);
+  if (text) { await user.click(screen.getByRole("textbox")); await user.paste(text); }
   await next(user);
 }
 
@@ -89,7 +89,7 @@ describe("guided opening", () => {
       else await user.type(screen.getByRole("textbox"), chip as string);
       await next(user);
     }
-    expect(screen.getByText("12 of 16")).toBeInTheDocument();
+    expect(screen.getByText("13 of 16")).toBeInTheDocument();
   });
 
   it("shows a progress bar and an own-words box with an example on the chip screens", async () => {
@@ -340,7 +340,6 @@ describe("skip for now", () => {
     }
     await screen.findByRole("heading", { name: /here's what i understood/i });
     expect(screen.getAllByText(/ASSUMPTION/).length).toBeGreaterThan(3);
-    expect(screen.getByText(/nothing shows an edge yet/i)).toBeInTheDocument();
   });
 });
 
@@ -494,6 +493,14 @@ describe("the final profile card, grouped", () => {
     expect(edges[0]).toHaveTextContent("From your answer");
     expect(edges[0]).toHaveTextContent("They ask for my pharmacology sheets");
     expect(edges[2]).toHaveTextContent("My professor knows 3 clinic owners");
+  });
+
+  it("says nothing shows an edge yet, as an ASSUMPTION, when the summary is empty", async () => {
+    fetchMock.mockResolvedValueOnce(json({ done: true, profile: { ...RICH, fit: { edges: [] } } }));
+    render(<Onboarding live={live()} />);
+    await walkOpening(userEvent.setup());
+    await screen.findByRole("heading", { name: /here's what i understood/i });
+    expect(within(screen.getByRole("region", { name: /founder fit/i })).getByText(/nothing shows an edge yet.*ASSUMPTION/i)).toBeInTheDocument();
   });
 
   it("puts the extra groups into the brief it starts the run with", async () => {
