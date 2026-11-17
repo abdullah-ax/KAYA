@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, Field
 
-from api.agents.cofounder import ask_founder
+from api.agents.cofounder import ask_profile_answer
 from api.research import UNTRUSTED_NOTE, untrusted
 
 if TYPE_CHECKING:
@@ -62,7 +62,7 @@ def run(ctx: Ctx, brief: str) -> FounderProfile:
                         f"At most {_limit(ctx)}.", IntakePlan)
     intake = []
     for question in plan.questions[:_limit(ctx)]:
-        answer = ask_founder(ctx, "intake", question)
+        answer = ask_profile_answer(ctx, "intake", question)
         ctx.log.append("founder", "answer_question", founder_input=answer)
         intake.append({"question": question, "answer": answer})
     qa = "\n".join(f"Q: {x['question']}\nA: {x['answer']}" for x in intake) or "(no questions asked)"

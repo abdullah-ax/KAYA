@@ -8,7 +8,7 @@ import re
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any
 
-from api.approval import Approval, ApprovalError, check_approval
+from api.approval import Approval, ApprovalError, _normalize, _real_words, check_approval
 from api.guardrail import check_answer
 from api.research import clean_cell
 
@@ -35,6 +35,26 @@ def ask_founder(ctx: Ctx, key: str, prompt: str, choice: dict[str, Any] | None =
         ctx.log.append("guardrail", "refuse_request", founder_input=said, outcome=verdict.rule)
         ctx.say(f"{verdict.reason} Instead: {verdict.alternative}.")
     raise NoFounderDecision(f"No usable answer for: {prompt}")
+
+
+NO_ANSWER = "ASSUMPTION: no answer"
+MORE_WORDS = "Tell me in a few more words."
+
+
+def is_bare(ctx: Ctx, text: str) -> bool:
+    """True for an empty answer or one made only of filler like yes, ok or looks good."""
+    rejected = {_normalize(a) for a in ctx.cfg.approval.rejected_answers}
+    return not _real_words(text, rejected)
+
+
+def ask_profile_answer(ctx: Ctx, key: str, question: str) -> str:
+    """Ask a Profiler question. A bare answer is re-asked once; a second one is an ASSUMPTION."""
+    said = ask_founder(ctx, key, question)
+    if not is_bare(ctx, said):
+        return said
+    ctx.log.append("cofounder", "reask_bare_answer", founder_input=said)
+    said = ask_founder(ctx, key, f"{question}\n{MORE_WORDS}")
+    return NO_ANSWER if is_bare(ctx, said) else said
 
 
 @dataclass(frozen=True)
