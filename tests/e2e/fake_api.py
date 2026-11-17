@@ -17,7 +17,13 @@ import uvicorn  # noqa: E402
 
 from api.app import create_app  # noqa: E402
 
-app = create_app(llm_factory=lambda cfg, provider, key: fx.scripted_llm(fx.strong_opportunities()),
+# Realistic intake questions, so browser runs and screenshots read like a real run.
+INTAKE = {"answered": ["skills"], "questions": [
+    "How many hours a week can you give this for the next two months?",
+    "Who in your group has paid you for help before, and for what?"]}
+
+app = create_app(llm_factory=lambda cfg, provider, key: fx.scripted_llm(
+                     fx.strong_opportunities(), overrides={"IntakePlan": [INTAKE] * 20}),
                  search_factory=lambda cfg: fx.fake_search())
 
 if __name__ == "__main__":
