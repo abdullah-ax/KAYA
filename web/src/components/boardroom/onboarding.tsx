@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { DictationButton } from "./dictation-button";
 import { cn } from "@/lib/utils";
 import { ApiError, createRun, nextQuestion, type ApiProvider, type FollowUp, type OnbAnswer, type Profile, type Run } from "@/lib/api";
 import { buildProfile, fallbackQuestion, followUpCount, MAX_FOLLOWUPS, OPENING, profileBrief, type OpeningStep } from "@/lib/onboarding";
@@ -87,6 +88,7 @@ function TextField({ id, label, value, onChange, placeholder, onSubmit, invalid 
           className="min-h-28 rounded-xl border-2 bg-card p-4 text-xl md:text-xl"
         />
       </div>
+      <DictationButton onText={(t) => onChange(value.trim() ? `${value.trim()} ${t}` : t)} />
     </div>
   );
 }
