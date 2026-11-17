@@ -111,17 +111,29 @@ def check_answer(text: str, table_path: Path = TRICKS_PATH) -> Verdict:
     return _check(text, table_path, products=False)
 
 
+_NEGATION = re.compile(r"\b(no|not|never|don't|dont|won't|wont|without|avoid|refuse to|zero)\b")
+
+
+def _negated(clause: str, start: int) -> bool:
+    """True when the clause says the founder won't do the thing matched at `start`."""
+    return bool(_NEGATION.search(clause[:start]))
+
+
 def _check(text: str, table_path: Path, *, products: bool) -> Verdict:
     rows = load_rows(table_path)
-    said = _norm(text)
-    for row in rows:
-        if _norm(row.prompt) and _norm(row.prompt) in said:
-            return _refuse(row.rule, row.alternative)
-    lowered = text.lower()
-    for pattern, key, rule, alternative in _PATTERNS:
-        if not products and key in _PRODUCT_KEYS:
-            continue
-        if re.search(pattern, lowered):
-            row = next((r for r in rows if key.lower() in r.rule.lower()), None)
-            return _refuse(row.rule, row.alternative) if row else _refuse(rule, alternative)
+    # Judge each clause on its own so "No fake reviews" in a founder's values
+    # is not read as a request for fake reviews.
+    for clause in (c for c in re.split(r"[.;,!?\n]+", text.lower()) if c.strip()):
+        said = _norm(clause)
+        for row in rows:
+            wanted = _norm(row.prompt)
+            if wanted and wanted in said and not _negated(said, said.index(wanted)):
+                return _refuse(row.rule, row.alternative)
+        for pattern, key, rule, alternative in _PATTERNS:
+            if not products and key in _PRODUCT_KEYS:
+                continue
+            m = re.search(pattern, clause)
+            if m and not _negated(clause, m.start()):
+                row = next((r for r in rows if key.lower() in r.rule.lower()), None)
+                return _refuse(row.rule, row.alternative) if row else _refuse(rule, alternative)
     return Verdict(True, None, None, None)

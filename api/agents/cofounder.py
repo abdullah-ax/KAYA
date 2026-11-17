@@ -49,6 +49,8 @@ class Option:
         """One line, no pipes or backticks, so an option can't break a table or the list."""
         for name in ("name", "cost", "risk", "source"):
             object.__setattr__(self, name, clean_cell(getattr(self, name)))
+        if not self.id:  # every option needs its own id so the UI can tell them apart
+            object.__setattr__(self, "id", re.sub(r"[^a-z0-9]+", "_", self.name.lower()).strip("_"))
 
 
 def _same(a: str, b: str) -> bool:

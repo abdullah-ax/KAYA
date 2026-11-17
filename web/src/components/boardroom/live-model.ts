@@ -30,7 +30,7 @@ const STEP_LABEL: Record<string, string> = {
   brief: "Brief",
   phase1_step1: "Intake",
   phase1_step2: "Opportunities",
-  phase1_gate: "Sign-up gate",
+  phase1_gate: "Opportunity gate",
   phase2_step1: "Canvas",
   phase2_step2: "Publish",
   phase2_gate: "Sign-up gate",
@@ -64,16 +64,38 @@ export function sourceCardsFrom(sources: ApiSource[]) {
   }));
 }
 
+export type Outcome = "go" | "repeat" | "pivot" | "stop";
 export type GateArgs = {
   question: string;
   recommended: string[];
+  recommendation?: { outcome: Outcome; text: string };
   options: { id: string; label: string; body: string; cost: string; risk: string }[];
 };
 
+function siteName(source: string): string | null {
+  try {
+    return new URL(source).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+/** "go: 3 sourced problems. Which option?" -> a recommendation plus the question. */
+function splitPrompt(prompt: string): { question: string; recommendation?: { outcome: Outcome; text: string } } {
+  const m = /^(go|repeat|pivot|stop):\s*([^]*?[.!])\s+(\S[^]*)$/.exec(prompt.trim());
+  return m ? { question: m[3], recommendation: { outcome: m[1] as Outcome, text: m[2] } } : { question: prompt };
+}
+
 export function gateArgsFromPending(p: Extract<Pending, { kind: "gate" }>): GateArgs {
+  const { question, recommendation } = splitPrompt(p.prompt);
   return {
-    question: p.prompt,
-    recommended: [],
-    options: p.options.map((o) => ({ id: o.id, label: o.name, body: o.source ? `Source: ${o.source}` : "No source listed. Treat as an assumption.", cost: o.cost, risk: o.risk })),
+    question,
+    recommendation,
+    recommended: recommendation?.outcome === "stop" ? p.options.filter((o) => o.id === "stop").map((o) => o.id) : [],
+    options: p.options.map((o, i) => {
+      const site = o.source && o.source !== "none" ? siteName(o.source) : null;
+      const body = site ? `Source: ${site}` : o.source && o.source !== "none" ? `Source: ${o.source}` : "No source. Treat as an assumption.";
+      return { id: o.id || `${i}:${o.name}`, label: o.name, body, cost: o.cost, risk: o.risk };
+    }),
   };
 }

@@ -9,6 +9,7 @@ import { createContext, useContext, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { RadioGroup } from "@/components/ui/radio-group";
+import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
 import type { Source } from "./data";
 import { ParodyVerdict } from "./parody";
@@ -17,7 +18,27 @@ import { checkReason, OptionCard, ReasonField, SourceCard, StatusBadge, VerdictC
 const MIN_WORDS = 15;
 
 type GateOption = { id: string; label: string; body: string; cost: string; risk: string };
-type GateArgs = { question: string; recommended: string[]; options: GateOption[] };
+type Recommendation = { outcome: "go" | "repeat" | "pivot" | "stop"; text: string };
+type GateArgs = { question: string; recommended: string[]; options: GateOption[]; recommendation?: Recommendation };
+
+const OUTCOME_WORD: Record<Recommendation["outcome"], string> = { go: "Go", repeat: "Repeat", pivot: "Pivot", stop: "Stop" };
+
+/** The gate's own verdict, set from targets fixed before the test. The founder still decides. */
+function RecommendationNote({ rec }: { rec: Recommendation }) {
+  const stop = rec.outcome === "stop";
+  return (
+    <div
+      role="note"
+      aria-label="System recommends"
+      data-outcome={rec.outcome}
+      className={cn("rounded-xl border-2 p-4", stop ? "border-destructive/50 bg-stop-bg" : "border-primary/30 bg-accent/50")}
+    >
+      <div className={cn("text-[14px] font-bold", stop ? "text-destructive" : "text-accent-foreground")}>System recommends</div>
+      <div className={cn("text-2xl font-extrabold", stop ? "text-destructive" : "text-foreground")}>{OUTCOME_WORD[rec.outcome]}</div>
+      <p className="mt-1 text-[15px]">{rec.text}</p>
+    </div>
+  );
+}
 
 /** In live mode the app provides this. It posts the choice and rejects with the API's message. */
 export const GateSubmitContext = createContext<((option: string, reason: string) => Promise<void>) | null>(null);
@@ -70,6 +91,7 @@ export function GateDecision({ args }: { args: GateArgs }) {
         <h3 className="text-2xl font-extrabold tracking-tight">{args.question}</h3>
         {!submit && <StatusBadge status="mocked">Demo data</StatusBadge>}
       </div>
+      {args.recommendation && <RecommendationNote rec={args.recommendation} />}
       <RadioGroup value={choice} onValueChange={(v) => { setChoice(v); setError(null); }} className="grid gap-3 md:grid-cols-3" disabled={phase !== "editing"}>
         {args.options.map((o) => (
           <OptionCard
