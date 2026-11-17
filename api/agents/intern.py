@@ -245,8 +245,9 @@ def draft_interview_script(ctx: Ctx, opportunity: Opportunity, profile: FounderP
         f"Chosen opportunity:\n{opportunity.model_dump_json()}\n\nProfile:\n{profile.model_dump_json()}\n\n"
         "Write an interview script in Mom Test style: exactly 5 questions about what people did in the past, "
         "never about what they would buy, pay or use. Do not mention the idea. "
-        "In first_people, name the first people to ask, taken from the founder's own groups "
-        f"(profile access).{_notes_text(notes)}", InterviewScript)
+        "In first_people, describe the first kinds of people to ask, taken from the founder's own groups "
+        "(profile access), for example '3 students from your WhatsApp group who sit the test within 2 months'. "
+        f"Never invent a person's name, age or job title.{_notes_text(notes)}", InterviewScript)
     head, tail, defaults = _template_parts()
     fallbacks = [q.replace("[the thing]", opportunity.title.lower()) for q in defaults]
     questions: list[str] = []
@@ -326,7 +327,7 @@ def draft_user_stories(ctx: Ctx, opportunity: Opportunity, profile: FounderProfi
         f"Chosen opportunity:\n{opportunity.model_dump_json()}\n\nProfile:\n{profile.model_dump_json()}\n\n"
         f"Lean Canvas:\n{canvas.markdown}\n\nSign-up page:\n{signup_page}\n\n"
         f"Write 5 to 8 user stories for the first version. Each story follows INVEST: it stands alone, is small "
-        f"and can be tested. who is one specific kind of person. want is what they do. why is what they get. "
+        f"and can be tested. who is one specific kind of person, described by group, never by a made-up name (for example a student in your WhatsApp group). want is what they do. why is what they get. "
         f"Give 1 to 4 acceptance criteria written as Given, when, then. Set priority to must, should or could. "
         f"At least one must. hours is your honest guess of the work in hours; the founder has {weekly} hours "
         f"a week. first_version is the smallest way to deliver it by hand or with a free no-code tool, "
