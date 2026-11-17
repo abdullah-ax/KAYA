@@ -28,8 +28,8 @@ type Provider = { id: string; name: string; model: string; note: string; needsKe
 export const PROVIDERS: Provider[] = [
   { id: "ollama", name: "Local, light", model: "qwen3:8b", note: "Free. Runs on a 16 GB laptop. Nothing leaves your machine.", needsKey: false },
   { id: "ollama-gpt-oss", name: "Local, stronger", model: "gpt-oss:20b", note: "Free. Better answers, slower. Needs about 16 GB free memory.", needsKey: false },
-  { id: "groq", name: "Groq free tier", model: "openai/gpt-oss-20b", note: "Free key. Open-weight model, fast. Rate limited.", needsKey: true },
-  { id: "openrouter", name: "OpenRouter free models", model: "qwen/qwen3-8b:free", note: "Free key. Open-weight model. Slower at peak.", needsKey: true },
+  { id: "groq", name: "Groq free tier", model: "Model set on the server", note: "Free key. Open-weight model, fast. Rate limited.", needsKey: true },
+  { id: "openrouter", name: "OpenRouter free models", model: "Model set on the server", note: "Free key. Open-weight model. Slower at peak.", needsKey: true },
 ];
 
 export type ConnState = "unset" | "testing" | "connected" | "invalid" | "rate_limited";
@@ -86,6 +86,10 @@ export function ModelSettings({
   const [key, setKey] = useState("");
   const [state, setState] = useState<ConnState>("unset");
   const [detail, setDetail] = useState<string | undefined>();
+  const [open, setOpen] = useState(false);
+  // The model the server reported on the last good test, and the one in use now.
+  const [tested, setTested] = useState<string | undefined>();
+  const [inUse, setInUse] = useState<string | undefined>();
   const keyId = useId();
   const p = PROVIDERS.find((x) => x.id === provider)!;
 
@@ -95,7 +99,10 @@ export function ModelSettings({
     if (liveTest) {
       try {
         const r = await liveTest(apiProviderOf(provider), p.needsKey ? key.trim() : "", localModelOf(provider));
-        if (r.ok) return setState("connected");
+        if (r.ok) {
+          setTested(r.model);
+          return setState("connected");
+        }
         setDetail(r.error || undefined);
         setState(/rate|429|quota/i.test(r.error ?? "") ? "rate_limited" : "invalid");
       } catch (e) {
@@ -109,11 +116,11 @@ export function ModelSettings({
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2 rounded-full text-[14px]">
           {PROVIDERS.find((x) => x.id === current)?.needsKey ? <KeyRound className="size-4" /> : <Cpu className="size-4" />}
-          {PROVIDERS.find((x) => x.id === current)?.model}
+          {inUse ?? localModelOf(current) ?? "Hosted model"}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
@@ -174,12 +181,22 @@ export function ModelSettings({
         )}
 
         <ConnectionStatus state={state} detail={detail} />
+        {state === "connected" && tested && (
+          <p className="-mt-2 text-[15px]">Model: <span className="font-mono">{tested}</span></p>
+        )}
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={test} disabled={state === "testing" || (p.needsKey && !key.trim())}>
             Test connection
           </Button>
-          <Button onClick={() => onChange(provider, p.needsKey ? key.trim() : "")} disabled={state !== "connected"}>
+          <Button
+            onClick={() => {
+              onChange(provider, p.needsKey ? key.trim() : "");
+              setInUse(tested ?? localModelOf(provider));
+              setOpen(false);
+            }}
+            disabled={state !== "connected"}
+          >
             Use this model
           </Button>
         </DialogFooter>
