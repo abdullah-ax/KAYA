@@ -2,6 +2,12 @@
 
 An open-source AI co-founder team that builds the founder as much as the business. It learns who the founder is first, plays to their strengths, and takes an idea through six gated phases toward a tested, sellable digital product. The founder makes every decision, and the system says **stop** when the evidence is weak. It runs free on a local open-weight model.
 
+**Problem.** First-time founders, especially outside big startup hubs, start with an idea and no one to push back. They build for months before anyone pays, and the tools that help cost money they don't have. (ASSUMPTION, from our own experience and early conversations; not yet measured.)
+
+**Who it is for.** A first-time founder with a skill and a group of people they can reach: a tutor with a WhatsApp group, a designer with a client list. Egypt first, in English or Arabic.
+
+**Why open beats closed.** Every prompt, gate and threshold is a plain file you can read and change. It runs on a free open-weight model on your own laptop, so your idea and your answers stay with you. Anyone can fork it for their own market or language.
+
 ![Onboarding asks specific questions, one per screen](docs/media/onboarding.png)
 
 **How a run goes:** you answer short questions about your work, studies, groups and limits. You check the profile it built. A research intern finds problems with sources, a boss agent checks every draft, and at each gate you pick an option and say why in your own words. A bare "yes" never counts. Targets are set before each test, and weak results get a plain stop.
@@ -103,10 +109,13 @@ Not published yet. Until then, the screenshots in this README show every screen 
 
 ## How the project stays alive after the hackathon
 
-- **Maintainers:** the founding team, listed in `MAINTAINERS.md`.
-- **Roadmap:** see the Roadmap section of [ARCHITECTURE.md](ARCHITECTURE.md). First: finish Phases 3–6, add Arabic voice, add more founder lessons.
-- **Community:** MIT license. Prompts, templates, and the knowledge base are plain markdown, so non-coders can contribute.
-- **Funding:** open-source grants and sponsorships. Every core feature stays free.
+- **Maintainers:** Abdullah Ahmed is the lead maintainer (`MAINTAINERS.md`). We are looking for a second maintainer for the web app.
+- **Roadmap:**
+  - 30 days: commit real runs through all six stages, test voice with a real microphone, add an Arabic-first onboarding.
+  - 90 days: replace the MOCKED checkout with a payment provider's test mode, and build the judges panel.
+  - 180 days: pilot with 10 founders in Egypt and publish what worked and what did not.
+- **Community:** GitHub Issues for bugs and ideas. Prompts, templates and the knowledge base are plain markdown, so non-coders can contribute. The full pitch is in [docs/pitch.md](docs/pitch.md).
+- **Funding:** apply to open-source programs such as GitHub Sponsors and NLnet. Every core feature stays free, with no paywall of our own.
 
 ### Contributing
 
