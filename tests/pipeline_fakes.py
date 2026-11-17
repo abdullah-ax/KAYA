@@ -143,6 +143,10 @@ def scripted_llm(opps: dict[str, Any], questions: int = 2, boss: str = "pass",
         "InterviewScript": interview_script(),
         "UserStories": user_stories(),
         "MvpPlan": mvp_plan(),
+        "Panel": {"verdicts": [
+            {"shark": "Numbers shark", "decision": "out", "reason": "No one has paid yet.", "would_change_mind": "10 paid pre-orders."},
+            {"shark": "Customer shark", "decision": "in", "reason": "420 students you can message today.", "would_change_mind": "n/a"},
+            {"shark": "Risk shark", "decision": "out", "reason": "One teacher, one channel.", "would_change_mind": "A second channel."}]},
         "Reply": {"text": "You proved real demand in your own group. Next, test it with strangers. Set the sign-up target before you post."},
     }
 
