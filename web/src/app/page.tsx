@@ -6,5 +6,5 @@ export default async function Page({
   searchParams: Promise<{ screen?: string; theme?: string; egg?: string }>;
 }) {
   const { screen, theme, egg } = await searchParams;
-  return <Boardroom initialScreen={screen} dark={theme === "dark"} egg={egg === "1"} />;
+  return <Boardroom initialScreen={screen} dark={theme === "dark"} egg={egg !== "0"} />;
 }

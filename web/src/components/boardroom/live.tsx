@@ -18,6 +18,8 @@ import { cn } from "@/lib/utils";
 import { TEAM } from "./data";
 import { gateArgsFromPending, sourceCardsFrom, stageInfo } from "./live-model";
 import { BoardroomTool, GateSubmitContext } from "./tools";
+import { FaceAvatar, PARODY, TarekCard } from "./parody";
+import { tarekMood } from "./tarek-mood";
 import { EmptyState, RosterItem, SourceCard } from "./ui";
 
 const InlineToolGroup = ({ children }: { children?: React.ReactNode }) => <>{children}</>;
@@ -131,7 +133,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-export function LivePanel({ run, error, onRestart }: { run: Run | null; error: string | null; onRestart: () => void }) {
+export function LivePanel({ run, error, onRestart, tarek = false }: { run: Run | null; error: string | null; onRestart: () => void; tarek?: boolean }) {
   if (!run) {
     return <div className="p-6"><EmptyState title="Starting your run" body="Nothing to show yet." /></div>;
   }
@@ -140,6 +142,7 @@ export function LivePanel({ run, error, onRestart }: { run: Run | null; error: s
   const ended = run.status === "done" || run.status === "error" || run.status === "closed";
   return (
     <div className="flex flex-col gap-7 p-6">
+      {tarek && <TarekCard run={run} />}
       <Section title="Status">
         <div className="text-2xl font-extrabold">{info.label}</div>
         <p className="text-base">{STATUS_TEXT[run.status]}</p>
@@ -169,7 +172,7 @@ export function LivePanel({ run, error, onRestart }: { run: Run | null; error: s
 
 const GROUPS = ["Co-founder", "Crew", "Judges"] as const;
 
-export function LiveRoster({ run }: { run: Run | null }) {
+export function LiveRoster({ run, tarek = false }: { run: Run | null; tarek?: boolean }) {
   const working = run?.status === "working";
   return (
     <aside className="flex min-h-0 flex-col border-r">
@@ -183,6 +186,18 @@ export function LiveRoster({ run }: { run: Run | null }) {
               ))}
             </div>
           ))}
+          {tarek && (
+            <div className="flex flex-col gap-1">
+              <div className="px-2.5 text-[13px] font-bold tracking-wide text-muted-foreground uppercase">Sharks</div>
+              <div className="flex items-center gap-3 rounded-lg px-2.5 py-2">
+                <FaceAvatar emotion={tarekMood(run).emotion} idle size={40} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-base font-semibold">{PARODY.name}</span>
+                  <span className="block truncate text-[14px] text-muted-foreground">{PARODY.role}</span>
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </aside>

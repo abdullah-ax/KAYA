@@ -1,12 +1,15 @@
 "use client";
 
 /* "Ahmed Tarek mode": a lighthearted PARODY shark modelled on a public Shark
-   Tank Egypt investor. Off by default; switched on in Settings.
+   Tank Egypt investor. On by default; switched off in Settings.
    Lines are an impression, not real quotes. Persona facts are sourced in
    prompts/easter_egg_parody_shark.md. */
 
 import { Settings } from "lucide-react";
 import { useEffect, useId, useState } from "react";
+
+import type { Run } from "@/lib/api";
+import { tarekMood } from "./tarek-mood";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -24,25 +27,47 @@ export const PARODY = {
   fallback: "/mascots/ahmed_tarek/placeholder.svg",
 };
 
-/* One photo per expression. Missing photos fall back to the closest one we
-   have, then to the placeholder, so the face never breaks. */
-const FACE_FALLBACK: Record<FaceEmotion, FaceEmotion[]> = {
-  neutral: ["neutral", "listening", "pleased"],
-  listening: ["listening", "neutral", "pleased"],
-  thinking: ["thinking", "listening", "neutral", "pleased"],
-  talking: ["talking", "neutral", "pleased"],
+/* One photo per expression. Missing photos fall back to the closest SERIOUS
+   one, then to the placeholder. The happy photo is only for flawless results,
+   so a serious face never falls back to it. */
+export const SERIOUS: FaceEmotion[] = ["neutral", "skeptical", "listening", "thinking"];
+export const FACE_FALLBACK: Record<FaceEmotion, FaceEmotion[]> = {
+  neutral: ["neutral", "listening", "skeptical", "thinking"],
+  listening: ["listening", "neutral", "thinking", "skeptical"],
+  thinking: ["thinking", "listening", "neutral", "skeptical"],
+  talking: ["talking", "neutral", "listening", "skeptical"],
   pleased: ["pleased"],
-  skeptical: ["skeptical", "neutral", "pleased"],
-  im_out: ["skeptical", "neutral", "pleased"],
+  skeptical: ["skeptical", "neutral", "listening", "thinking"],
+  im_out: ["im_out", "skeptical", "neutral", "thinking"],
 };
 
-export function FaceAvatar({ emotion = "neutral", size = 48, className }: { emotion?: FaceEmotion; size?: number; className?: string }) {
+const IDLE_MS = 4000;
+
+function prefersReducedMotion(): boolean {
+  return typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+}
+
+/* Serious expressions in turn, every few seconds. Stays put under reduced motion. */
+function useIdleEmotion(base: FaceEmotion, idle: boolean): FaceEmotion {
+  const [i, setI] = useState(0);
+  const cycling = idle && base === "neutral" && !prefersReducedMotion();
+  useEffect(() => {
+    if (!cycling) return;
+    const t = setInterval(() => setI((x) => (x + 1) % SERIOUS.length), IDLE_MS);
+    return () => clearInterval(t);
+  }, [cycling]);
+  return cycling ? SERIOUS[i] : base;
+}
+
+export function FaceAvatar({ emotion: want = "neutral", size = 48, className, idle = false }: { emotion?: FaceEmotion; size?: number; className?: string; idle?: boolean }) {
+  const emotion = useIdleEmotion(want, idle);
   const chain = [...FACE_FALLBACK[emotion].map((e) => `/mascots/ahmed_tarek/${e}.png`), PARODY.fallback];
   const [tries, setTries] = useState<Record<string, number>>({});
   const src = chain[Math.min(tries[emotion] ?? 0, chain.length - 1)];
   return (
     <span className={cn("relative inline-flex shrink-0", className)} style={{ width: size, height: size }}>
       <span
+        data-emotion={emotion}
         className={cn(
           "block size-full overflow-hidden rounded-full bg-[#fafaf7] ring-2 ring-offset-2 ring-offset-background transition-[filter,box-shadow] duration-300",
           emotion === "im_out" ? "ring-destructive grayscale" : emotion === "pleased" ? "ring-primary" : "ring-foreground",
@@ -77,7 +102,7 @@ export function FaceAvatar({ emotion = "neutral", size = 48, className }: { emot
 export function emotionFor(text: string): FaceEmotion {
   const t = text.toLowerCase();
   if (/i'?m out|no deal|not investing/.test(t)) return "im_out";
-  if (/i'?m in|deal\b|love this|well done|mabrouk/.test(t)) return "pleased";
+  if (/\bi'?m in\b|we have a deal|it'?s a deal|flawless|mabrouk/.test(t)) return "pleased";
   if (/\?|prove|show me|really|why/.test(t)) return "skeptical";
   if (/let me think|do the math|margin/.test(t)) return "thinking";
   return "talking";
@@ -161,16 +186,38 @@ export function SettingsDialog({ tarekMode, onTarekMode }: { tarekMode: boolean;
           <DialogDescription className="text-base">Change these before a run.</DialogDescription>
         </DialogHeader>
         <div className="flex items-start gap-4 rounded-xl border-2 p-4 has-[[data-state=checked]]:border-foreground">
-          <FaceAvatar emotion={tarekMode ? "talking" : "neutral"} size={52} />
+          <FaceAvatar emotion="neutral" idle={tarekMode} size={52} />
           <div className="flex-1">
             <Label htmlFor={id} className="text-base font-bold">Ahmed Tarek mode</Label>
             <p className="mt-1 text-[15px] leading-snug text-muted-foreground">
-              A tough parody shark joins the panel. Blunt, numbers first, no mercy. For fun, not affiliated with the real person.
+              A tough parody shark sits on the panel. On by default. Blunt, numbers first, no mercy. For fun, not affiliated with the real person.
             </p>
           </div>
           <Switch id={id} checked={tarekMode} onCheckedChange={onTarekMode} className="mt-1" />
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+const DISCLAIMER = "Parody for fun. Not affiliated with or endorsed by the real person. Not investment advice.";
+
+/* Live mode: his current reaction to the run, in a compact card. */
+export function TarekCard({ run }: { run: Run | null }) {
+  const mood = tarekMood(run);
+  return (
+    <section aria-label="Ahmed Tarek reacts" className="flex flex-col gap-2 rounded-xl border-2 border-foreground/20 bg-card p-3">
+      <div className="flex items-center gap-3">
+        <FaceAvatar emotion={mood.emotion} idle size={48} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="truncate text-base font-bold">{PARODY.name}</span>
+            <span className="rounded border border-sky-800/30 bg-sky-50 px-1.5 text-[12px] font-bold text-sky-900 uppercase dark:bg-sky-950 dark:text-sky-200">Parody</span>
+          </div>
+          <p aria-live="polite" className="text-[15px] leading-snug font-semibold">{mood.line}</p>
+        </div>
+      </div>
+      <p className="text-[13px] text-muted-foreground">{DISCLAIMER}</p>
+    </section>
   );
 }

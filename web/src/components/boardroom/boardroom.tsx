@@ -98,7 +98,7 @@ export function Boardroom({ initialScreen, initialRunId, dark, egg: eggParam }: 
       .catch(() => setInstalled(undefined));
   }, [live]);
 
-  const [egg, setEgg] = useState(!!eggParam);
+  const [egg, setEgg] = useState(eggParam ?? true);
   const [screenId, setScreenId] = useState<string>(initialScreen ?? "gate");
   const [model, setModel] = useState("ollama");
   const screen = SCREENS.find((s) => s.id === screenId);
@@ -144,7 +144,7 @@ export function Boardroom({ initialScreen, initialRunId, dark, egg: eggParam }: 
               test={live ? (provider, key, m) => testModel(provider, key || undefined, m) : undefined}
               installed={installed}
             />
-            {!live && <SettingsDialog tarekMode={egg} onTarekMode={setEgg} />}
+            <SettingsDialog tarekMode={egg} onTarekMode={setEgg} />
           </div>
         </header>
 
@@ -153,7 +153,7 @@ export function Boardroom({ initialScreen, initialRunId, dark, egg: eggParam }: 
             <Onboarding live={{ provider: apiProviderOf(model), modelKey, model: localModelOf(model), onRun: (r: Run) => { setRunId(r.id); update(r); } }} />
           ) : (
             <div className="grid min-h-0 flex-1 grid-cols-[17rem_1fr_22rem]">
-              <LiveRoster run={run} />
+              <LiveRoster run={run} tarek={egg} />
               <main className="flex min-h-0 flex-col">
                 <div className="flex shrink-0 items-center gap-3 border-b px-6 py-3">
                   <MascotAvatar id="warm_skeptic" expression="listening" activity={run?.status === "working" ? "thinking" : "speaking"} size={44} />
@@ -167,7 +167,7 @@ export function Boardroom({ initialScreen, initialRunId, dark, egg: eggParam }: 
                 </div>
               </main>
               <aside className="min-h-0 border-l bg-card/40">
-                <ScrollArea className="h-full"><LivePanel run={run} error={runError} onRestart={startOver} /></ScrollArea>
+                <ScrollArea className="h-full"><LivePanel run={run} error={runError} onRestart={startOver} tarek={egg} /></ScrollArea>
               </aside>
             </div>
           )
@@ -198,7 +198,7 @@ export function Boardroom({ initialScreen, initialRunId, dark, egg: eggParam }: 
                       ))}
                       {g === "Sharks" && egg && (
                         <div className="flex items-center gap-3 rounded-lg px-2.5 py-2">
-                          <FaceAvatar emotion={screen.id === "sharks" ? "listening" : "neutral"} size={40} />
+                          <FaceAvatar emotion={screen.id === "sharks" ? "listening" : "neutral"} idle size={40} />
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-base font-semibold">{PARODY.name}</span>
                             <span className="block truncate text-[14px] text-muted-foreground">{PARODY.role}</span>
