@@ -32,3 +32,6 @@ models/
 
 # Local agent worktrees
 .claude/worktrees/
+
+# Run state written next to outputs by the cli
+/state.json
