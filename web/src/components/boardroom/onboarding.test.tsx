@@ -26,6 +26,15 @@ async function fillAll(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("Onboarding in live mode", () => {
+  it("starts the run on the local model the founder picked", async () => {
+    fetchMock.mockImplementation(async () => json(RUN, 201));
+    const user = userEvent.setup();
+    render(<Onboarding live={{ provider: "ollama", modelKey: "", model: "gpt-oss:20b", onRun: vi.fn() }} />);
+    await fillAll(user);
+    await user.click(screen.getByRole("button", { name: /finish/i }));
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).model).toBe("gpt-oss:20b");
+  });
+
   it("Finish creates a run with a brief that holds the answers, and hands the run on", async () => {
     fetchMock.mockImplementation(async () => json(RUN, 201));
     const onRun = vi.fn();

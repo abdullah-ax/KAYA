@@ -17,7 +17,7 @@ describe("ModelSettings with a live API", () => {
     const test = vi.fn().mockResolvedValue({ ok: true, provider: "ollama", model: "qwen3:8b" });
     const { user } = await open({ test });
     await user.click(screen.getByRole("button", { name: /test connection/i }));
-    expect(test).toHaveBeenCalledWith("ollama", "");
+    expect(test).toHaveBeenCalledWith("ollama", "", "qwen3:8b");
     expect(await screen.findByText(/connected/i)).toBeInTheDocument();
   });
 
@@ -27,7 +27,7 @@ describe("ModelSettings with a live API", () => {
     await user.click(screen.getByRole("radio", { name: /groq/i }));
     await user.type(screen.getByLabelText(/api key/i), "sk-live-123");
     await user.click(screen.getByRole("button", { name: /test connection/i }));
-    expect(test).toHaveBeenCalledWith("openai", "sk-live-123");
+    expect(test).toHaveBeenCalledWith("openai", "sk-live-123", undefined);
     await screen.findByText(/connected/i);
     await user.click(screen.getByRole("button", { name: /use this model/i }));
     expect(onChange).toHaveBeenCalledWith("groq", "sk-live-123");
