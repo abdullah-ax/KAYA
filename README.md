@@ -22,6 +22,7 @@ Statuses are updated only after a real run. Working = tested end to end. MOCKED 
 | 1 Discover | Gate: founder picks an option and explains why | STUBBED |
 | 2 Validate | Lean Canvas | STUBBED |
 | 2 Validate | Landing page draft | STUBBED |
+| 2 Validate | Publish sign-up page to Netlify (founder's own free account) | STUBBED |
 | 2 Validate | Sign-up target gate (recommends stop on weak evidence) | STUBBED |
 | 2 Validate | Shark panel (SIMULATION) | STUBBED |
 | 3 Build | User stories and MVP spec | STUBBED |
