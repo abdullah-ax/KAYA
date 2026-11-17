@@ -44,6 +44,26 @@ export type Run = {
   delivery?: { approved: boolean; url: string | null; site_id: string | null };
 };
 
+export type ProgramStep = { step: string; title: string; line: string; links: { title: string; url: string }[] };
+/** One accelerator stage card from GET /runs/{id}/program. Mirrors api/program.py. */
+export type ProgramCardData = {
+  stage: string;
+  label: string;
+  goal: string;
+  lead: { id: string; name: string };
+  handoff: string | null;
+  joins: { id: string; name: string; when: string }[];
+  big_question: string;
+  questions: string[];
+  do_today: string;
+  ship: string;
+  metric: { name: string; target: string };
+  review: string;
+  learn: { kind: string; org: string; title: string; url: string; why: string };
+  case: { company: string; market: string; fact: string; url: string; source: string; why: string };
+  steps?: ProgramStep[];
+};
+
 export type ModelTestResult = { ok: boolean; provider: ApiProvider; model?: string; error?: string };
 export type LogEntry = Record<string, unknown>;
 
@@ -146,6 +166,12 @@ export const nextQuestion = (body: { answers: OnbAnswer[]; mode?: "demo" | "full
     body: { answers: body.answers, mode: body.mode ?? "demo", provider: body.provider ?? "ollama", ...(body.model ? { model: body.model } : {}) },
     key,
   });
+
+export async function getProgram(runId: string): Promise<ProgramCardData> {
+  const body = await call<{ card?: ProgramCardData }>(`/runs/${encodeURIComponent(runId)}/program`);
+  if (!body?.card || !Array.isArray(body.card.questions)) throw new ApiError(500, FALLBACK);
+  return body.card;
+}
 
 export const POLL_MS = 1000;
 const isLive = (s: RunStatus) => s === "working" || s === "waiting" || s === "gate";

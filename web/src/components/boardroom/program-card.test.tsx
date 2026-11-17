@@ -29,7 +29,7 @@ afterEach(() => vi.unstubAllGlobals());
 describe("ProgramCard", () => {
   it("shows every part of the stage card", () => {
     render(<ProgramCard card={base()} />);
-    expect(screen.getByRole("heading", { name: /this week/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^this week$/i })).toBeInTheDocument();
     for (const text of [/get proof from strangers/i, /who else would want it/i, /420 students/, /message 10 people/i, /sign-up page/i,
       /sign-ups from strangers/i, /set before you start/i, /under 30%/i, /door to door/i]) {
       expect(screen.getByText(text)).toBeInTheDocument();
@@ -90,6 +90,6 @@ describe("demo and live panel", () => {
     const run = { id: "run1", status: "working", stage: "phase2_step1", outcome: null, mode: "demo", provider: "ollama", phase1: null, phase2: null,
       pending: null, notice: null, messages: [], outputs: [], sources: [], error: null, delivery: { approved: false, url: null, site_id: null } };
     render(<LivePanel run={run as never} error={null} onRestart={() => {}} />);
-    expect(await screen.findByRole("heading", { name: /this week/i })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /^this week$/i })).toBeInTheDocument();
   });
 });

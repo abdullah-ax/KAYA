@@ -19,6 +19,7 @@ import { CASES, LEARN, TEAM } from "./data";
 import { friendlyFileName, gateArgsFromPending, learnKeyFor, outcomeSentence, progressLine, refusalText, sourceCardsFrom, speakerFor, stageInfo } from "./live-model";
 import { BoardroomTool, GateNextContext, GateSubmitContext, RetryContext } from "./tools";
 import { FaceAvatar, PARODY, TarekCard } from "./parody";
+import { ProgramSection } from "./program-card";
 import { PublishCard } from "./publish-card";
 import { tarekMood } from "./tarek-mood";
 import { CaseStudyCard, checkReason, EmptyState, LearnCard, RosterItem, SourceCard } from "./ui";
@@ -174,6 +175,8 @@ export function LivePanel({ run, error, onRestart, tarek = false }: { run: Run |
       </Section>
 
       {(run.delivery?.approved || run.delivery?.url || (run.pending?.kind === "gate" && run.pending.key === "publish")) && <PublishCard run={run} />}
+
+      <ProgramSection runId={run.id} stage={run.stage} status={run.status} />
 
       <Section title={`Sources (${cards.length})`}>
         {cards.length ? cards.map((c) => <SourceCard key={c.n} {...c} />) : <p className="text-[15px] text-muted-foreground">None yet. Every claim will show its source here, or the word ASSUMPTION.</p>}

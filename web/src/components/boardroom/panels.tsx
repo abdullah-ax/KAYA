@@ -4,6 +4,8 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { CASES, LEARN, NOTES, SOURCES, type Screen } from "./data";
+import { ProgramCard } from "./program-card";
+import { demoProgramFor } from "./program-demo";
 import { CaseStudyCard, EmptyState, LearnCard, SourceCard, StatusBadge, VerdictCard } from "./ui";
 
 function Section({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
@@ -35,6 +37,7 @@ function NotesList() {
 export function WorkingPanel({ screen }: { screen: Screen }) {
   return (
     <div className="flex flex-col gap-7 p-6">
+      <ProgramCard card={demoProgramFor(screen.id)} />
       {screen.panel === "profile" && (
         <>
           <Section title="Intake">
