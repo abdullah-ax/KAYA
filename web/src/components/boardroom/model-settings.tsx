@@ -120,7 +120,7 @@ export function ModelSettings({
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2 rounded-full text-[14px]">
           {PROVIDERS.find((x) => x.id === current)?.needsKey ? <KeyRound className="size-4" /> : <Cpu className="size-4" />}
-          {inUse ?? localModelOf(current) ?? "Hosted model"}
+          AI ready
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
@@ -149,7 +149,6 @@ export function ModelSettings({
               <RadioGroupItem value={x.id} className="mt-1" />
               <span className="flex flex-col gap-0.5">
                 <span className="font-bold">{x.name}</span>
-                <span className="font-mono text-[14px] text-muted-foreground">{x.model}</span>
                 <span className="text-[15px]">{x.note}</span>
                 {installed && localModelOf(x.id) && installed[localModelOf(x.id)!] === false && (
                   <span className="text-[14px] font-semibold text-amber-800 dark:text-amber-300">Still downloading. Pick the light model for now.</span>
@@ -181,9 +180,12 @@ export function ModelSettings({
         )}
 
         <ConnectionStatus state={state} detail={detail} />
-        {state === "connected" && tested && (
-          <p className="-mt-2 text-[15px]">Model: <span className="font-mono">{tested}</span></p>
-        )}
+        <details className="text-[15px]">
+          <summary className="cursor-pointer font-semibold">Advanced</summary>
+          <p className="mt-1 text-muted-foreground">
+            Model: <span className="font-mono">{(state === "connected" && tested) || inUse || p.model}</span>
+          </p>
+        </details>
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={test} disabled={state === "testing" || (p.needsKey && !key.trim())}>

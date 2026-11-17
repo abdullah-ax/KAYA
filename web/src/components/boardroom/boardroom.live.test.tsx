@@ -118,7 +118,7 @@ describe("online", () => {
     render(<Boardroom initialRunId="r1" />);
     expect(await screen.findByRole("link", { name: /example source/i })).toHaveAttribute("href", "https://example.org/a");
     expect(screen.getByText(/students buy summaries/i)).toBeInTheDocument();
-    expect(screen.getByText("phase1_step2_opportunities.md")).toBeInTheDocument();
+    expect(screen.getByText("Opportunities report")).toBeInTheDocument();
   });
 
   it("says plainly when the run has stopped, and never shows demo data as the run", async () => {
@@ -134,7 +134,7 @@ describe("online", () => {
     const user = userEvent.setup();
     render(<Boardroom />);
     await screen.findByText("What do you do most days?");
-    await user.click(screen.getByRole("button", { name: /qwen3/i }));
+    await user.click(screen.getByRole("button", { name: /ai ready/i }));
     await user.click(screen.getByRole("radio", { name: /groq/i }));
     await user.type(screen.getByLabelText(/api key/i), "sk-mem-1");
     await user.click(screen.getByRole("button", { name: /test connection/i }));

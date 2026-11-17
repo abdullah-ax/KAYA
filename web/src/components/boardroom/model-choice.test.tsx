@@ -22,9 +22,9 @@ describe("picking the local model", () => {
     const onChange = vi.fn();
     const test = vi.fn().mockResolvedValue({ ok: true, provider: "ollama", model: "gpt-oss:20b" });
     render(<ModelSettings current="ollama" onChange={onChange} test={test} />);
-    await user.click(screen.getByRole("button", { name: /qwen3/i }));
-    expect(screen.getByRole("radio", { name: /qwen3:8b/i })).toBeInTheDocument();
-    await user.click(screen.getByRole("radio", { name: /gpt-oss:20b/i }));
+    await user.click(screen.getByRole("button", { name: /ai ready/i }));
+    expect(screen.getByRole("radio", { name: /local, light/i })).toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: /local, stronger/i }));
     await user.click(screen.getByRole("button", { name: /test connection/i }));
     expect(test).toHaveBeenCalledWith("ollama", "", "gpt-oss:20b");
     await screen.findByText(/connected/i);
@@ -35,9 +35,9 @@ describe("picking the local model", () => {
   it("says when a local model is not downloaded yet", async () => {
     const user = userEvent.setup();
     render(<ModelSettings current="ollama" onChange={vi.fn()} installed={{ "qwen3:8b": true, "gpt-oss:20b": false }} />);
-    await user.click(screen.getByRole("button", { name: /qwen3/i }));
-    expect(screen.getByRole("radio", { name: /gpt-oss:20b/i }).closest("label")).toHaveTextContent(/still downloading/i);
-    expect(screen.getByRole("radio", { name: /qwen3:8b/i }).closest("label")).not.toHaveTextContent(/still downloading/i);
+    await user.click(screen.getByRole("button", { name: /ai ready/i }));
+    expect(screen.getByRole("radio", { name: /local, stronger/i }).closest("label")).toHaveTextContent(/still downloading/i);
+    expect(screen.getByRole("radio", { name: /local, light/i }).closest("label")).not.toHaveTextContent(/still downloading/i);
   });
 });
 
@@ -67,7 +67,7 @@ describe("finishing the model dialog", () => {
     const user = userEvent.setup();
     const test = vi.fn().mockResolvedValue({ ok: true, provider: "ollama", model: "qwen3:8b" });
     render(<ModelSettings current="ollama" onChange={vi.fn()} test={test} />);
-    await user.click(screen.getByRole("button", { name: /qwen3/i }));
+    await user.click(screen.getByRole("button", { name: /ai ready/i }));
     await user.click(screen.getByRole("button", { name: /test connection/i }));
     await screen.findByText(/connected/i);
     await user.click(screen.getByRole("button", { name: /use this model/i }));
@@ -78,19 +78,22 @@ describe("finishing the model dialog", () => {
     const user = userEvent.setup();
     const test = vi.fn().mockResolvedValue({ ok: true, provider: "openai", model: "nvidia/nemotron-3.5-lightning:free" });
     render(<ModelSettings current="ollama" onChange={vi.fn()} test={test} />);
-    await user.click(screen.getByRole("button", { name: /qwen3/i }));
+    await user.click(screen.getByRole("button", { name: /ai ready/i }));
     await user.click(screen.getByRole("radio", { name: /openrouter/i }));
     await user.type(screen.getByLabelText(/api key/i), "k");
     await user.click(screen.getByRole("button", { name: /test connection/i }));
     expect(await screen.findByText(/nvidia\/nemotron-3\.5-lightning:free/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /use this model/i }));
-    expect(screen.getByRole("button", { name: /nemotron/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /ai ready/i })).not.toHaveTextContent(/nemotron/i);
+    await user.click(screen.getByRole("button", { name: /ai ready/i }));
+    expect(screen.getByRole("dialog")).toHaveTextContent(/nemotron/i);
   });
 
   it("does not claim a hosted model before the server says which one", async () => {
     const user = userEvent.setup();
     render(<ModelSettings current="ollama" onChange={vi.fn()} />);
-    await user.click(screen.getByRole("button", { name: /qwen3/i }));
-    expect(screen.getByRole("radio", { name: /openrouter/i }).closest("label")).toHaveTextContent(/set on the server/i);
+    await user.click(screen.getByRole("button", { name: /ai ready/i }));
+    await user.click(screen.getByRole("radio", { name: /openrouter/i }));
+    expect(screen.getByRole("dialog")).toHaveTextContent(/set on the server/i);
   });
 });

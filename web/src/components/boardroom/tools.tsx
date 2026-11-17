@@ -80,7 +80,7 @@ export function GateDecision({ args }: { args: GateArgs }) {
           <CheckCircle2 className="size-5" /> Decision recorded: {picked.label}
         </div>
         <p className="text-base">“{reason.trim()}”</p>
-        <p className="text-[14px] text-muted-foreground">Logged to decision_log.json with approved_by: founder.</p>
+        <p className="text-[14px] text-muted-foreground">Saved. You approved this.</p>
       </div>
     );
   }

@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { ApiError, sendAnswer, sendGate, type Run } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { TEAM } from "./data";
-import { gateArgsFromPending, sourceCardsFrom, stageInfo } from "./live-model";
+import { friendlyFileName, gateArgsFromPending, outcomeSentence, sourceCardsFrom, stageInfo } from "./live-model";
 import { BoardroomTool, GateSubmitContext } from "./tools";
 import { FaceAvatar, PARODY, TarekCard } from "./parody";
 import { PublishCard } from "./publish-card";
@@ -118,8 +118,8 @@ export function LiveChat({ run, update }: { run: Run; update: (r: Run) => void }
 
 const STATUS_TEXT: Record<Run["status"], string> = {
   working: "Working on it",
-  waiting: "Waiting for your answer",
-  gate: "Waiting for your decision",
+  waiting: "Waiting for you",
+  gate: "Waiting for you",
   done: "Finished",
   error: "Stopped with an error",
   closed: "Closed. The server restarted.",
@@ -146,12 +146,9 @@ export function LivePanel({ run, error, onRestart, tarek = false }: { run: Run |
       {tarek && <TarekCard run={run} />}
       <Section title="Status">
         <div className="text-2xl font-extrabold">{info.label}</div>
-        <p className="text-base">{STATUS_TEXT[run.status]}</p>
-        {run.outcome && (
-          <p data-testid="outcome" className={cn("text-base font-bold", run.outcome === "stop" ? "text-destructive" : "text-primary")}>
-            Outcome: {run.outcome}
-          </p>
-        )}
+        <p data-testid="outcome" className={cn("text-base", run.outcome === "stop" && run.status === "done" ? "font-bold text-destructive" : "font-semibold")}>
+          {run.status === "error" || run.status === "closed" ? STATUS_TEXT[run.status] : outcomeSentence(run.status, run.outcome)}
+        </p>
         {error && <p role="status" className="text-[15px] font-semibold text-destructive">Lost contact with the API. Trying again.</p>}
         {ended && <Button variant="outline" onClick={onRestart} className="w-fit rounded-full">Start a new run</Button>}
       </Section>
@@ -162,9 +159,9 @@ export function LivePanel({ run, error, onRestart, tarek = false }: { run: Run |
         {cards.length ? cards.map((c) => <SourceCard key={c.n} {...c} />) : <p className="text-[15px] text-muted-foreground">None yet. Every claim will show its source here, or the word ASSUMPTION.</p>}
       </Section>
 
-      <Section title={`Files (${run.outputs.length})`}>
+      <Section title={`Your documents (${run.outputs.length})`}>
         {run.outputs.length ? (
-          <ul className="flex flex-col gap-1.5">{run.outputs.map((o) => <li key={o} className="font-mono text-[14px] break-all">{o}</li>)}</ul>
+          <ul className="flex flex-col gap-1.5">{run.outputs.map((o) => <li key={o} className="text-base">{friendlyFileName(o)}</li>)}</ul>
         ) : (
           <p className="text-[15px] text-muted-foreground">Nothing written yet.</p>
         )}

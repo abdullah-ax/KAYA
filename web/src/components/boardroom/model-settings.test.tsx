@@ -8,7 +8,7 @@ async function open(props: Partial<React.ComponentProps<typeof ModelSettings>> =
   const user = userEvent.setup();
   const onChange = vi.fn();
   render(<ModelSettings current="ollama" onChange={onChange} {...props} />);
-  await user.click(screen.getByRole("button", { name: /qwen3/i }));
+  await user.click(screen.getByRole("button", { name: /ai ready/i }));
   return { user, onChange };
 }
 
