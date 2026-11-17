@@ -148,6 +148,9 @@ PHASE3_OPTIONS = [Option("Build this MVP", "Your time, 2 weeks", "The stories ma
                          "gate result"),
                   Option("Go back to validation", "More time before you build", "Waiting longer for proof",
                          "gate result")]
+STAGES = ["Ideation", "Validation", "Build", "Commercial setup", "Sell and get paid", "Operate and learn"]
+NEXT_STAGE = "__next_stage__"  # sent only by POST /runs/{id}/next
+MAX_CHAT = 30
 BUILD_DONE = "Your MVP plan is ready. Next: pricing and setup."
 BUILD_CUT = "Cut the must-have list, then plan the build again. Keep only what the first ten users need."
 BUILD_BACK = "Go back to validation: talk to more people before you build."
@@ -227,6 +230,25 @@ def _gate(ctx: Ctx, phase: int, result: GateResult, options: list[Option]) -> Ap
     return approval
 
 
+def level_up(ctx: Ctx, done: int, proof: str) -> None:
+    """Pause after a passed stage: the founder can chat with the co-founder, then moves on.
+
+    Only answer sources that support it pause (the web). Scripted and CLI runs carry on.
+    """
+    if not getattr(ctx.answers, "level_up", False):
+        return
+    stage, nxt = STAGES[done - 1], STAGES[done]
+    prompt = f"{stage} is done. {proof} Ask me anything about it, or move on to {nxt}."
+    choice = {"done": done, "stage": stage, "next": nxt, "proof": proof}
+    for _ in range(MAX_CHAT):
+        said = ctx.answers.ask("level_up", prompt, choice=choice)
+        if said == NEXT_STAGE:
+            break
+        ctx.say(cofounder.chat(ctx, said, stage))
+    ctx.log.append("founder", "move_to_next_stage", approved_by="founder",
+                   founder_input=f"Moved on to {nxt} after finishing {stage}.")
+
+
 def _signup_page(opportunity: intern.Opportunity, canvas: Draft) -> str:
     data: intern.LeanCanvas = canvas.data
     return (f"# {data.uvp.content}\n\n{data.solution.content}\n\n"
@@ -268,6 +290,7 @@ def _run(ctx: Ctx, brief: str, result: RunResult) -> RunResult:
         return _save(ctx, result, "phase1_gate", "stop")
     _save(ctx, result, "phase1_gate")
     chosen = next(o for o in opps.data.opportunities if o.title == pick.option)
+    level_up(ctx, 1, f"You picked {chosen.title} from {opps.sourced} sourced problems.")
 
     script = _reviewed(ctx, "phase1_step3",
                        lambda notes: intern.draft_interview_script(ctx, chosen, profile, notes))
@@ -286,12 +309,10 @@ def _run(ctx: Ctx, brief: str, result: RunResult) -> RunResult:
     _write_draft(ctx, 2, 1, "lean_canvas", canvas)
     if canvas.review_failed:
         top = "; ".join(canvas.review_reasons[:3])
-        ctx.say("The boss did not pass the Lean Canvas, even after a second try, so we stop here "
-                f"and do not offer a sign-up page. Why: {top}")
-        ctx.log.append("orchestrator", "stop_canvas_failed_review", outcome="repeat",
+        ctx.say("Warning: the boss did not pass the Lean Canvas, even after a second try. "
+                f"Fix these before you share it. Why: {top}")
+        ctx.log.append("orchestrator", "warn_canvas_failed_review", outcome="warn",
                        reasons=canvas.review_reasons)
-        snapshot(ctx.run_dir, "stop", "The Lean Canvas did not pass the boss review twice")
-        return _save(ctx, result, "phase2_step1", "repeat")
     _save(ctx, result, "phase2_step1")
 
     page = _signup_page(chosen, canvas)
@@ -317,6 +338,8 @@ def _run(ctx: Ctx, brief: str, result: RunResult) -> RunResult:
     _save(ctx, result, "phase2_gate", PHASE2[pick.option])
     if result.outcome != "go":
         return result
+    ev = result.phase2.evidence
+    level_up(ctx, 2, f"{ev['actual']} of {ev['target']} people signed up.")
     return _build(ctx, result, profile, chosen, canvas, page)
 
 
@@ -339,4 +362,7 @@ def _build(ctx: Ctx, result: RunResult, profile: Any, chosen: intern.Opportunity
     result.phase3 = phase3_gate(intern.must_hours(stories), weekly * 2, weekly)
     pick = _gate(ctx, 3, result.phase3, PHASE3_OPTIONS)
     ctx.say({"go": BUILD_DONE, "repeat": BUILD_CUT, "pivot": BUILD_BACK}[PHASE3[pick.option]])
-    return _save(ctx, result, "phase3_gate", PHASE3[pick.option])
+    _save(ctx, result, "phase3_gate", PHASE3[pick.option])
+    if result.outcome == "go":
+        level_up(ctx, 3, f"The must-have stories fit in {weekly * 2} hours over two weeks.")
+    return result

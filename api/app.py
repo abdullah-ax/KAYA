@@ -31,7 +31,7 @@ from api.log import DecisionLog
 from api.onboarding import AnswerIn, next_step
 from api import program
 from api.plan import build_plan, get_version, plan_markdown
-from api.orchestrator import AnswersExhausted, Ctx, run_pipeline
+from api.orchestrator import NEXT_STAGE, AnswersExhausted, Ctx, run_pipeline
 from api.research import Search, SearxSearch
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -97,6 +97,8 @@ class _Ping(BaseModel):
 class WebAnswers:
     """An AnswerSource that waits for the founder to answer through the API."""
 
+    level_up = True  # the run pauses between stages so the founder can chat, then moves on
+
     def __init__(self, on_change: Callable[[], None]) -> None:
         self.cv = threading.Condition()
         self.pending: tuple[str, str] | None = None
@@ -147,6 +149,10 @@ class Session:
         if self.done or self.answers.pending is None:
             return None
         key, prompt = self.answers.pending
+        if key == "level_up":
+            info = self.answers.pending_choice or {}
+            return {"kind": "level_up", "key": key, "prompt": prompt,
+                    **{k: info.get(k) for k in ("done", "stage", "next", "proof")}}
         if not key.endswith("_option"):
             return {"kind": "question", "key": key, "prompt": prompt}
         choice = self.answers.pending_choice or {}
@@ -367,8 +373,10 @@ def create_app(*, llm_factory: LLMFactory = _default_llm, search_factory: Search
     def answer(run_id: str, body: Answer) -> dict[str, Any]:
         session = get(run_id)
         pending = session.pending()
-        if pending is None or pending["kind"] != "question":
+        if pending is None or pending["kind"] not in ("question", "level_up"):
             raise HTTPException(409, "The run is not waiting for an answer right now.")
+        if body.text.strip() == NEXT_STAGE:
+            raise HTTPException(422, "Use the move on button to go to the next stage.")
         verdict = check_answer(body.text)
         if not verdict.allowed:
             DecisionLog(session.run_dir / "decision_log.json").append(
@@ -379,6 +387,17 @@ def create_app(*, llm_factory: LLMFactory = _default_llm, search_factory: Search
             return session.state()
         session.notice = None
         session.send([body.text], wait)
+        return session.state()
+
+    @app.post("/runs/{run_id}/next")
+    def next_stage(run_id: str) -> dict[str, Any]:
+        """Move on after a finished stage. The pipeline logs it as the founder's action."""
+        session = get(run_id)
+        pending = session.pending()
+        if pending is None or pending["kind"] != "level_up":
+            raise HTTPException(409, "The run is not at the end of a stage right now.")
+        session.notice = None
+        session.send([NEXT_STAGE], wait)
         return session.state()
 
     @app.post("/runs/{run_id}/gate")
