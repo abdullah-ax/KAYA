@@ -218,3 +218,14 @@ def test_rejects_too_many_answers_and_unlisted_models(make_client):
 
     assert post(c, [follow("k", "x")] * 40).status_code == 422
     assert post(c, OPENING, model="not-a-model").status_code == 422
+
+
+def test_any_model_crash_still_falls_back_and_never_blocks_onboarding(make_client):
+    def broken(system, user, schema):
+        raise KeyError("model adapter blew up")
+
+    c, _ = make_client(FakeLLM(broken))
+
+    resp = post(c, OPENING)
+
+    assert resp.status_code == 200 and resp.json()["question"]["key"] == "problem"
