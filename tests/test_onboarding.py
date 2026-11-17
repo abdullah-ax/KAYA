@@ -296,7 +296,7 @@ def test_fallback_quotes_what_the_founder_said_about_hobbies():
     assert q["why"]
 
     q2 = post(c, with_skipped("connections", "access")).json()["question"]
-    assert q2["key"] == "distribution"
+    assert q2["key"] in {"problem", "distribution"}  # the access area
     assert "40 pharmacy students" in q2["text"]
 
 
@@ -304,13 +304,15 @@ def test_model_prompt_names_the_gaps_and_asks_to_quote(make_client):
     llm = FakeLLM([QUOTING])
     c, _ = make_client(llm)
 
-    post(c, with_skipped("hobbies", "connections"))
+    post(c, with_skipped("hobbies", "connections", "access"))
 
     system, user = llm.calls[0]
     assert "quote" in system.lower()
     assert "Skipped" in user and "hobbies" in user and "connections" in user
     assert "hobby" in user.split("<founder_answers>")[0]  # the topic for that gap is offered
-    assert user.split("<founder_answers>")[0].index("hobby") < user.split("<founder_answers>")[0].index("problem")
+    head = user.split("<founder_answers>")[0]
+    assert head.index("- problem:") < head.index("- hobby:")  # access is missing two answers, interests one
+    assert head.index("- customer:") > head.index("- hobby:")
 
 
 def test_profile_groups_everything_and_marks_skips_as_assumption(make_client):
@@ -341,7 +343,7 @@ def test_founder_fit_is_top_three_edges_each_pointing_to_an_answer(make_client):
         assert e["title"] and e["why"]
         assert e["key"] != "help"  # skipped answers never count
         assert e["quote"] == answered[e["key"]]
-    assert edges[0]["key"] == "customer"
+    assert [e["key"] for e in edges][0] == "group"  # 40 people and a long answer score highest
 
 
 def test_founder_fit_is_empty_when_everything_was_skipped(make_client):

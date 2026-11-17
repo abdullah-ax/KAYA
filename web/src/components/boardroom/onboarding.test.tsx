@@ -23,57 +23,85 @@ afterEach(() => vi.unstubAllGlobals());
 type User = ReturnType<typeof userEvent.setup>;
 const next = (user: User) => user.click(screen.getByRole("button", { name: /^next/i }));
 
-async function walkOpening(user: User) {
-  await user.click(screen.getByRole("radio", { name: "Student" }));
-  await user.type(screen.getByRole("textbox"), "Pharmacy, 4th year");
+const ASSUMPTION = "ASSUMPTION: not answered yet";
+const GROUP = "About 40 pharmacy students from my tutoring sessions";
+const skip = (user: User) => user.click(screen.getByRole("button", { name: /skip for now/i }));
+
+/** One screen: optional chip, optional text, then Next. */
+async function fill(user: User, chip: { role: "radio" | "checkbox"; name: string | RegExp } | null, text?: string) {
+  if (chip) await user.click(screen.getByRole(chip.role, { name: chip.name }));
+  if (text) await user.type(screen.getByRole("textbox"), text);
   await next(user);
-  await user.type(screen.getByRole("textbox"), "Cairo");
-  await next(user);
-  await user.click(screen.getByRole("checkbox", { name: /teaching or tutoring/i }));
-  await user.type(screen.getByRole("textbox"), "They ask for my pharmacology sheets");
-  await next(user);
-  await user.type(screen.getByRole("textbox"), "About 40 pharmacy students from my tutoring sessions");
-  await next(user);
-  await user.click(screen.getByRole("radio", { name: /5–10/ }));
-  await next(user);
-  await user.click(screen.getByRole("radio", { name: /self-funded/i }));
-  await next(user);
+}
+
+async function walkOpening(user: User, skipped: string[] = []) {
+  const steps: [string, { role: "radio" | "checkbox"; name: string | RegExp } | null, string?][] = [
+    ["role", { role: "radio", name: "Student" }, "Pharmacy, 4th year"],
+    ["city", null, "Cairo"],
+    ["education", { role: "radio", name: "University" }, "Cairo University, Pharmacy, 4th year"],
+    ["work", { role: "checkbox", name: "Part-time job" }, "Pharmacy intern for 3 months"],
+    ["help", { role: "checkbox", name: /teaching or tutoring/i }, "They ask for my pharmacology sheets"],
+    ["hobbies", { role: "checkbox", name: "Drawing or design" }, "Friends ask me to draw their posters"],
+    ["group", { role: "checkbox", name: "University clubs" }, GROUP],
+    ["connections", { role: "checkbox", name: "A teacher or professor" }, "My professor knows 3 clinic owners"],
+    ["access", { role: "checkbox", name: "Arabic" }, "I know Cairo and Giza"],
+    ["time", { role: "radio", name: /5–10/ }],
+    ["money", { role: "radio", name: /self-funded/i }],
+    ["wont_do", { role: "checkbox", name: "Fake reviews" }, "No exaggerated claims"],
+  ];
+  for (const [id, chip, text] of steps) {
+    if (skipped.includes(id)) await skip(user);
+    else await fill(user, chip, text);
+  }
 }
 
 const live = (over = {}) => ({ provider: "openai" as const, modelKey: "sk-mem", onRun: vi.fn(), ...over });
 const bodyOf = (call: number) => JSON.parse(fetchMock.mock.calls[call][1].body);
 
 describe("guided opening", () => {
-  it("asks specific questions one per screen, with chips, and no vague first question", async () => {
+  it("asks twelve specific questions, one per screen, with chips and optional own words", async () => {
     const user = userEvent.setup();
     render(<Onboarding />);
-    expect(screen.getByText("What do you do most days?")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "What do you do most days?" })).toBeInTheDocument();
     expect(screen.queryByText(/two or three sentences/i)).not.toBeInTheDocument();
     for (const chip of ["Student", "Employee", "Freelancer", "Run a business", "Between jobs"]) expect(screen.getByRole("radio", { name: chip })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^next/i })).toBeDisabled();
-    await user.click(screen.getByRole("radio", { name: "Student" }));
-    await user.type(screen.getByRole("textbox"), "Pharmacy, 4th year");
-    await next(user);
 
-    expect(screen.getByText("Where are you based?")).toBeInTheDocument();
-    expect(screen.getByRole("textbox")).toHaveAttribute("placeholder", expect.stringMatching(/cairo|alexandria/i));
+    const screens: [string, "radio" | "checkbox" | null, string | RegExp | null][] = [
+      ["Where are you based?", null, "Cairo"],
+      ["What did you study, or what are you studying?", "radio", "University"],
+      ["What jobs or side jobs have you done?", "checkbox", "Part-time job"],
+      ["What do people already ask you to help with?", "checkbox", /teaching or tutoring/i],
+      ["What do you do for fun that other people notice?", "checkbox", "Sports"],
+      ["Which groups are you part of, and about how many people are in each?", "checkbox", "Mosque or church"],
+      ["Who could introduce you to customers or experts?", "checkbox", "A family friend"],
+      ["Which languages, cities and doors do you have?", "checkbox", "English"],
+      ["How many hours a week can you give this?", "radio", /5–10/],
+      ["How much money can you risk, and how do you want to fund it?", "radio", /self-funded/i],
+      ["What would you never do, even for money?", "checkbox", "Fake reviews"],
+    ];
+    await user.click(screen.getByRole("radio", { name: "Student" }));
+    await next(user);
+    for (const [q, kind, chip] of screens) {
+      expect(screen.getByRole("heading", { name: q })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /skip for now/i })).toBeInTheDocument();
+      if (kind) await user.click(screen.getByRole(kind, { name: chip! }));
+      else await user.type(screen.getByRole("textbox"), chip as string);
+      await next(user);
+    }
+    expect(screen.getByText("12 of 16")).toBeInTheDocument();
+  });
+
+  it("shows a progress bar and an own-words box with an example on the chip screens", async () => {
+    const user = userEvent.setup();
+    render(<Onboarding />);
+    expect(screen.getByRole("progressbar")).toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "Student" }));
+    expect(screen.getByRole("textbox", { name: /your field/i })).toHaveAttribute("placeholder", expect.stringMatching(/pharmacy/i));
+    await next(user);
     await user.type(screen.getByRole("textbox"), "Cairo");
     await next(user);
-
-    expect(screen.getByText("What do people already ask you to help with?")).toBeInTheDocument();
-    await user.click(screen.getByRole("checkbox", { name: /teaching or tutoring/i }));
-    await user.type(screen.getByRole("textbox"), "They ask for my pharmacology sheets");
-    await next(user);
-
-    expect(screen.getByText("Which group could you message today, and about how many people are in it?")).toBeInTheDocument();
-    expect(screen.getByRole("textbox")).toHaveAttribute("placeholder", expect.stringMatching(/\d/));
-    await user.type(screen.getByRole("textbox"), "About 40 pharmacy students from my tutoring sessions");
-    await next(user);
-
-    expect(screen.getByText("How many hours a week can you give this?")).toBeInTheDocument();
-    await user.click(screen.getByRole("radio", { name: /5–10/ }));
-    await next(user);
-    expect(screen.getByText("How do you want to fund it?")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /school, subject and year/i })).toBeInTheDocument();
   });
 
   it("Back returns to the earlier answer", async () => {
@@ -105,9 +133,10 @@ describe("dynamic follow-ups in live mode", () => {
     expect(new Headers(init.headers).get("x-model-key")).toBe("sk-mem");
     const body = JSON.parse(init.body);
     expect(body.provider).toBe("openai");
-    expect(body.answers.map((x: { key: string }) => x.key)).toEqual(["role", "city", "help", "group", "time", "money"]);
+    expect(body.answers.map((x: { key: string }) => x.key)).toEqual(["role", "city", "education", "work", "help", "hobbies", "group", "connections", "access", "time", "money", "wont_do"]);
     expect(body.answers[0]).toMatchObject({ question: "What do you do most days?", answer: "Student, Pharmacy, 4th year" });
-    expect(body.answers[3].answer).toBe("About 40 pharmacy students from my tutoring sessions");
+    expect(body.answers[6].answer).toBe(`University clubs. ${GROUP}`);
+    expect(body.answers[9].answer).toBe("5–10");
   });
 
   it("shows the API's message with a Retry when the question can't be written, and Retry asks again", async () => {
@@ -273,5 +302,217 @@ describe("voice dictation on free-text answers", () => {
   it("shows no mic when the browser cannot record or recognise speech", () => {
     render(<Onboarding />);
     expect(screen.queryByRole("button", { name: /start voice input/i })).not.toBeInTheDocument();
+  });
+});
+
+describe("skip for now", () => {
+  it("records a skipped screen as ASSUMPTION and posts it", async () => {
+    fetchMock.mockResolvedValueOnce(json({ done: false, question: QUESTION }));
+    const user = userEvent.setup();
+    render(<Onboarding live={live()} />);
+    await walkOpening(user, ["education", "hobbies", "connections"]);
+    await screen.findByText(QUESTION.text);
+    const sent = Object.fromEntries(bodyOf(0).answers.map((x: { key: string; answer: string }) => [x.key, x.answer]));
+    expect(sent.education).toBe(ASSUMPTION);
+    expect(sent.hobbies).toBe(ASSUMPTION);
+    expect(sent.connections).toBe(ASSUMPTION);
+    expect(sent.work).toBe("Part-time job. Pharmacy intern for 3 months");
+  });
+
+  it("needs no answer on the screen and moves straight on", async () => {
+    const user = userEvent.setup();
+    render(<Onboarding />);
+    await skip(user);
+    expect(screen.getByRole("heading", { name: "Where are you based?" })).toBeInTheDocument();
+  });
+
+  it("shows ASSUMPTION in the sidebar without quotes, and a founder who skips everything still reaches the card", async () => {
+    const user = userEvent.setup();
+    render(<Onboarding />);
+    await skip(user);
+    const side = screen.getByRole("complementary");
+    expect(within(side).getByText(/ASSUMPTION/)).toBeInTheDocument();
+    expect(side.textContent).not.toMatch(/“ASSUMPTION/);
+    for (let n = 0; n < 11; n++) await skip(user);
+    for (let n = 0; n < 4; n++) {
+      await user.type(screen.getByRole("textbox"), `answer number ${n}`);
+      await next(user);
+    }
+    await screen.findByRole("heading", { name: /here's what i understood/i });
+    expect(screen.getAllByText(/ASSUMPTION/).length).toBeGreaterThan(3);
+    expect(screen.getByText(/nothing shows an edge yet/i)).toBeInTheDocument();
+  });
+});
+
+describe("what I know about you", () => {
+  it("shows choice answers plain and own words in quotes", async () => {
+    const user = userEvent.setup();
+    render(<Onboarding />);
+    await user.click(screen.getByRole("radio", { name: "Student" }));
+    await user.type(screen.getByRole("textbox"), "Pharmacy");
+    await next(user);
+    const side = screen.getByRole("complementary");
+    expect(within(side).getByRole("heading", { name: /what i know about you/i })).toBeInTheDocument();
+    expect(side.textContent).toContain("Student");
+    expect(side.textContent).not.toContain("“Student");
+    expect(side.textContent).toContain("“Pharmacy”");
+    expect(within(side).queryByText(/your answers so far/i)).not.toBeInTheDocument();
+  });
+
+  it("shows a chip-only answer with no quotes at all", async () => {
+    const user = userEvent.setup();
+    render(<Onboarding />);
+    await user.click(screen.getByRole("radio", { name: "Employee" }));
+    await next(user);
+    expect(screen.getByRole("complementary").textContent).not.toMatch(/[“”]/);
+  });
+});
+
+describe("answer checks use plain words", () => {
+  it("says 'Tell me in a few more words.' for a bare follow-up answer, never 'isn't a reason'", async () => {
+    fetchMock.mockResolvedValueOnce(json({ done: false, question: QUESTION }));
+    const user = userEvent.setup();
+    render(<Onboarding live={live()} />);
+    await walkOpening(user);
+    await user.type(await screen.findByRole("textbox"), "yes");
+    expect(screen.getByText("Tell me in a few more words.")).toBeInTheDocument();
+    expect(screen.queryByText(/isn't a reason/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^next/i })).toBeDisabled();
+  });
+});
+
+describe("accessibility", () => {
+  it("labels a choice group by the real id of the question heading", () => {
+    render(<Onboarding />);
+    const group = screen.getByRole("radiogroup");
+    const heading = screen.getByRole("heading", { name: "What do you do most days?" });
+    expect(heading.id).not.toBe("");
+    expect(group).toHaveAttribute("aria-labelledby", heading.id);
+    expect(document.getElementById(heading.id)).toBe(heading);
+    expect(screen.getByRole("radiogroup", { name: "What do you do most days?" })).toBe(group);
+  });
+
+  it("moves between radios with the arrow keys and selects as it goes", async () => {
+    const user = userEvent.setup();
+    render(<Onboarding />);
+    await user.click(screen.getByRole("radio", { name: "Student" }));
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByRole("radio", { name: "Employee" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Employee" })).toHaveFocus();
+    await user.keyboard("{ArrowUp}{ArrowUp}");
+    expect(screen.getByRole("radio", { name: "Between jobs" })).toBeChecked();
+  });
+
+  it("uses a labelled group of real checkboxes, with arrow keys to move and space to tick", async () => {
+    const user = userEvent.setup();
+    render(<Onboarding />);
+    await skip(user);
+    await skip(user);
+    await skip(user);
+    const group = screen.getByRole("group", { name: "What jobs or side jobs have you done?" });
+    const boxes = within(group).getAllByRole("checkbox");
+    expect(boxes.length).toBeGreaterThan(3);
+    await user.click(boxes[0]);
+    expect(boxes[0]).toBeChecked();
+    await user.keyboard("{ArrowDown}");
+    expect(boxes[1]).toHaveFocus();
+    await user.keyboard(" ");
+    expect(boxes[1]).toBeChecked();
+    expect(boxes[0]).toBeChecked();
+    await user.keyboard("{ArrowUp}");
+    expect(boxes[0]).toHaveFocus();
+  });
+
+  it("moves focus to the new question heading after Next and Skip", async () => {
+    const user = userEvent.setup();
+    render(<Onboarding />);
+    await user.click(screen.getByRole("radio", { name: "Student" }));
+    await next(user);
+    expect(screen.getByRole("heading", { name: "Where are you based?" })).toHaveFocus();
+    await skip(user);
+    expect(screen.getByRole("heading", { name: "What did you study, or what are you studying?" })).toHaveFocus();
+  });
+
+  it("moves focus to the follow-up question heading too", async () => {
+    fetchMock.mockResolvedValueOnce(json({ done: false, question: QUESTION }));
+    const user = userEvent.setup();
+    render(<Onboarding live={live()} />);
+    await walkOpening(user);
+    expect(await screen.findByRole("heading", { name: QUESTION.text })).toHaveFocus();
+  });
+
+  it("names a text-only screen's box by its question", async () => {
+    const user = userEvent.setup();
+    render(<Onboarding />);
+    await skip(user);
+    expect(screen.getByRole("textbox", { name: "Where are you based?" })).toBeInTheDocument();
+  });
+});
+
+describe("the final profile card, grouped", () => {
+  const RICH = {
+    ...PROFILE,
+    network: [{ key: "connections", text: "People who could introduce you", quote: "My professor knows 3 clinic owners" }, { key: "access", text: "Languages, cities, family business, industries", quote: ASSUMPTION }],
+    experience: [{ key: "education", text: "Education", quote: "Cairo University, Pharmacy, 4th year" }],
+    interests: [{ key: "hobbies", text: "Hobbies and things you do for fun", quote: ASSUMPTION }],
+    fit: { edges: [
+      { key: "help", title: "Real demand", why: "People already ask you for this.", quote: "Teaching or tutoring. They ask for my pharmacology sheets" },
+      { key: "group", title: "People you can reach", why: "You can message them today.", quote: GROUP },
+      { key: "connections", title: "Doors you can open", why: "You know people who can introduce you.", quote: "My professor knows 3 clinic owners" },
+    ] },
+  };
+
+  async function toRich(user: User) {
+    fetchMock.mockResolvedValueOnce(json({ done: true, profile: RICH }));
+    render(<Onboarding live={live()} />);
+    await walkOpening(user);
+    await screen.findByRole("heading", { name: /here's what i understood/i });
+  }
+
+  it("groups lines under Strengths, Access and network, Experience, Interests, Constraints and Values", async () => {
+    await toRich(userEvent.setup());
+    const titles = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
+    for (const t of ["Strengths", "Access and network", "Experience", "Interests", "Constraints", "Values"]) expect(titles).toContain(t);
+    expect(titles.indexOf("Strengths")).toBeLessThan(titles.indexOf("Access and network"));
+    expect(titles.indexOf("Values")).toBeGreaterThan(titles.indexOf("Constraints"));
+    expect(screen.getByDisplayValue("Cairo University, Pharmacy, 4th year")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("My professor knows 3 clinic owners")).toBeInTheDocument();
+  });
+
+  it("shows skipped items as ASSUMPTION", async () => {
+    await toRich(userEvent.setup());
+    expect(screen.getByRole("textbox", { name: /hobbies and things you do for fun/i })).toHaveValue(ASSUMPTION);
+    expect(screen.getByRole("textbox", { name: /languages, cities/i })).toHaveValue(ASSUMPTION);
+  });
+
+  it("shows the founder-fit summary: three edges, each pointing to the answer that shows it", async () => {
+    await toRich(userEvent.setup());
+    const fit = screen.getByRole("region", { name: /founder fit/i });
+    const edges = within(fit).getAllByRole("listitem");
+    expect(edges).toHaveLength(3);
+    expect(edges[0]).toHaveTextContent("Real demand");
+    expect(edges[0]).toHaveTextContent("From your answer");
+    expect(edges[0]).toHaveTextContent("They ask for my pharmacology sheets");
+    expect(edges[2]).toHaveTextContent("My professor knows 3 clinic owners");
+  });
+
+  it("puts the extra groups into the brief it starts the run with", async () => {
+    const user = userEvent.setup();
+    await toRich(user);
+    fetchMock.mockResolvedValueOnce(json(RUN, 201));
+    await user.click(screen.getByRole("button", { name: /^start/i }));
+    const body = JSON.parse(fetchMock.mock.calls.find((c) => c[0] === "/api/runs")![1].body);
+    expect(body.brief).toContain("Cairo University, Pharmacy, 4th year");
+    expect(body.brief).toContain("My professor knows 3 clinic owners");
+    expect(body.brief).not.toContain("ASSUMPTION");
+  });
+});
+
+describe("offline fallback, aimed at skipped areas", () => {
+  it("asks about the area the founder skipped first", async () => {
+    const user = userEvent.setup();
+    render(<Onboarding />);
+    await walkOpening(user, ["hobbies"]);
+    expect(screen.getByRole("heading", { name: /what do you do for fun that other people notice\? what do they say\?/i })).toBeInTheDocument();
   });
 });
