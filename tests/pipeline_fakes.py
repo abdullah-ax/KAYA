@@ -133,6 +133,7 @@ def scripted_llm(opps: dict[str, Any], questions: int = 2, boss: str = "pass",
         "InterviewScript": interview_script(),
         "UserStories": user_stories(),
         "MvpPlan": mvp_plan(),
+        "Reply": {"text": "You proved real demand in your own group. Next, test it with strangers. Set the sign-up target before you post."},
     }
 
     def reply(system: str, user: str, schema: type) -> dict[str, Any]:

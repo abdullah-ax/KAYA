@@ -93,7 +93,18 @@ def test_level_up_after_phase2_go_names_build(client):
 
 
 def test_model_trouble_in_chat_gives_a_plain_fallback(tmp_run):
-    app = create_app(llm_factory=lambda *a: fx.scripted_llm(fx.strong_opportunities()),
+    def broken_chat(*a):
+        llm = fx.scripted_llm(fx.strong_opportunities())
+        plain = llm.complete
+
+        def complete(system, user, schema):
+            if schema.__name__ == "Reply":
+                raise RuntimeError("model down")
+            return plain(system, user, schema)
+        llm.complete = complete
+        return llm
+
+    app = create_app(llm_factory=broken_chat,
                      search_factory=lambda cfg: fx.fake_search())
     with TestClient(app) as c:
         run_id, _ = to_level_up(c)
