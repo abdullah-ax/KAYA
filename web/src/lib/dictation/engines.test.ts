@@ -100,9 +100,8 @@ describe("web speech engine", () => {
   it("maps not-allowed to permission-denied", async () => {
     vi.stubGlobal("SpeechRecognition", FakeRecognition);
     const s = await createWebSpeechEngine().start("en", hooks);
-    const p = s.stop();
     FakeRecognition.last.onerror?.({ error: "not-allowed" });
-    await expect(p).rejects.toMatchObject({ kind: "permission-denied" });
+    await expect(s.stop()).rejects.toMatchObject({ kind: "permission-denied" });
   });
 
   it("is unsupported without the browser API", () => {
