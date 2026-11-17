@@ -27,6 +27,7 @@ from api.delivery import DeliveryError, NetlifyPublisher
 from api.guardrail import check_answer
 from api.llm import LLM, LLMError, make_llm
 from api.log import DecisionLog
+from api.onboarding import AnswerIn, next_step
 from api.orchestrator import AnswersExhausted, Ctx, run_pipeline
 from api.research import Search, SearxSearch
 
@@ -51,6 +52,13 @@ def _scrub(text: str, secret: str | None) -> str:
 
 class NewRun(BaseModel):
     brief: str = Field(min_length=1, max_length=8000)
+    mode: Literal["demo", "full"] = "demo"
+    provider: Literal["ollama", "openai"] = "ollama"
+    model: str | None = Field(default=None, max_length=100)
+
+
+class NextQuestion(BaseModel):
+    answers: list[AnswerIn] = Field(max_length=30)
     mode: Literal["demo", "full"] = "demo"
     provider: Literal["ollama", "openai"] = "ollama"
     model: str | None = Field(default=None, max_length=100)
@@ -325,6 +333,20 @@ def create_app(*, llm_factory: LLMFactory = _default_llm, search_factory: Search
         threading.Thread(target=work, args=(session, ctx, x_model_key), daemon=True).start()
         session.wait_idle(wait)
         return session.state()
+
+    @app.post("/onboarding/next")
+    def onboarding_next(body: NextQuestion, x_model_key: str | None = Header(default=None)) -> dict[str, Any]:
+        """One personal follow-up question, or the profile when enough is known. Model trouble never blocks it."""
+        cfg = with_model(config(body.mode), body.model)
+        for item in body.answers:
+            verdict = check_answer(item.answer)
+            if not verdict.allowed:
+                raise HTTPException(422, f"{verdict.reason} Instead: {(verdict.alternative or '').rstrip('.')}.")
+        try:
+            llm: LLM | None = llm_factory(cfg, body.provider, x_model_key)
+        except ValueError:
+            llm = None  # no key or no model: the fixed questions still work
+        return next_step(cfg, body.mode, llm, body.answers)
 
     @app.get("/runs/{run_id}")
     def read_run(run_id: str) -> dict[str, Any]:
