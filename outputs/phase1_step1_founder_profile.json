@@ -1,15 +1,15 @@
 {
   "strengths": [
     {
-      "strength": "IELTS coaching experience",
-      "quote": "I have coached IELTS speaking for 4 years. I have coached about 300 students since 2021."
+      "strength": "4 years of IELTS speaking coaching",
+      "quote": "I have coached IELTS speaking for 4 years."
     },
     {
-      "strength": "Personal high-band score",
+      "strength": "band 8.5 personal score in IELTS speaking",
       "quote": "I scored band 8.5 in speaking myself."
     },
     {
-      "strength": "Creates practical video content",
+      "strength": "creates short practice videos on mobile",
       "quote": "I make short practice videos for my students on my phone."
     }
   ],
@@ -18,73 +18,72 @@
       "group": "WhatsApp IELTS students in Alexandria",
       "how_many": "420",
       "reach_today": true
-    },
-    {
-      "group": "Language centres in Smouha",
-      "how_many": "2",
-      "reach_today": false
     }
   ],
   "constraints": [
-    "10 hours a week available for the next 3 months",
-    "EGP 2,000 maximum spend without financial harm",
-    "Will not promise band scores or post fake reviews"
+    "limited to 10 hours per week for the next 3 months",
+    "maximum EGP 2,000 personal spending without financial harm",
+    "will not promise band scores to students"
   ],
   "personality": [
     {
-      "signal": "cautious with score claims",
-      "quote": "I will never promise a band score or post fake reviews."
+      "signal": "cautious about score promises",
+      "quote": "I will not promise a band score or post fake reviews."
     },
     {
-      "signal": "time-blocked commitment",
-      "quote": "About 10 hours a week, evenings and Fridays."
+      "signal": "detail-oriented in practice design",
+      "quote": "Students record answers to real-style questions at home. They get a short checklist and a model answer to compare with."
     },
     {
-      "signal": "targeted purpose for test takers",
-      "quote": "IELTS test takers in Egypt who need band 6.5 or 7 for university or work abroad."
+      "signal": "community-focused",
+      "quote": "I run a WhatsApp group of 420 IELTS students in Alexandria."
     }
   ],
   "cofounder_type": "warm_skeptic",
-  "cofounder_why": "Values real student feedback, cautious about band score promises, but has direct access to a large IELTS student network.",
+  "cofounder_why": "Values real student outcomes over promised scores, limits personal spending to EGP 2,000, and operates within a 10-hour weekly constraint, reflecting cautious optimism and integrity.",
   "teaching_level": "strengths-led",
   "markets": [
     {
-      "market": "IELTS test takers in Egypt needing band 6.5 or 7",
-      "why": "Required for university admission or work abroad."
+      "market": "IELTS test takers in Alexandria, Egypt",
+      "why": "420-student WhatsApp group with most sitting test within 6 months"
     },
     {
-      "market": "Alexandria IELTS students via WhatsApp",
-      "why": "420 students in the group can be reached directly for practice."
+      "market": "IELTS candidates in Egypt requiring band 6.5–7 for university admission",
+      "why": "Target market defined for university or work abroad eligibility"
     },
     {
-      "market": "Students referred by language centres in Smouha",
-      "why": "2 centres send students monthly, providing a steady flow."
+      "market": "Students referred by 2 language centres in Smouha, Alexandria",
+      "why": "Monthly referrals from established centres provide initial customer pipeline"
     }
   ],
   "open_questions": [
-    "How long can she work on this project unpaid before going full-time? (ASSUMPTION: unknown)",
-    "Can she message the language centres today for feedback? (ASSUMPTION: not confirmed)",
-    "What specific practice features do students need based on their complaints? (ASSUMPTION: not yet gathered)"
+    "Platform for students to record and submit IELTS speaking answers",
+    "Price students are willing to pay for the practice pack",
+    "Timeline for developing and launching the minimum viable product",
+    "Specific IELTS speaking sub-skills students find most difficult and need feedback on",
+    "Existing IELTS preparation products in Egypt and competitive landscape",
+    "Who can introduce the founder to potential students or experts outside her current network",
+    "Languages the founder can sell the pack in beyond Arabic and English"
   ],
   "intake": [
     {
-      "question": "How long can you work on this project without pay?",
+      "question": "Which IELTS speaking sub-skills do students find most difficult, and what specific feedback do they need?",
       "answer": "I run a WhatsApp group of 420 IELTS students in Alexandria and I can message them today."
     },
     {
-      "question": "What milestone would make you go full-time on this?",
+      "question": "How will students record and submit their answers, and through what platform?",
       "answer": "About 10 hours a week, evenings and Fridays."
     },
     {
-      "question": "What problem did you personally face with IELTS speaking in the last month, and how did you solve it?",
+      "question": "What price will students pay, and what is the revenue model for the practice pack?",
       "answer": "I can spend up to EGP 2,000 of my own money."
     },
     {
-      "question": "Who in your current networks could you message today to get feedback on an IELTS practice product, and what would you say?",
+      "question": "Who are the existing IELTS preparation products in Egypt, and what makes this pack different?",
       "answer": "I have coached 300 students since 2021 and scored band 8.5 myself."
     },
     {
-      "question": "What skill do you most wish you had for creating and selling a digital IELTS practice pack?",
+      "question": "What is the planned timeline for developing and launching the minimum viable product?",
       "answer": "I will never promise a band score or post fake reviews."
     }
   ]

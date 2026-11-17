@@ -1,52 +1,16 @@
 [
   {
     "id": "S1",
-    "url": "https://takeielts.britishcouncil.org/prepare/ielts-free-practice-mock-tests/academic/speaking",
-    "title": "IELTS Academic Speaking Practice Tests",
-    "publisher": "takeielts.britishcouncil.org",
+    "url": "https://ielts.idp.com/egypt/prepare/article-free-speaking-practice-questions",
+    "title": "IELTS Speaking free practice questions Egypt",
+    "publisher": "ielts.idp.com",
     "date_published": "unknown",
     "date_accessed": "2026-11-17",
     "type": "secondary",
     "trust": "medium",
     "trust_reason": "Company or general site; may gain from what it says.",
     "claims_backed": [
-      "Alexandria IELTS students lack daily speaking practice at home."
-    ],
-    "quote_or_number": "",
-    "conflicts_with": [],
-    "used_by": "research_intern",
-    "step": "phase1_step2"
-  },
-  {
-    "id": "S8",
-    "url": "https://lingoleap.ai/blog/speaking-practice-tools-ielts",
-    "title": "Speaking Practice for IELTS: 5 Online Tools You Should Be Using",
-    "publisher": "lingoleap.ai",
-    "date_published": "unknown",
-    "date_accessed": "2026-11-17",
-    "type": "vendor",
-    "trust": "medium",
-    "trust_reason": "Company or general site; may gain from what it says.",
-    "claims_backed": [
-      "Alexandria IELTS students lack daily speaking practice at home."
-    ],
-    "quote_or_number": "",
-    "conflicts_with": [],
-    "used_by": "research_intern",
-    "step": "phase1_step2"
-  },
-  {
-    "id": "S4",
-    "url": "https://oxfordtefl.com/blog/helping-students-prepare-for-the-ielts-speaking-test-a-task-based-approach/",
-    "title": "Helping students prepare for the IELTS speaking test - Oxford TEFL",
-    "publisher": "oxfordtefl.com",
-    "date_published": "unknown",
-    "date_accessed": "2026-11-17",
-    "type": "vendor",
-    "trust": "medium",
-    "trust_reason": "Company or general site; may gain from what it says.",
-    "claims_backed": [
-      "IELTS test takers in Egypt have no affordable source for short model answers they can compare their recordings against."
+      "Students can't afford EGP 9,000 courses; need practice at home."
     ],
     "quote_or_number": "",
     "conflicts_with": [],
@@ -55,16 +19,34 @@
   },
   {
     "id": "S2",
-    "url": "https://ieltsliz.com/ielts-speaking-free-lessons-essential-tips/",
-    "title": "IELTS Speaking: Free Lessons & Essential Tips",
-    "publisher": "ieltsliz.com",
+    "url": "https://ieltsbiz.com/ielts-fees/egypt",
+    "title": "IELTS Exam Fee in Egypt (2026): EGP 10,200 | IELTSbiz",
+    "publisher": "ieltsbiz.com",
     "date_published": "unknown",
     "date_accessed": "2026-11-17",
     "type": "secondary",
     "trust": "medium",
     "trust_reason": "Company or general site; may gain from what it says.",
     "claims_backed": [
-      "IELTS test takers in Egypt have no affordable source for short model answers they can compare their recordings against."
+      "Students can't afford EGP 9,000 courses; need practice at home."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase1_step2"
+  },
+  {
+    "id": "S3",
+    "url": "https://www.englishverseeg.com/knowledge/ielts-course-cost-egypt-2026-prices-guide/",
+    "title": "سعر كورس IELTS في مصر 2026 | تكلفة الامتحان والتحضير | EnglishVerse",
+    "publisher": "englishverseeg.com",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "secondary",
+    "trust": "medium",
+    "trust_reason": "Company or general site; may gain from what it says.",
+    "claims_backed": [
+      "Students can't afford EGP 9,000 courses; need practice at home."
     ],
     "quote_or_number": "",
     "conflicts_with": [],
@@ -73,16 +55,70 @@
   },
   {
     "id": "S7",
-    "url": "https://ihworld.com/ih-journal/issues/issue-54/ielts-speaking-exam-preparation-activities/",
-    "title": "IELTS Speaking - Three Activities - International House",
-    "publisher": "ihworld.com",
+    "url": "https://ielts.idp.com/egypt/prepare/speaking",
+    "title": "How to prepare for the IELTS Speaking test | IDP IELTS Egypt",
+    "publisher": "ielts.idp.com",
     "date_published": "unknown",
     "date_accessed": "2026-11-17",
     "type": "secondary",
     "trust": "medium",
     "trust_reason": "Company or general site; may gain from what it says.",
     "claims_backed": [
-      "Two language centres in Smouha send 20+ IELTS students monthly to Mariam; these students have no structured speaking practice between centre classes."
+      "No cheap way for students to get feedback on recorded IELTS speaking answers."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase1_step2"
+  },
+  {
+    "id": "S5",
+    "url": "https://ieltspeaking.com/guides/practice-ielts-speaking-alone-at-home.html",
+    "title": "How to Practise IELTS Speaking Alone at Home | IELTSpeaking",
+    "publisher": "ieltspeaking.com",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "secondary",
+    "trust": "medium",
+    "trust_reason": "Company or general site; may gain from what it says.",
+    "claims_backed": [
+      "No cheap way for students to get feedback on recorded IELTS speaking answers."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase1_step2"
+  },
+  {
+    "id": "S8",
+    "url": "https://jurassicenglish.com/ielts-speaking-online/egypt",
+    "title": "IELTS Speaking Online in Egypt | Jurassic English™",
+    "publisher": "jurassicenglish.com",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "secondary",
+    "trust": "medium",
+    "trust_reason": "Company or general site; may gain from what it says.",
+    "claims_backed": [
+      "No cheap way for students to get feedback on recorded IELTS speaking answers."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase1_step2"
+  },
+  {
+    "id": "S9",
+    "url": "https://ielts.org/receiving-organisations/idp-education-alexandria",
+    "title": "IELTS accepted at IDP Education Alexandria",
+    "publisher": "ielts.org",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "secondary",
+    "trust": "medium",
+    "trust_reason": "Company or general site; may gain from what it says.",
+    "claims_backed": [
+      "2 language centres refer students monthly; no standardized cheap practice material."
     ],
     "quote_or_number": "",
     "conflicts_with": [],
@@ -91,16 +127,34 @@
   },
   {
     "id": "S10",
-    "url": "https://www.esl-lounge.com/student/ielts-speaking.php",
-    "title": "IELTS Exam - Free Exercises & Tasks For Speaking - ESL Lounge",
-    "publisher": "esl-lounge.com",
+    "url": "https://bandladder.com/study-abroad/ielts-for-egypt",
+    "title": "IELTS Fee in Egypt 2026: EGP 9,400 or EGP 10,200 | BandLadder",
+    "publisher": "bandladder.com",
     "date_published": "unknown",
     "date_accessed": "2026-11-17",
     "type": "secondary",
     "trust": "medium",
     "trust_reason": "Company or general site; may gain from what it says.",
     "claims_backed": [
-      "Two language centres in Smouha send 20+ IELTS students monthly to Mariam; these students have no structured speaking practice between centre classes."
+      "2 language centres refer students monthly; no standardized cheap practice material."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase1_step2"
+  },
+  {
+    "id": "S11",
+    "url": "https://ielts.idp.com/egypt/prepare/article/ielts-material",
+    "title": "Free and Paid IELTS Preparation material | IDP",
+    "publisher": "ielts.idp.com",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "secondary",
+    "trust": "medium",
+    "trust_reason": "Company or general site; may gain from what it says.",
+    "claims_backed": [
+      "2 language centres refer students monthly; no standardized cheap practice material."
     ],
     "quote_or_number": "",
     "conflicts_with": [],

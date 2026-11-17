@@ -1,16 +1,18 @@
 [
   {
-    "id": "S1",
-    "url": "https://takeielts.britishcouncil.org/prepare/ielts-free-practice-mock-tests/academic/speaking",
-    "title": "IELTS Academic Speaking Practice Tests",
-    "publisher": "takeielts.britishcouncil.org",
+    "id": "S2",
+    "url": "https://ieltsbiz.com/ielts-fees/egypt",
+    "title": "IELTS Exam Fee in Egypt (2026): EGP 10,200 | IELTSbiz",
+    "publisher": "ieltsbiz.com",
     "date_published": "unknown",
     "date_accessed": "2026-11-17",
     "type": "secondary",
     "trust": "medium",
     "trust_reason": "Company or general site; may gain from what it says.",
     "claims_backed": [
-      "Alexandria IELTS students lack daily speaking practice at home. 420 students in WhatsApp group get no structured practice outside class."
+      "IELTS test takers in Alexandria, Egypt. 420 students in WhatsApp group. Referrals from 2 language centres in Smouha, Alexandria.",
+      "WhatsApp broadcast to 420-student group. Language centre referrals in Smouha, Alexandria. Founder creates short practice videos on mobile.",
+      "EGP 500 for WhatsApp broadcast and simple template. Personal spending maximum EGP 2,000 without financial harm. 10 hours per week time constraint for founder."
     ],
     "quote_or_number": "",
     "conflicts_with": [],
@@ -18,17 +20,38 @@
     "step": "phase2_step1"
   },
   {
-    "id": "S8",
-    "url": "https://lingoleap.ai/blog/speaking-practice-tools-ielts",
-    "title": "Speaking Practice for IELTS: 5 Online Tools You Should Be Using",
-    "publisher": "lingoleap.ai",
+    "id": "S3",
+    "url": "https://www.englishverseeg.com/knowledge/ielts-course-cost-egypt-2026-prices-guide/",
+    "title": "سعر كورس IELTS في مصر 2026 | تكلفة الامتحان والتحضير | EnglishVerse",
+    "publisher": "englishverseeg.com",
     "date_published": "unknown",
     "date_accessed": "2026-11-17",
-    "type": "vendor",
+    "type": "secondary",
     "trust": "medium",
     "trust_reason": "Company or general site; may gain from what it says.",
     "claims_backed": [
-      "WhatsApp sends 10 speaking prompts daily. Students record 2-minute answers. Receive 3-item checklist to self-score."
+      "Students cannot afford EGP 9,000 IELTS courses. Need practice at home. Free resources insufficient for speaking practice.",
+      "Price EGP 200 per student per month for practice pack. ASSUMPTION: students willing to pay for practice pack."
+    ],
+    "quote_or_number": "",
+    "conflicts_with": [],
+    "used_by": "research_intern",
+    "step": "phase2_step1"
+  },
+  {
+    "id": "S1",
+    "url": "https://ielts.idp.com/egypt/prepare/article-free-speaking-practice-questions",
+    "title": "IELTS Speaking free practice questions Egypt",
+    "publisher": "ielts.idp.com",
+    "date_published": "unknown",
+    "date_accessed": "2026-11-17",
+    "type": "secondary",
+    "trust": "medium",
+    "trust_reason": "Company or general site; may gain from what it says.",
+    "claims_backed": [
+      "Band 8.5 personal score in IELTS speaking. 4 years coaching experience. Short practice videos made on phone. Checklist and model answer provided via WhatsApp.",
+      "WhatsApp IELTS speaking practice pack. Students record 3 answers at home. Receive checklist and model answer via WhatsApp broadcast. Cost to test EGP 500 for broadcast and template.",
+      "Students submit 3 practice answers weekly. 10 students enrolled in first month. EGP 500 cost per test. ASSUMPTION: 20 percent conversion from free to paid."
     ],
     "quote_or_number": "",
     "conflicts_with": [],

@@ -154,8 +154,8 @@ Kept in sync with the README table.
 | Part | Status |
 |---|---|
 | Phase 1: intake, research with sources, opportunities, gate, interview script; Lean Canvas with the failed-review warning | Working (committed demo run on a free open-weight model) |
-| Sign-up page and Phase 2 gate with STOP | STUBBED (built and tested; not yet in a committed real run) |
-| Phases 3 to 6 in the run, each with a stage-complete pause | STUBBED (built and tested with a scripted model; not yet in a committed real run) |
+| Sign-up page and Phase 2 gate with STOP | Working (committed six-stage real run) |
+| Phases 3 to 6 in the run, each with a stage-complete pause | Working (committed six-stage real run; money steps MOCKED) |
 | Payment, delivery, refunds, reconciliation | MOCKED |
 | Netlify publishing of the approved page (`api/publish.py`) | STUBBED (code and tests, never run against Netlify) |
 | Founder approval in code | Working |

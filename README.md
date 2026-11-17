@@ -49,7 +49,7 @@ In the terminal, with `docker compose up` still running for the model and search
 
 ## What works and what is mocked
 
-Statuses are updated only after a real run. Working = tested end to end. MOCKED = simulated on purpose. STUBBED = designed, minimal output only.
+Statuses are updated only after a real run. The committed run (`outputs/`, `decision_log.json`) went through all six stages on a free open-weight model, with founder answers replayed from `briefs/full_answers.yaml`. Working = tested end to end. MOCKED = simulated on purpose. STUBBED = designed, minimal output only.
 
 | Phase | Step | Status |
 |---|---|---|
@@ -59,16 +59,16 @@ Statuses are updated only after a real run. Working = tested end to end. MOCKED 
 | 1 Discover | Gate: founder picks an option and explains why | Working |
 | 1 Discover | STOP on a weak idea: the gate recommends stop when the founder can reach no one (real-model run: `outputs/phase1_gate_weak_idea_decision.md`) | Working |
 | 2 Validate | Lean Canvas (boss review; a second failed review is shown as a warning) | Working |
-| 2 Validate | Sign-up page draft (built and tested; not yet in a committed real run) | STUBBED |
+| 2 Validate | Sign-up page draft and founder publish approval (page saved locally) | Working |
 | 2 Validate | Publish sign-up page to Netlify (founder's own free account; code and tests only, never run against Netlify) | STUBBED |
-| 2 Validate | Sign-up target gate (recommends stop under 30% of the target; built and tested, not yet in a committed real run) | STUBBED |
+| 2 Validate | Sign-up target gate (recommends stop under 30% of the target; founder enters the real count) | Working |
 | 2 Validate | Shark panel (SIMULATION) | STUBBED |
-| 3 Build | User stories, MVP spec and build gate (built and tested with a scripted model, not yet in a committed real run) | STUBBED |
-| 4 Commercial setup | Offer, price and refund policy, then a founder gate before checkout (built and tested, not yet in a committed real run) | STUBBED |
+| 3 Build | User stories, MVP spec and build gate (hours checked against the founder's time) | Working |
+| 4 Commercial setup | Offer, price and refund policy, then a founder gate before the MOCKED checkout | Working |
 | 5 Sell | Store page and launch posts (no code yet) | STUBBED |
 | 5 Sell | Test orders in the run: payment triggers one delivery, duplicate webhook ignored, refund only with founder approval, reconciliation (no real money) | MOCKED |
 | 5 Sell | Payment and automatic delivery (simulated events, access token, refunds, reconcile; no real money) | MOCKED |
-| 6 Operate | Learning review from repeat buyers and feedback, then keep, fix, pivot or stop (built and tested, not yet in a committed real run) | STUBBED |
+| 6 Operate | Learning review from repeat buyers and feedback, then keep, fix, pivot or stop | Working |
 | All | Founder approval enforced in code (no bare yes, option plus reason) | Working |
 | All | Stage-complete screen after each stage: go to the next stage or keep talking with the co-founder | Working |
 | All | Guardrail, ethics check and decision log | Working |
@@ -91,7 +91,7 @@ A fixed workflow in plain Python runs the six phases. Each step is done by small
 
 ## Cost per run
 
-About $0.00 per run (local model or free tier, about 119k tokens for the committed Phase 1 to 2 demo run and about 50k for the committed weak-idea run that ends in stop). Tokens are logged per model call in `decision_log.json`.
+About $0.00 per run (local model or free tier, about 168k tokens for the committed six-stage demo run and about 50k for the committed weak-idea run that ends in stop). Tokens are logged per model call in `decision_log.json`.
 
 ## Demo video
 

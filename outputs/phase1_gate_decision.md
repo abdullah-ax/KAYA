@@ -10,7 +10,7 @@
 - Percent of target: 100%
 
 ## System recommendation
-go: 3 sourced problems (need 3), founder fit 4 of 5 (model estimate; need 3).
+go: 3 sourced problems (need 3), founder fit 3 of 5 (model estimate; need 3).
 
 ## Judges' top notes
 - none recorded
@@ -18,13 +18,13 @@ go: 3 sourced problems (need 3), founder fit 4 of 5 (model estimate; need 3).
 ## Options shown to the founder
 | Option | Cost | Risk | Source |
 |---|---|---|---|
-| WhatsApp speaking practice pack | EGP 1,500 for WhatsApp broadcast setup and simple checklist design; within the 2,000 EGP limit. | Risk of 30% non-response if students don't record answers; mitigated by daily reminders and small incentive for first 20 respondents. | https://takeielts.britishcouncil.org/prepare/ielts-free-practice-mock-tests/academic/speaking, https://lingoleap.ai/blog/speaking-practice-tools-ielts |
-| Video library of model answers and practice questions | EGP 800 for video recording, editing, and hosting on a free platform; within the 2,000 EGP budget. | Risk of low video views; mitigated by sharing via existing WhatsApp group and language centres. | https://oxfordtefl.com/blog/helping-students-prepare-for-the-ielts-speaking-test-a-task-based-approach/, https://ieltsliz.com/ielts-speaking-free-lessons-essential-tips/ |
-| Partnership with Smouha language centres for bundled practice | EGP 1,000 for printable checklist design and centre outreach; within the 2,000 EGP limit. | Risk of centres declining; mitigated by proposing a low-cost pilot with first 10 students. | https://ihworld.com/ih-journal/issues/issue-54/ielts-speaking-exam-preparation-activities/, https://www.esl-lounge.com/student/ielts-speaking.php |
+| WhatsApp IELTS speaking practice pack | EGP 500 for WhatsApp broadcast and simple template | Low engagement; students used to free resources | https://ielts.idp.com/egypt/prepare/article-free-speaking-practice-questions, https://ieltsbiz.com/ielts-fees/egypt, https://www.englishverseeg.com/knowledge/ielts-course-cost-egypt-2026-prices-guide/ |
+| Recorded speaking feedback pack with model answers | EGP 1,000 for form setup and WhatsApp coordination | Feedback workload may exceed 10 hours per week; students reluctant to record | https://ielts.idp.com/egypt/prepare/speaking, https://ieltspeaking.com/guides/practice-ielts-speaking-alone-at-home.html, https://jurassicenglish.com/ielts-speaking-online/egypt |
+| Language centre practice pack for Smouha referrals | EGP 1,500 for PDF pack and WhatsApp group setup | Centres may not prioritize; administrative hurdles | https://ielts.org/receiving-organisations/idp-education-alexandria, https://bandladder.com/study-abroad/ielts-for-egypt, https://ielts.idp.com/egypt/prepare/article/ielts-material |
 | Stop here | EGP 0 | The work so far is not used | none |
 
 ## Founder's decision
-- Picked: WhatsApp speaking practice pack
+- Picked: WhatsApp IELTS speaking practice pack
 - Why, in their own words: "My students ask for speaking practice every week, so this is the problem I already see up close and can test fast"
 - Understanding check answers: not recorded
-- Approved by: founder, 2026-11-17T19:36:50Z
+- Approved by: founder, 2026-11-17T21:32:22Z

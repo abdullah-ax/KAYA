@@ -5,16 +5,17 @@ Source: `kb/method/talk_to_users.md`, `kb/method/mom_test.md`.
 **Before:** don't mention your idea. Ask about their life. Take notes.
 
 
-1. How many days in the past week did you practice IELTS speaking at home alone, Alexandria student, based on the British Council's IELTS speaking mock tests (https://takeielts.britishcouncil.org/prepare/ielts-free-practice-mock-tests/academic/speaking)?
-2. Tell me about the last time you tried to evaluate your own IELTS speaking score—did you use a method like a rubric or teacher feedback, given Mariam has coached 300+ students since 2021 and scored band 8.5 herself?
-3. When did you last search for free IELTS speaking resources online, Smouha language centre student, per Lingoleap's speaking practice tools blog (https://lingoleap.ai/blog/speaking-practice-tools-ielts)?
-4. What’s the biggest challenge you’ve faced keeping a regular speaking practice routine outside class, Alexandria student aiming for band 6.5 or 7 for university admission?
-5. How many IELTS practice sessions have you skipped in the past month, and what usually stops you, Alexandria student, ASSUMPTION: daily reminders and small incentives can reduce non-response?
+1. When was the last time you looked for IELTS speaking practice outside of a formal course in Alexandria? How many different options did you compare, and what was the lowest price in EGP you saw?
+2. Think about the last time you tried to practice IELTS speaking at home on your own in the past month. How many actual practice sessions did you complete, and what was the main obstacle that kept you from doing more?
+3. Tell me about the last time you paid for an IELTS preparation resource. What did you receive for the price you paid in EGP, and how many sessions did you actually use?
+4. Which IELTS speaking skill did you last practice on your own in the last month? Who gave you feedback, if anyone, and what was the result?
+5. When did you last speak with someone about your IELTS goals for studying or working abroad? What specific band score were you aiming for, and how did you decide on that target?
 
 ## Who to ask first
 
-- Alexandria IELTS students aiming for band 6.5 or 7
-- Students referred by Smouha language centres
+- Ahmed
+- Mona
+- Karim
 
 **Close:** Who else should I talk to? Can I follow up next week?
 
@@ -24,4 +25,8 @@ Source: `kb/method/talk_to_users.md`, `kb/method/mom_test.md`.
 
 ## Boss notes (did not pass)
 
-- Reading grade 13.0 is above 8.0.
+- Sourced: Questions lack source links or ASSUMPTION labels; only top-level method sources provided.
+- Founder-based: No founder profile or quoted words integrated into the script.
+- Options: Script provides interview questions, not 2-3 decision options with cost, risk, and source.
+- Cut to the bone: Instructional line adds no fact: don't mention your idea, ask about their life, take notes.
+- Delete: **Before:** don't mention your idea. Ask about their life. Take notes.
