@@ -66,3 +66,26 @@ def test_the_api_refuses_the_plan_and_tells_the_founder_both_rules(tmp_run):
     said = " ".join(state["messages"])
     assert "Physical goods not allowed" in said and "No income promises" in said
     assert "every chick lives" in said
+
+
+def test_diet_plan_with_stolen_photos_names_every_rule_it_breaks():
+    v = check_request("I'm a gym coach. I want to sell a PDF plan that makes people lose 20 kg in 14 days, guaranteed, "
+                      "with before and after photos I found online and a countdown saying the price doubles in 10 minutes.")
+    broken = [v.rule, *v.also]
+    assert not v.allowed
+    assert "Health or legal advice products not allowed" in broken or any("health" in r.lower() for r in broken)
+    assert any("review" in r.lower() or "testimonial" in r.lower() for r in broken)
+    assert any("urgency" in r.lower() for r in broken)
+
+
+def test_crypto_channel_names_the_income_promise_and_fake_proof_too():
+    v = check_request("I want to launch an AI crypto signals Telegram channel. Members pay 500 EGP a month and I guarantee "
+                      "they double their money in 30 days. I'll post fake screenshots of wins to get the first 100 members.")
+    broken = [v.rule, *v.also]
+    assert v.rule == "Financial products not allowed"
+    assert "No income promises" in broken
+    assert any("review" in r.lower() or "testimonial" in r.lower() for r in broken)
+
+
+def test_a_real_fitness_ebook_without_claims_is_fine():
+    assert check_request("A PDF of 20 home workouts with no equipment for busy students in Cairo").allowed

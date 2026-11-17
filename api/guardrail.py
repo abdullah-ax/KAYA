@@ -39,14 +39,15 @@ _PATTERNS: list[tuple[str, str, str, str]] = [
     (r"\bfake\b.{0,20}\bsign[- ]?ups?\b|\bsign[- ]?ups?\b.{0,30}\bgate (pass|passes)\b",
      "fake sign-ups", "No fake sign-ups", "Show the real number and the stop/pivot recommendation"),
     (r"\b(reviews?|testimonials?|ratings?)\b.{0,40}\b(fake|made[- ]up|invent)|"
-     r"\b(fake|five[- ]star|5[- ]star|glowing|made[- ]up)\b.{0,30}\b(reviews?|testimonials?|ratings?)\b",
+     r"\b(fake|five[- ]star|5[- ]star|glowing|made[- ]up)\b.{0,30}\b(reviews?|testimonials?|ratings?)\b|"
+     r"\bfake (screenshots?|results|proof|wins)\b|\b(photos?|pictures?|screenshots?)\b.{0,20}\b(found|took|taken|copied) (online|from)\b",
      "fake reviews", "No fake reviews", "Ask real users for honest reviews"),
     (r"\bcountdown\b|\b(offer|sale|deal) (ends|expires) in\b|\bonly \d+ (left|spots?)\b",
      "fake urgency", "No fake urgency", "Show the real launch date, if there is one"),
     (r"\b(make|earn|making|earning)\b.{0,20}\$\s?\d|\bguarantee(d)? (income|profit|results|success)\b|"
      r"\$\s?[\d,]+\s*(a|per) (day|week|month|year)\b|"
      r"\b(buy|afford|get) (me )?(a |my own )?(bentley|lamborghini|ferrari|porsche|rolls[- ]royce|yacht|villa)\b|"
-     r"\b(get|getting|be|become) rich\b|\buntil i'?m rich\b|\bmillionaire\b|بنتلي|هبقى غني",
+     r"\bdouble (their|your|my) money\b|\b(get|getting|be|become) rich\b|\buntil i'?m rich\b|\bmillionaire\b|بنتلي|هبقى غني",
      "income promises", "No income promises", "Describe what the product does, with no earnings claims"),
     (r"\b(pretend(ing)? to be|pose as|posing as|as if (it came )?from|impersonat\w*)\b",
      "another brand", "No posing as another brand", "Draft an email from the founder's own name"),
@@ -71,7 +72,8 @@ _PATTERNS: list[tuple[str, str, str, str]] = [
     (r"\blegal advice\b",
      "legal advice", "Legal advice products not allowed",
      "Draft terms marked \"draft, not legal advice\" and suggest a lawyer review"),
-    (r"\b(medical|health|diet|therapy|nutrition) advice\b",
+    (r"\b(medical|health|diet|therapy|nutrition) advice\b|\blose \d+\s?(kg|kilos?|pounds|lbs)\b|"
+     r"\b(cures?|treats?|heals?)\b.{0,20}\b(diabetes|cancer|disease|anxiety|depression|obesity)\b",
      "health advice", "Health advice products not allowed",
      "Explain the excluded categories; suggest a digital product outside health advice"),
     (r"\b(hide|without|leave out)\b.{0,30}\b(fees?|delivery fee|full price)\b|\bhidden fees?\b",
