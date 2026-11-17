@@ -27,7 +27,7 @@
   --destructive: #9b2c1f;
   --destructive-foreground: #ffffff;
   --border: #dcdcd4;
-  --input: #cfcfc6;
+  --input: #8a8a80;
   --ring: #1e5a3c;
   --stop-bg: #fbeeec;
 }
@@ -50,7 +50,7 @@
   --destructive: #e07a6c;
   --destructive-foreground: #1a0d0a;
   --border: #33332e;
-  --input: #3d3d37;
+  --input: #6b6b63;
   --ring: #5fb488;
   --stop-bg: #2a1714;
 }
@@ -97,6 +97,10 @@
   html { font-size: 18px; }
   body { @apply bg-background text-foreground font-sans antialiased; }
 }
+
+/* WCAG 2.4.7 and 1.4.11: one solid 2px outline in the primary color on every
+   focusable element. Unlayered, so it wins over the component utilities. */
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 /* Face-photo emotions for the parody shark. Pure transforms so they work on
    any cropped face image. Off under reduced motion. */

@@ -5,7 +5,7 @@
    the founder's own words (or standard ones when the model can't be reached).
    Last, a profile the founder can edit before anything starts. */
 
-import { ArrowLeft, ArrowRight, Check, Mic } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -45,7 +45,7 @@ function openingValid(step: OpeningStep, d: Draft): boolean {
 function Chips({ options, value, multi, onChange, labelledBy }: { options: string[]; value: string[]; multi?: boolean; onChange: (v: string[]) => void; labelledBy: string }) {
   return (
     <div role={multi ? "group" : "radiogroup"} aria-labelledby={labelledBy} className="grid grid-cols-2 gap-3">
-      {options.map((o, k) => {
+      {options.map((o) => {
         const sel = value.includes(o);
         return (
           <button
@@ -60,8 +60,8 @@ function Chips({ options, value, multi, onChange, labelledBy }: { options: strin
               sel && "border-foreground bg-accent/40",
             )}
           >
-            <span aria-hidden className={cn("flex size-7 shrink-0 items-center justify-center rounded-md border-2 text-[14px] font-bold", sel ? "border-foreground bg-foreground text-background" : "text-muted-foreground")}>
-              {sel ? <Check className="size-4" /> : String.fromCharCode(65 + k)}
+            <span aria-hidden className={cn("flex size-7 shrink-0 items-center justify-center border-2", multi ? "rounded-md" : "rounded-full", sel ? "border-foreground bg-foreground text-background" : "border-input")}>
+              {sel && <Check className="size-4" />}
             </span>
             {o}
           </button>
@@ -84,9 +84,8 @@ function TextField({ id, label, value, onChange, placeholder, onSubmit, invalid 
           onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) onSubmit(); }}
           placeholder={placeholder}
           aria-invalid={invalid || undefined}
-          className="min-h-28 rounded-xl border-2 bg-card p-4 pr-14 text-xl md:text-xl"
+          className="min-h-28 rounded-xl border-2 bg-card p-4 text-xl md:text-xl"
         />
-        <Button variant="ghost" size="icon" type="button" className="absolute right-2 bottom-2 rounded-full" aria-label="Hold to talk"><Mic className="size-5" /></Button>
       </div>
     </div>
   );

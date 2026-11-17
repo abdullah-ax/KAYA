@@ -15,7 +15,7 @@ const FALLBACK = "Couldn't reach the API. Check your connection and try again.";
 
 type Busy = "publish" | "takedown" | null;
 
-export function PublishCard({ run }: { run: Run }) {
+export function PublishCard({ run, connected = true }: { run: Run; connected?: boolean }) {
   const approved = run.delivery?.approved ?? false;
   const [url, setUrl] = useState<string | null>(run.delivery?.url ?? null);
   const [token, setToken] = useState("");
@@ -52,7 +52,7 @@ export function PublishCard({ run }: { run: Run }) {
   return (
     <section className="flex flex-col gap-3" aria-labelledby={`${tokenId}-h`}>
       <h3 id={`${tokenId}-h`} className="text-[14px] font-bold tracking-wide text-muted-foreground uppercase">Put your page online</h3>
-      {run.mode === "demo" && (
+      {!connected && (
         <p className="text-[14px] font-bold text-amber-800 dark:text-amber-300">STUBBED: demo mode. Check the live link yourself before you share it.</p>
       )}
 
@@ -109,12 +109,12 @@ export function PublishCard({ run }: { run: Run }) {
 
           {url ? (
             <Button variant="outline" onClick={() => go("takedown")} disabled={busy !== null || !token.trim()} className="w-fit rounded-full">
-              {busy === "takedown" && <Loader2 className="size-4 animate-spin" aria-hidden />}
+              {busy === "takedown" && <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden />}
               {busy === "takedown" ? "Taking it down" : "Take it down"}
             </Button>
           ) : (
             <Button onClick={() => go("publish")} disabled={busy !== null || !token.trim()} className="w-fit rounded-full">
-              {busy === "publish" && <Loader2 className="size-4 animate-spin" aria-hidden />}
+              {busy === "publish" && <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden />}
               {busy === "publish" ? "Publishing" : error ? "Try again" : "Publish to Netlify"}
             </Button>
           )}

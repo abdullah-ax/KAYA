@@ -78,7 +78,7 @@ function Chat({ screen, egg }: { screen: Screen; egg: boolean }) {
 type Conn = "checking" | "online" | "offline";
 const LIVE_FOUNDER = { title: "You", subtitle: "Your answers, in your words" };
 
-export function Boardroom({ initialScreen, initialRunId, dark, egg: eggParam }: { initialScreen?: string; initialRunId?: string; dark?: boolean; egg?: boolean }) {
+export function Boardroom({ initialScreen, initialRunId, dark, egg: eggParam, dev = false }: { initialScreen?: string; initialRunId?: string; dark?: boolean; egg?: boolean; dev?: boolean }) {
   const [conn, setConn] = useState<Conn>("checking");
   const [runId, setRunId] = useState<string | null>(initialRunId ?? null);
   // The model key lives in React state only: never storage, never a URL, never logged.
@@ -130,7 +130,7 @@ export function Boardroom({ initialScreen, initialRunId, dark, egg: eggParam }: 
           <div className="ml-auto flex items-center gap-2">
             {conn === "checking" && <StatusBadge status="stubbed">Checking API…</StatusBadge>}
             {conn === "offline" && <StatusBadge status="mocked">Demo data — API not connected</StatusBadge>}
-            {!live && (
+            {!live && (conn === "offline" || dev) && (
               <Select value={screenId} onValueChange={setScreenId}>
                 <SelectTrigger aria-label="Mock screen" className="h-9 w-40 rounded-full text-[14px]"><SelectValue /></SelectTrigger>
                 <SelectContent>

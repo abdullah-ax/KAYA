@@ -153,8 +153,8 @@ export function ParodyVerdict() {
       </div>
       {step < 0 ? (
         <div className="flex flex-col gap-2" aria-busy>
-          <span className="h-4 w-11/12 animate-pulse rounded bg-muted" />
-          <span className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+          <span className="h-4 w-11/12 motion-safe:animate-pulse rounded bg-muted" />
+          <span className="h-4 w-3/4 motion-safe:animate-pulse rounded bg-muted" />
         </div>
       ) : (
         <div className="flex flex-col gap-1.5 text-base leading-snug">

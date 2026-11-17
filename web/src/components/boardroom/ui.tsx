@@ -75,7 +75,7 @@ export function MascotAvatar({
       />
       {activity === "thinking" && (
         <span className="absolute -right-1 -bottom-1 rounded-full bg-background p-0.5">
-          <Loader2 className="size-3.5 animate-spin text-primary" aria-label="Thinking" />
+          <Loader2 className="size-3.5 motion-safe:animate-spin text-primary" aria-label="Thinking" />
         </span>
       )}
       {activity === "error" && (
@@ -108,17 +108,17 @@ export function RosterItem({
   disabled?: boolean;
   onSelect?: () => void;
 }) {
+  const Tag = onSelect ? "button" : "div";
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      disabled={disabled}
+    <Tag
+      {...(onSelect ? { type: "button" as const, onClick: onSelect, disabled } : {})}
       aria-current={active ? "true" : undefined}
       className={cn(
         "group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors",
-        "hover:bg-muted focus-visible:ring-ring/50 outline-none focus-visible:ring-[3px]",
+        onSelect && "hover:bg-muted",
         "disabled:pointer-events-none disabled:opacity-45",
-        active && "bg-accent hover:bg-accent",
+        active && "bg-accent",
+        active && onSelect && "hover:bg-accent",
       )}
     >
       <MascotAvatar id={id} activity={activity} size={40} />
@@ -129,7 +129,7 @@ export function RosterItem({
       {status && (
         <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[12px] font-bold text-primary">{status}</span>
       )}
-    </button>
+    </Tag>
   );
 }
 
@@ -278,10 +278,10 @@ export function SourceCard({
   if (state === "loading") {
     return (
       <div className="flex gap-3 rounded-xl border bg-card p-3" aria-busy>
-        <span className="size-7 shrink-0 animate-pulse rounded-md bg-muted" />
+        <span className="size-7 shrink-0 motion-safe:animate-pulse rounded-md bg-muted" />
         <span className="flex flex-1 flex-col gap-2">
-          <span className="h-4 w-3/4 animate-pulse rounded bg-muted" />
-          <span className="h-3.5 w-1/2 animate-pulse rounded bg-muted" />
+          <span className="h-4 w-3/4 motion-safe:animate-pulse rounded bg-muted" />
+          <span className="h-3.5 w-1/2 motion-safe:animate-pulse rounded bg-muted" />
         </span>
       </div>
     );
@@ -360,7 +360,7 @@ export function VerdictCard({
         </div>
       </div>
       {verdict === "pending" ? (
-        <span className="h-4 w-4/5 animate-pulse rounded bg-muted" />
+        <span className="h-4 w-4/5 motion-safe:animate-pulse rounded bg-muted" />
       ) : (
         <>
           <p className="text-base leading-snug">{reason}</p>

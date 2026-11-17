@@ -65,7 +65,7 @@ export function ConnectionStatus({ state, detail }: { state: ConnState; detail?:
         s.tone === "warn" && "text-amber-800 dark:text-amber-300",
       )}
     >
-      <Icon className={cn("size-4 shrink-0", state === "testing" && "animate-spin")} /> {detail || s.text}
+      <Icon className={cn("size-4 shrink-0", state === "testing" && "motion-safe:animate-spin")} /> {detail || s.text}
     </p>
   );
 }

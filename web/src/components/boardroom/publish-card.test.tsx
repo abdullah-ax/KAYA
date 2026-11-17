@@ -40,8 +40,8 @@ describe("PublishCard", () => {
     expect(screen.getByRole("button", { name: /publish to netlify/i })).toBeDisabled();
   });
 
-  it("is labelled STUBBED in demo mode and not otherwise", () => {
-    const { unmount } = render(<PublishCard run={run({ mode: "demo" })} />);
+  it("is labelled STUBBED only when the app is not connected to the API", () => {
+    const { unmount } = render(<PublishCard run={run({ mode: "demo" })} connected={false} />);
     expect(screen.getByText(/stubbed/i)).toBeInTheDocument();
     unmount();
     render(<PublishCard run={run({ mode: "full" })} />);

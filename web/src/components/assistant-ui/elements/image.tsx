@@ -257,7 +257,7 @@ function ImagePreview({
           data-slot="image-preview-loading"
           className="bg-muted/50 absolute inset-0 flex items-center justify-center"
         >
-          <ImageIcon className="text-muted-foreground size-8 animate-pulse" />
+          <ImageIcon className="text-muted-foreground size-8 motion-safe:animate-pulse" />
         </div>
       )}
       {error ? (
@@ -517,7 +517,7 @@ function ImageGenerating({ className }: { className?: string }) {
         className,
       )}
     >
-      <Loader2Icon className="text-muted-foreground size-8 animate-spin" />
+      <Loader2Icon className="text-muted-foreground size-8 motion-safe:animate-spin" />
       <span className="sr-only">Generating image…</span>
     </div>
   );
@@ -579,7 +579,7 @@ function RegenerateButton({
       className="hover:bg-muted inline-flex size-7 items-center justify-center rounded disabled:opacity-50"
     >
       <RefreshCwIcon
-        className={cn("size-4", isRegenerating && "animate-spin")}
+        className={cn("size-4", isRegenerating && "motion-safe:animate-spin")}
       />
     </button>
   );

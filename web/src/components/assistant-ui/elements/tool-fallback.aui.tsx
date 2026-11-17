@@ -184,7 +184,7 @@ function ToolFallbackTrigger({
         className={cn(
           "aui-tool-fallback-trigger-icon size-4 shrink-0",
           isCancelled && "text-muted-foreground",
-          isRunning && "animate-spin [animation-duration:0.6s]",
+          isRunning && "motion-safe:animate-spin [animation-duration:0.6s]",
         )}
       />
       <span
