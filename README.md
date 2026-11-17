@@ -95,7 +95,7 @@ About $0.00 per run (local model or free tier, about 168k tokens for the committ
 
 ## Demo video
 
-Not published yet. Until then, the screenshots in this README show every screen of one run.
+[Watch the demo on Google Drive](https://drive.google.com/file/d/1PHE021xPrqiv64VkYOOdxMUGPo2GG3GR/view?usp=sharing) (2:31, all six stages; recorded with the scripted test model, money steps MOCKED).
 
 ## What our system will NOT do
 
