@@ -369,13 +369,14 @@ def _build(ctx: Ctx, result: RunResult, profile: Any, chosen: intern.Opportunity
     _save(ctx, result, "phase3_step2")
 
     weekly, _known = intern.weekly_hours(profile)
-    result.phase3 = phase3_gate(intern.must_hours(stories), weekly * 2, weekly)
+    must = intern.must_hours(stories)
+    result.phase3 = phase3_gate(must, weekly * 2, weekly)
     pick = _gate(ctx, 3, result.phase3, PHASE3_OPTIONS)
     ctx.say({"go": BUILD_DONE, "repeat": BUILD_CUT, "pivot": BUILD_BACK}[PHASE3[pick.option]])
     _save(ctx, result, "phase3_gate", PHASE3[pick.option])
     if result.outcome != "go":
         return result
-    level_up(ctx, 3, f"The must-have stories fit in {weekly * 2} hours over two weeks.")
+    level_up(ctx, 3, f"The must-have stories take {must} of your {weekly * 2} hours over two weeks.")
     return _commercial(ctx, result, chosen)
 
 

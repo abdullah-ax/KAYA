@@ -1,5 +1,6 @@
 """Phase 3 Build: user stories, a 2-week MVP plan and the build gate, after a Phase 2 go."""
 import json
+import re
 
 import pytest
 from fastapi.testclient import TestClient
@@ -157,6 +158,7 @@ def test_api_phase3_gate_is_pending_with_three_options_then_run_is_done(tmp_run)
         assert bad.status_code == 422
         state = decide(client, run_id, "Build this MVP", REASON3)
         assert state["pending"]["kind"] == "level_up" and state["pending"]["done"] == 3
+        assert re.search(r"take \d+ of your \d+ hours over two weeks", state["pending"]["proof"])
         next_stage(client, run_id)
         state = finish_later_phases(client, run_id)
         assert state["status"] == "done" and state["outcome"] == "go" and state["phase3"] == "go"
