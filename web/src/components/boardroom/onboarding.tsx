@@ -1,148 +1,310 @@
 "use client";
 
-/* Onboarding: one question per screen, big type, progress, back and next.
-   The Profiler asks; the founder answers in their own words. */
+/* Onboarding: one question per screen, big type, chips plus free text.
+   First a short fixed opening. Then up to four follow-ups the model writes from
+   the founder's own words (or standard ones when the model can't be reached).
+   Last, a profile the founder can edit before anything starts. */
 
 import { ArrowLeft, ArrowRight, Check, Mic } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { ApiError, createRun, type ApiProvider, type Run } from "@/lib/api";
-import { composeBrief } from "./live-model";
+import { ApiError, createRun, nextQuestion, type ApiProvider, type FollowUp, type OnbAnswer, type Profile, type Run } from "@/lib/api";
+import { buildProfile, fallbackQuestion, followUpCount, MAX_FOLLOWUPS, OPENING, profileBrief, type OpeningStep } from "@/lib/onboarding";
+import { ProfileCard } from "./onboarding-profile";
 import { checkReason, LearnCard, MascotAvatar } from "./ui";
-
-type Step =
-  | { kind: "text"; id: string; q: string; hint: string; minWords: number; placeholder: string }
-  | { kind: "choice"; id: string; q: string; hint: string; options: string[]; multi?: boolean };
-
-const STEPS: Step[] = [
-  { kind: "text", id: "brief", q: "Tell me about you in two or three sentences.", hint: "Not your idea yet. You.", minWords: 12, placeholder: "I'm a 4th-year pharmacy student in Cairo. I tutor…" },
-  { kind: "choice", id: "skills", q: "What are people already asking you to help with?", hint: "Pick all that apply.", options: ["Teaching or tutoring", "Design", "Writing", "Coding", "Selling", "Organizing events"], multi: true },
-  { kind: "text", id: "network", q: "Which group of people could you message today?", hint: "Name the group and roughly how many.", minWords: 6, placeholder: "About 40 pharmacy students from my tutoring sessions" },
-  { kind: "choice", id: "time", q: "How many hours a week can you give this?", hint: "Be honest. We plan around it.", options: ["Under 5", "5–10", "10–20", "20+"] },
-  { kind: "choice", id: "money", q: "How do you want to fund it?", hint: "No wrong answer.", options: ["Self-funded, no raise", "Small grant or competition", "Raise from investors later"] },
-  { kind: "text", id: "values", q: "What won't you do, even for money?", hint: "This becomes a rule the agents follow.", minWords: 6, placeholder: "No exaggerated health claims. No fake reviews." },
-];
 
 export type LiveStart = { provider: ApiProvider; modelKey: string; model?: string; onRun: (run: Run) => void };
 
+type Draft = { chips: string[]; text: string };
+type Trail = { q: FollowUp; answer: string };
+type Ask = { status: "loading" } | { status: "ready"; q: FollowUp } | { status: "error"; message: string; refused: boolean };
+
+const TOTAL = OPENING.length + MAX_FOLLOWUPS + 1;
+const UNREACHABLE = "Couldn't reach the API. Check that it is running, then try again.";
+
+function openingAnswer(step: OpeningStep, d: Draft): string {
+  const text = d.text.trim();
+  if (step.id === "role") return [d.chips[0], text].filter(Boolean).join(", ");
+  if (step.id === "help") return d.chips.length && text ? `${d.chips.join(", ")}. ${text}` : d.chips.length ? d.chips.join(", ") : text;
+  return d.chips.length ? d.chips[0] : text;
+}
+
+function openingValid(step: OpeningStep, d: Draft): boolean {
+  if (step.id === "role") return d.chips.length > 0;
+  if (step.id === "help") return d.chips.length > 0 || d.text.trim().length > 1;
+  if (step.chips) return d.chips.length > 0;
+  return checkReason(d.text, step.text?.minWords ?? 1).state === "valid";
+}
+
+function Chips({ options, value, multi, onChange, labelledBy }: { options: string[]; value: string[]; multi?: boolean; onChange: (v: string[]) => void; labelledBy: string }) {
+  return (
+    <div role={multi ? "group" : "radiogroup"} aria-labelledby={labelledBy} className="grid grid-cols-2 gap-3">
+      {options.map((o, k) => {
+        const sel = value.includes(o);
+        return (
+          <button
+            key={o}
+            type="button"
+            role={multi ? "checkbox" : "radio"}
+            aria-checked={sel}
+            onClick={() => onChange(multi ? (sel ? value.filter((x) => x !== o) : [...value, o]) : [o])}
+            className={cn(
+              "flex items-center gap-3 rounded-xl border-2 bg-card px-4 py-3.5 text-left text-xl font-semibold outline-none transition-colors",
+              "hover:border-foreground/40 focus-visible:ring-[3px] focus-visible:ring-ring/40",
+              sel && "border-foreground bg-accent/40",
+            )}
+          >
+            <span aria-hidden className={cn("flex size-7 shrink-0 items-center justify-center rounded-md border-2 text-[14px] font-bold", sel ? "border-foreground bg-foreground text-background" : "text-muted-foreground")}>
+              {sel ? <Check className="size-4" /> : String.fromCharCode(65 + k)}
+            </span>
+            {o}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function TextField({ id, label, value, onChange, placeholder, onSubmit, invalid }: { id: string; label?: string; value: string; onChange: (v: string) => void; placeholder: string; onSubmit: () => void; invalid?: boolean }) {
+  return (
+    <div className="flex flex-col gap-2">
+      {label && <Label htmlFor={id} className="text-[18px] font-semibold text-muted-foreground">{label}</Label>}
+      <div className="relative">
+        <Textarea
+          id={id}
+          autoFocus={!label}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) onSubmit(); }}
+          placeholder={placeholder}
+          aria-invalid={invalid || undefined}
+          className="min-h-28 rounded-xl border-2 bg-card p-4 pr-14 text-xl md:text-xl"
+        />
+        <Button variant="ghost" size="icon" type="button" className="absolute right-2 bottom-2 rounded-full" aria-label="Hold to talk"><Mic className="size-5" /></Button>
+      </div>
+    </div>
+  );
+}
+
 export function Onboarding({ onDone, live }: { onDone?: () => void; live?: LiveStart }) {
+  const [phase, setPhase] = useState<"opening" | "followup" | "profile">("opening");
+  const [i, setI] = useState(0);
+  const [drafts, setDrafts] = useState<Record<string, Draft>>({});
+  const [trail, setTrail] = useState<Trail[]>([]);
+  const [ask, setAsk] = useState<Ask>({ status: "loading" });
+  const [followText, setFollowText] = useState("");
+  const [refusal, setRefusal] = useState<string | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
-  const [i, setI] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [dir, setDir] = useState<1 | -1>(1);
+  const latest = useRef(0);
   const fieldId = useId();
-  const done = i >= STEPS.length;
-  const step = STEPS[Math.min(i, STEPS.length - 1)];
-  const value = answers[step.id];
 
-  const valid =
-    step.kind === "text"
-      ? checkReason(String(value ?? ""), step.minWords).state === "valid"
-      : Array.isArray(value) ? value.length > 0 : !!value;
-  const textCheck = step.kind === "text" ? checkReason(String(value ?? ""), step.minWords) : null;
+  const step = OPENING[i];
+  const draft: Draft = drafts[step.id] ?? { chips: [], text: "" };
+  const setDraft = (patch: Partial<Draft>) => setDrafts((d) => ({ ...d, [step.id]: { ...draft, ...patch } }));
 
-  const finish = async () => {
-    if (!live) return go(1);
+  const openingAnswers: OnbAnswer[] = OPENING.map((s) => ({ key: s.id, question: s.q, answer: openingAnswer(s, drafts[s.id] ?? { chips: [], text: "" }) }));
+  const followAnswers = (t: Trail[]): OnbAnswer[] => t.map((x) => ({ key: x.q.key, question: x.q.text, answer: x.answer }));
+
+  /* Ask for the next question. Online: the API. Offline: the standard questions, in the browser. */
+  const standard = (all: OnbAnswer[]) => {
+    if (followUpCount(all) >= MAX_FOLLOWUPS) return finishWith(buildProfile(all));
+    const q = fallbackQuestion(all);
+    if (!q) return finishWith(buildProfile(all));
+    setAsk({ status: "ready", q });
+  };
+  const finishWith = (p: Profile) => { setProfile(p); setPhase("profile"); };
+
+  const request = async (nextTrail: Trail[]) => {
+    const all = [...openingAnswers, ...followAnswers(nextTrail)];
+    setPhase("followup");
+    if (!live) return standard(all);
+    const mine = ++latest.current;
+    setAsk({ status: "loading" });
+    try {
+      const reply = await nextQuestion({ answers: all, provider: live.provider, model: live.model }, live.modelKey || undefined);
+      if (mine !== latest.current) return;
+      if (reply.done) finishWith(reply.profile);
+      else setAsk({ status: "ready", q: reply.question });
+    } catch (e) {
+      if (mine !== latest.current) return;
+      if (e instanceof ApiError && e.status === 422) {
+        const last = nextTrail.at(-1);
+        if (last) { // the newest follow-up was refused: keep that question and show why
+          setTrail(nextTrail.slice(0, -1));
+          setFollowText(last.answer);
+          setRefusal(e.message);
+          setAsk({ status: "ready", q: last.q });
+        } else setAsk({ status: "error", message: e.message, refused: true });
+        return;
+      }
+      setAsk({ status: "error", message: e instanceof ApiError ? e.message : UNREACHABLE, refused: false });
+    }
+  };
+
+  const goBack = () => {
+    latest.current++;
+    setDir(-1);
+    setRefusal(null);
+    if (phase === "opening") return setI((x) => Math.max(0, x - 1));
+    const last = trail.at(-1);
+    if (!last) { setPhase("opening"); setI(OPENING.length - 1); return; }
+    setTrail(trail.slice(0, -1));
+    setFollowText(last.answer);
+    setAsk({ status: "ready", q: last.q });
+    setPhase("followup");
+  };
+
+  const nextOpening = () => {
+    setDir(1);
+    if (i < OPENING.length - 1) return setI(i + 1);
+    void request(trail);
+  };
+
+  const submitFollow = (q: FollowUp) => {
+    const answer = followText.trim();
+    if (!answer) return;
+    const t = [...trail, { q, answer }];
+    setTrail(t);
+    setFollowText("");
+    setRefusal(null);
+    setDir(1);
+    void request(t);
+  };
+
+  const start = async () => {
+    if (!profile) return;
+    if (!live) return onDone?.();
     setStarting(true);
     setStartError(null);
     try {
-      live.onRun(await createRun({ brief: composeBrief(answers), mode: "demo", provider: live.provider, model: live.model }, live.modelKey || undefined));
+      live.onRun(await createRun({ brief: profileBrief(profile), mode: "demo", provider: live.provider, model: live.model }, live.modelKey || undefined));
     } catch (e) {
-      setStartError(e instanceof ApiError ? e.message : "Couldn't reach the API. Check that it is running, then try again.");
+      setStartError(e instanceof ApiError ? e.message : UNREACHABLE);
       setStarting(false);
     }
   };
-  const go = (d: 1 | -1) => { setDir(d); setI((x) => x + d); };
-  const set = (v: string | string[]) => setAnswers((a) => ({ ...a, [step.id]: v }));
+
+  const position = phase === "opening" ? i : phase === "followup" ? OPENING.length + trail.length : TOTAL - 1;
+  const why = phase === "followup" && ask.status === "ready" ? ask.q.why : phase === "opening" ? step.why : "Check every line. You can change any of it.";
+  const sofar: { label: string; answer: string }[] = [
+    ...openingAnswers.filter((a) => a.answer).map((a) => ({ label: a.key, answer: a.answer })),
+    ...trail.map((t) => ({ label: t.q.key.replace("_", " "), answer: t.answer })),
+  ];
+  const q = ask.status === "ready" ? ask.q : null;
+  const followCheck = checkReason(followText, 1);
 
   return (
     <div className="grid min-h-0 flex-1 grid-cols-[1fr_22rem]">
       <div className="flex min-h-0 flex-col">
         <div className="flex items-center gap-4 px-10 pt-6">
-          <Progress value={(Math.min(i, STEPS.length) / STEPS.length) * 100} className="h-1.5 flex-1" />
-          <span className="text-[14px] font-semibold tabular-nums text-muted-foreground">{done ? "Done" : `${i + 1} of ${STEPS.length}`}</span>
+          <Progress value={(position / (TOTAL - 1)) * 100} className="h-1.5 flex-1" />
+          <span className="text-[14px] font-semibold tabular-nums text-muted-foreground">{phase === "profile" ? "Check" : `${position + 1} of ${TOTAL - 1}`}</span>
         </div>
 
-        <div className="flex flex-1 items-center justify-center overflow-y-auto px-10">
-          {done ? (
-            <div className="flex max-w-2xl flex-col items-start gap-5">
-              <MascotAvatar id="profiler" expression="pleased" size={88} activity="done" />
-              <h1 className="text-5xl leading-tight font-extrabold tracking-tight">Thanks. I know you a bit now.</h1>
-              <p className="text-xl text-muted-foreground">Based on your answers, your co-founder is <b className="text-foreground">Noor, the warm skeptic</b>. She'll push back kindly and ask for proof.</p>
-              <Button size="lg" className="h-12 rounded-full px-6 text-base font-bold" onClick={onDone}>Meet Noor <ArrowRight className="size-4" /></Button>
-            </div>
+        <div className="flex flex-1 items-start justify-center overflow-y-auto px-10 py-8">
+          {phase === "profile" && profile ? (
+            <ProfileCard profile={profile} onChange={setProfile} onStart={start} onBack={goBack} starting={starting} error={startError} />
           ) : (
-            <div key={i} className={cn("flex w-full max-w-2xl flex-col gap-6 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300", dir === 1 ? "motion-safe:slide-in-from-bottom-4" : "motion-safe:slide-in-from-top-4")}>
+            <div key={`${phase}-${phase === "opening" ? i : trail.length}`} className={cn("my-auto flex w-full max-w-2xl flex-col gap-6 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300", dir === 1 ? "motion-safe:slide-in-from-bottom-4" : "motion-safe:slide-in-from-top-4")}>
               <div className="flex items-center gap-3">
-                <MascotAvatar id="profiler" expression="listening" activity="speaking" size={48} />
+                <MascotAvatar id="profiler" expression={phase === "followup" && ask.status === "loading" ? "thinking" : "listening"} activity={phase === "followup" && ask.status === "loading" ? "thinking" : "speaking"} size={48} />
                 <span className="text-[15px] font-semibold text-muted-foreground">Profiler</span>
               </div>
-              <div>
-                <Label htmlFor={fieldId} className="block text-[32px] leading-tight font-extrabold tracking-tight">{step.q}</Label>
-                <p className="mt-2 text-xl text-muted-foreground">{step.hint}</p>
-              </div>
 
-              {step.kind === "text" ? (
-                <div className="flex flex-col gap-2">
-                  <div className="relative">
-                    <Textarea
-                      id={fieldId}
-                      autoFocus
-                      value={String(value ?? "")}
-                      onChange={(e) => set(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && valid && !starting) { if (i === STEPS.length - 1) void finish(); else go(1); } }}
-                      placeholder={step.placeholder}
-                      aria-invalid={textCheck?.state === "bare" || undefined}
-                      className="min-h-32 rounded-xl border-2 bg-card p-4 pr-14 text-xl md:text-xl"
-                    />
-                    <Button variant="ghost" size="icon" className="absolute right-2 bottom-2 rounded-full" aria-label="Hold to talk"><Mic className="size-5" /></Button>
+              {phase === "opening" && (
+                <>
+                  <div>
+                    <Label id={fieldId} className="block text-[32px] leading-tight font-extrabold tracking-tight">{step.q}</Label>
+                    <p className="mt-2 text-xl text-muted-foreground">{step.hint}</p>
                   </div>
-                  <p aria-live="polite" className="min-h-6 text-base font-semibold">
-                    {textCheck?.state === "bare" && <span className="text-destructive">{textCheck.message} Tell me in your own words.</span>}
-                    {textCheck?.state === "short" && <span className="text-muted-foreground">{textCheck.message}</span>}
-                    {textCheck?.state === "valid" && <span className="inline-flex items-center gap-1.5 text-primary"><Check className="size-4" /> Got it.</span>}
-                  </p>
-                </div>
-              ) : (
-                <div role={step.multi ? "group" : "radiogroup"} aria-labelledby={fieldId} className="grid grid-cols-2 gap-3">
-                  {step.options.map((o, k) => {
-                    const sel = Array.isArray(value) ? value.includes(o) : value === o;
-                    return (
-                      <button
-                        key={o}
-                        role={step.multi ? "checkbox" : "radio"}
-                        aria-checked={sel}
-                        onClick={() => set(step.multi ? (sel ? (value as string[]).filter((x) => x !== o) : [...((value as string[]) ?? []), o]) : o)}
-                        className={cn(
-                          "flex items-center gap-3 rounded-xl border-2 bg-card px-4 py-3.5 text-left text-xl font-semibold outline-none transition-colors",
-                          "hover:border-foreground/40 focus-visible:ring-[3px] focus-visible:ring-ring/40",
-                          sel && "border-foreground bg-accent/40",
-                        )}
-                      >
-                        <span className={cn("flex size-7 shrink-0 items-center justify-center rounded-md border-2 text-[14px] font-bold", sel ? "border-foreground bg-foreground text-background" : "text-muted-foreground")}>
-                          {sel ? <Check className="size-4" /> : String.fromCharCode(65 + k)}
-                        </span>
-                        {o}
-                      </button>
-                    );
-                  })}
+                  {step.chips && <Chips options={step.chips} multi={step.multi} value={draft.chips} onChange={(chips) => setDraft({ chips })} labelledBy={fieldId} />}
+                  {step.text && (
+                    <>
+                      <TextField
+                        id={`${fieldId}-text`}
+                        label={step.chips ? step.text.label : undefined}
+                        value={draft.text}
+                        onChange={(text) => setDraft({ text })}
+                        placeholder={step.text.placeholder}
+                        onSubmit={() => openingValid(step, draft) && nextOpening()}
+                      />
+                      {!step.chips && step.text.minWords && (
+                        <p aria-live="polite" className="min-h-6 text-base font-semibold">
+                          {draft.text.trim() && checkReason(draft.text, step.text.minWords).state === "short" && <span className="text-muted-foreground">Add a number and the group name.</span>}
+                          {checkReason(draft.text, step.text.minWords).state === "valid" && <span className="inline-flex items-center gap-1.5 text-primary"><Check className="size-4" /> Got it.</span>}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+
+              {phase === "followup" && ask.status === "loading" && (
+                <div role="status" aria-label="Writing your next question" className="flex flex-col gap-4">
+                  <Skeleton className="h-9 w-4/5" />
+                  <Skeleton className="h-9 w-3/5" />
+                  <Skeleton className="h-6 w-2/5" />
+                  <Skeleton className="h-28 w-full rounded-xl" />
                 </div>
               )}
 
-              <div className="flex items-center gap-3">
-                <Button variant="ghost" size="lg" onClick={() => go(-1)} disabled={i === 0} className="h-12 rounded-full text-base"><ArrowLeft className="size-4" /> Back</Button>
-                <Button size="lg" onClick={() => (i === STEPS.length - 1 ? finish() : go(1))} disabled={!valid || starting} className="h-12 rounded-full px-6 text-base font-bold">
-                  {starting ? "Starting…" : i === STEPS.length - 1 ? "Finish" : "Next"} <ArrowRight className="size-4" />
-                </Button>
-                {step.kind === "text" && <span className="text-[14px] text-muted-foreground">Ctrl + Enter</span>}
-              </div>
-              <p role="alert" className="min-h-6 text-base font-semibold text-destructive">{startError}</p>
+              {phase === "followup" && ask.status === "error" && (
+                <div className="flex flex-col gap-4">
+                  <h1 className="text-[32px] leading-tight font-extrabold tracking-tight">{ask.refused ? "I can't use one of your answers." : "I couldn't write your next question."}</h1>
+                  <p role="alert" className="text-xl font-semibold text-destructive">{ask.message}</p>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {ask.refused ? (
+                      <Button size="lg" className="h-12 rounded-full px-6 text-base font-bold" onClick={goBack}>Change my answers</Button>
+                    ) : (
+                      <>
+                        <Button size="lg" className="h-12 rounded-full px-6 text-base font-bold" onClick={() => void request(trail)}>Retry</Button>
+                        <Button variant="outline" size="lg" className="h-12 rounded-full px-6 text-base font-bold" onClick={() => standard([...openingAnswers, ...followAnswers(trail)])}>Use a standard question</Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {phase === "followup" && q && (
+                <>
+                  <div>
+                    <Label id={fieldId} htmlFor={q.kind === "text" ? `${fieldId}-text` : undefined} className="block text-[32px] leading-tight font-extrabold tracking-tight">{q.text}</Label>
+                  </div>
+                  {q.kind === "choice" && q.options ? (
+                    <Chips options={q.options} value={followText ? [followText] : []} onChange={(v) => setFollowText(v[0] ?? "")} labelledBy={fieldId} />
+                  ) : (
+                    <TextField id={`${fieldId}-text`} value={followText} onChange={(v) => { setFollowText(v); setRefusal(null); }} placeholder={q.placeholder ?? ""} onSubmit={() => followCheck.state === "valid" && submitFollow(q)} invalid={!!refusal || followCheck.state === "bare"} />
+                  )}
+                  <p aria-live="polite" role={refusal ? "alert" : undefined} className="min-h-6 text-base font-semibold">
+                    {refusal && <span className="text-destructive">{refusal}</span>}
+                    {!refusal && followCheck.state === "bare" && <span className="text-destructive">{followCheck.message} Tell me in your own words.</span>}
+                  </p>
+                </>
+              )}
+
+              {!(phase === "followup" && ask.status !== "ready") && (
+                <div className="flex items-center gap-3">
+                  <Button variant="ghost" size="lg" onClick={goBack} disabled={phase === "opening" && i === 0} className="h-12 rounded-full text-base"><ArrowLeft className="size-4" /> Back</Button>
+                  <Button
+                    size="lg"
+                    disabled={phase === "opening" ? !openingValid(step, draft) : followCheck.state !== "valid"}
+                    onClick={() => (phase === "opening" ? nextOpening() : q && submitFollow(q))}
+                    className="h-12 rounded-full px-6 text-base font-bold"
+                  >
+                    Next <ArrowRight className="size-4" />
+                  </Button>
+                  <span className="text-[14px] text-muted-foreground">{phase === "opening" && !step.chips || phase === "followup" ? "Ctrl + Enter" : ""}</span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -151,16 +313,16 @@ export function Onboarding({ onDone, live }: { onDone?: () => void; live?: LiveS
       <aside className="flex min-h-0 flex-col gap-6 overflow-y-auto border-l bg-card/40 p-6">
         <section className="flex flex-col gap-2">
           <h3 className="text-[14px] font-bold tracking-wide text-muted-foreground uppercase">Why we ask</h3>
-          <p className="text-base leading-snug">Founders do best with problems they already understand and people they can already reach. We start with you, not the idea.</p>
+          <p className="text-base leading-snug">{why}</p>
         </section>
         <section className="flex flex-col gap-2">
           <h3 className="text-[14px] font-bold tracking-wide text-muted-foreground uppercase">Your answers so far</h3>
-          {Object.keys(answers).length === 0 ? (
+          {sofar.length === 0 ? (
             <p className="text-[15px] text-muted-foreground">Nothing yet. Every answer is saved in your own words.</p>
           ) : (
             <ul className="flex flex-col gap-2 text-[15px] leading-snug">
-              {STEPS.filter((s) => answers[s.id]).map((s) => (
-                <li key={s.id}><b className="capitalize">{s.id}:</b> {Array.isArray(answers[s.id]) ? (answers[s.id] as string[]).join(", ") : `“${answers[s.id]}”`}</li>
+              {sofar.map((s) => (
+                <li key={s.label}><b className="capitalize">{s.label}:</b> {`“${s.answer}”`}</li>
               ))}
             </ul>
           )}

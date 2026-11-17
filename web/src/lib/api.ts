@@ -109,6 +109,25 @@ export const takeDownNetlify = (id: string, token: string) =>
 export type ModelChoices = { default: string; choices: { name: string; installed: boolean | null }[] };
 export const listModels = () => call<ModelChoices>("/models");
 
+/* Onboarding: one personal follow-up question at a time, then a profile. */
+export type OnbAnswer = { key: string; question: string; answer: string };
+export type FollowUp = { key: string; text: string; why: string; kind: "text" | "choice"; options?: string[]; placeholder?: string };
+export type Profile = {
+  about: string;
+  strengths: { text: string; quote: string }[];
+  access: { group: string; count: number | null; quote: string }[];
+  constraints: { hours: string; money: string };
+  values: string[];
+  cofounder: { type: string; why: string };
+};
+export type NextReply = { done: false; question: FollowUp } | { done: true; profile: Profile };
+export const nextQuestion = (body: { answers: OnbAnswer[]; mode?: "demo" | "full"; provider?: ApiProvider; model?: string }, key?: string) =>
+  call<NextReply>("/onboarding/next", {
+    method: "POST",
+    body: { answers: body.answers, mode: body.mode ?? "demo", provider: body.provider ?? "ollama", ...(body.model ? { model: body.model } : {}) },
+    key,
+  });
+
 export const POLL_MS = 1000;
 const isLive = (s: RunStatus) => s === "working" || s === "waiting" || s === "gate";
 

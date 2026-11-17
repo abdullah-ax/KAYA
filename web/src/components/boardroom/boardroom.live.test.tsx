@@ -133,7 +133,7 @@ describe("online", () => {
     const setItem = vi.spyOn(Storage.prototype, "setItem");
     const user = userEvent.setup();
     render(<Boardroom />);
-    await screen.findByText(/tell me about you/i);
+    await screen.findByText("What do you do most days?");
     await user.click(screen.getByRole("button", { name: /qwen3/i }));
     await user.click(screen.getByRole("radio", { name: /groq/i }));
     await user.type(screen.getByLabelText(/api key/i), "sk-mem-1");

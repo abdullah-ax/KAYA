@@ -131,7 +131,7 @@ describe("dynamic follow-ups in live mode", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/couldn't reach/i);
     await user.click(screen.getByRole("button", { name: /standard question/i }));
-    expect(screen.getByText(/40 pharmacy students from my tutoring sessions/)).toBeInTheDocument();
+    expect(screen.getByText(/^You said .*40 pharmacy students from my tutoring sessions/)).toBeInTheDocument();
   });
 
   it("shows a refused answer inline and keeps the question", async () => {
@@ -233,7 +233,7 @@ describe("offline demo mode (no API)", () => {
     render(<Onboarding onDone={onDone} />);
     await walkOpening(user);
 
-    expect(screen.getByText(/40 pharmacy students from my tutoring sessions/)).toBeInTheDocument();
+    expect(screen.getByText(/^You said .*40 pharmacy students from my tutoring sessions/)).toBeInTheDocument();
     for (let n = 0; n < 4; n++) {
       await user.type(screen.getByRole("textbox"), `answer number ${n}`);
       await next(user);

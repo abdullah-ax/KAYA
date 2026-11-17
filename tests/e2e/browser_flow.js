@@ -17,13 +17,16 @@ const R2 = 'We got more sign-ups than the target in two weeks, so building the p
   globalThis.failSnap = () => p.screenshot({ path: 'tests/e2e/screens/zz_fail.png' });
   await p.goto(`${BASE}/`, { waitUntil: 'networkidle' });
   await p.waitForTimeout(800); await snap('01_live_onboarding');
-  await p.getByRole('textbox').first().fill("I'm an IELTS tutor in Cairo with a WhatsApp group of 420 students preparing for the exam");
-  await p.getByRole('button', { name: /Next/ }).click();
-  await p.getByRole('checkbox', { name: /Teaching/ }).click(); await p.getByRole('button', { name: /Next/ }).click();
-  await p.getByRole('textbox').first().fill('My WhatsApp group of 420 IELTS students'); await p.getByRole('button', { name: /Next/ }).click();
-  await p.getByRole('radio', { name: /10–20/ }).click(); await p.getByRole('button', { name: /Next/ }).click();
-  await p.getByRole('radio', { name: /Self-funded/ }).click(); await p.getByRole('button', { name: /Next/ }).click();
-  await p.getByRole('textbox').first().fill('No fake reviews, no promises of band scores'); await p.getByRole('button', { name: /Finish/ }).click();
+  const next = () => p.getByRole('button', { name: /^Next/ }).click();
+  await p.getByRole('radio', { name: 'Freelancer' }).click(); await p.getByRole('textbox').first().fill('IELTS tutor'); await next();
+  await p.getByRole('textbox').first().fill('Cairo'); await next();
+  await p.getByRole('checkbox', { name: /Teaching/ }).click(); await next();
+  await p.getByRole('textbox').first().fill('My WhatsApp group of 420 IELTS students'); await next();
+  await p.getByRole('radio', { name: /10–20/ }).click(); await next();
+  await p.getByRole('radio', { name: /Self-funded/ }).click(); await next();
+  // follow-ups: the model (or the standard question) asks up to four, then the profile card
+  for (let k = 0; k < 4; k++) { await p.getByRole('textbox').first().fill('No fake reviews, no promises of band scores, 420 students ask weekly'); await next(); }
+  await p.getByRole('button', { name: /^Start/ }).click();
   await until(s => s.pending, 'first question');
   await p.waitForTimeout(1500); await snap('02_live_first_question');
   const say = async (text) => { const box = p.getByPlaceholder(/message/i); await box.fill(text); await box.press('Enter'); };
