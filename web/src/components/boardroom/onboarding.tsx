@@ -1,9 +1,9 @@
 "use client";
 
 /* Onboarding: one question per screen, big type, chips plus free text.
-   First a short fixed opening. Then up to four follow-ups the model writes from
-   the founder's own words (or standard ones when the model can't be reached).
-   Last, a profile the founder can edit before anything starts. */
+   First a short fixed opening. Then up to four standard follow-ups, built in the
+   browser from the founder's own words. No model is called here. Last, a profile
+   the founder can edit; Start sends it, with every answer, as the run's brief. */
 
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { Checkbox as CheckboxPrimitive, RadioGroup as RadioPrimitive } from "radix-ui";
@@ -12,12 +12,11 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { DictationButton } from "./dictation-button";
 import { cn } from "@/lib/utils";
-import { ApiError, createRun, nextQuestion, type ApiProvider, type Run } from "@/lib/api";
-import { ASSUMPTION, buildProfile, checkAnswer, fallbackQuestion, followUpCount, MAX_FOLLOWUPS, OPENING, profileBrief, type FollowUp, type OnbAnswer, type OpeningStep, type Profile } from "@/lib/onboarding";
+import { ApiError, createRun, type ApiProvider, type Run } from "@/lib/api";
+import { ASSUMPTION, buildProfile, checkAnswer, fallbackQuestion, followUpCount, MAX_BRIEF, MAX_FOLLOWUPS, OPENING, profileBrief, type FollowUp, type OnbAnswer, type OpeningStep, type Profile } from "@/lib/onboarding";
 import { ProfileCard } from "./onboarding-profile";
 import { LearnCard, MascotAvatar } from "./ui";
 
@@ -25,13 +24,19 @@ export type LiveStart = { provider: ApiProvider; modelKey: string; model?: strin
 
 type Draft = { chips: string[]; text: string; skipped?: boolean };
 type Trail = { q: FollowUp; answer: string };
-type Ask = { status: "loading" } | { status: "ready"; q: FollowUp } | { status: "error"; message: string; refused: boolean };
 
 const TOTAL = OPENING.length + MAX_FOLLOWUPS + 1;
 const UNREACHABLE = "Couldn't reach the API. Check that it is running, then try again.";
 
 type Known = { label: string; skipped?: boolean; chips?: string; text?: string };
 const EMPTY: Draft = { chips: [], text: "" };
+
+/** The edited profile, plus every follow-up answer the profile does not already show. */
+function fullBrief(p: Profile, follow: OnbAnswer[]): string {
+  const shown = new Set([...p.strengths, ...(p.network ?? []), ...(p.experience ?? []), ...(p.interests ?? [])].map((x) => x.key));
+  const extra = follow.filter((a) => !shown.has(a.key)).map((a) => `${a.question} ${a.answer}`);
+  return [profileBrief(p), ...extra].join("\n").slice(0, MAX_BRIEF);
+}
 
 function openingAnswer(step: OpeningStep, d: Draft): string {
   if (d.skipped) return ASSUMPTION;
@@ -145,14 +150,12 @@ export function Onboarding({ onDone, live }: { onDone?: () => void; live?: LiveS
   const [i, setI] = useState(0);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [trail, setTrail] = useState<Trail[]>([]);
-  const [ask, setAsk] = useState<Ask>({ status: "loading" });
+  const [q, setQ] = useState<FollowUp | null>(null);
   const [followText, setFollowText] = useState("");
-  const [refusal, setRefusal] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
   const [dir, setDir] = useState<1 | -1>(1);
-  const latest = useRef(0);
   const moved = useRef(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const fieldId = useId();
@@ -165,58 +168,30 @@ export function Onboarding({ onDone, live }: { onDone?: () => void; live?: LiveS
   // After Next, Skip or Back, the new question heading takes focus so a screen reader reads it first.
   useEffect(() => {
     if (moved.current) headingRef.current?.focus();
-  }, [phase, i, trail.length, ask]);
+  }, [phase, i, trail.length, q]);
 
   const openingAnswers: OnbAnswer[] = OPENING.map((s) => ({ key: s.id, question: s.q, answer: openingAnswer(s, drafts[s.id] ?? EMPTY) || ASSUMPTION }));
   const followAnswers = (t: Trail[]): OnbAnswer[] => t.map((x) => ({ key: x.q.key, question: x.q.text, answer: x.answer }));
 
-  /* Ask for the next question. Online: the API. Offline: the standard questions, in the browser. */
-  const standard = (all: OnbAnswer[]) => {
-    if (followUpCount(all) >= MAX_FOLLOWUPS) return finishWith(buildProfile(all));
-    const q = fallbackQuestion(all);
-    if (!q) return finishWith(buildProfile(all));
-    setAsk({ status: "ready", q });
-  };
-  const finishWith = (p: Profile) => { setProfile(p); setPhase("profile"); };
-
-  const request = async (nextTrail: Trail[]) => {
+  /* The next standard question, written in the browser, live or offline. After four, the profile. */
+  const request = (nextTrail: Trail[]) => {
     const all = [...openingAnswers, ...followAnswers(nextTrail)];
     setPhase("followup");
-    if (!live) return standard(all);
-    const mine = ++latest.current;
-    setAsk({ status: "loading" });
-    try {
-      const reply = await nextQuestion({ answers: all, provider: live.provider, model: live.model }, live.modelKey || undefined);
-      if (mine !== latest.current) return;
-      if (reply.done) finishWith(reply.profile);
-      else setAsk({ status: "ready", q: reply.question });
-    } catch (e) {
-      if (mine !== latest.current) return;
-      if (e instanceof ApiError && e.status === 422) {
-        const last = nextTrail.at(-1);
-        if (last) { // the newest follow-up was refused: keep that question and show why
-          setTrail(nextTrail.slice(0, -1));
-          setFollowText(last.answer);
-          setRefusal(e.message);
-          setAsk({ status: "ready", q: last.q });
-        } else setAsk({ status: "error", message: e.message, refused: true });
-        return;
-      }
-      setAsk({ status: "error", message: e instanceof ApiError ? e.message : UNREACHABLE, refused: false });
-    }
+    const next = followUpCount(all) < MAX_FOLLOWUPS ? fallbackQuestion(all) : null;
+    if (next) return setQ(next);
+    setProfile(buildProfile(all));
+    setPhase("profile");
   };
 
   const goBack = () => {
     moved.current = true;
-    latest.current++;
     setDir(-1);
-    setRefusal(null);
     if (phase === "opening") return setI((x) => Math.max(0, x - 1));
     const last = trail.at(-1);
     if (!last) { setPhase("opening"); setI(OPENING.length - 1); return; }
     setTrail(trail.slice(0, -1));
     setFollowText(last.answer);
-    setAsk({ status: "ready", q: last.q });
+    setQ(last.q);
     setPhase("followup");
   };
 
@@ -224,7 +199,7 @@ export function Onboarding({ onDone, live }: { onDone?: () => void; live?: LiveS
     moved.current = true;
     setDir(1);
     if (i < OPENING.length - 1) return setI(i + 1);
-    void request(trail);
+    request(trail);
   };
 
   const skipOpening = () => {
@@ -239,9 +214,8 @@ export function Onboarding({ onDone, live }: { onDone?: () => void; live?: LiveS
     const t = [...trail, { q, answer }];
     setTrail(t);
     setFollowText("");
-    setRefusal(null);
     setDir(1);
-    void request(t);
+    request(t);
   };
 
   const start = async () => {
@@ -250,7 +224,7 @@ export function Onboarding({ onDone, live }: { onDone?: () => void; live?: LiveS
     setStarting(true);
     setStartError(null);
     try {
-      live.onRun(await createRun({ brief: profileBrief(profile), mode: "demo", provider: live.provider, model: live.model }, live.modelKey || undefined));
+      live.onRun(await createRun({ brief: fullBrief(profile, followAnswers(trail)), mode: "demo", provider: live.provider, model: live.model }, live.modelKey || undefined));
     } catch (e) {
       setStartError(e instanceof ApiError ? e.message : UNREACHABLE);
       setStarting(false);
@@ -258,7 +232,7 @@ export function Onboarding({ onDone, live }: { onDone?: () => void; live?: LiveS
   };
 
   const position = phase === "opening" ? i : phase === "followup" ? OPENING.length + trail.length : TOTAL - 1;
-  const why = phase === "followup" && ask.status === "ready" ? ask.q.why : phase === "opening" ? step.why : "Check every line. You can change any of it.";
+  const why = phase === "followup" && q ? q.why : phase === "opening" ? step.why : "Check every line. You can change any of it.";
   const sofar: Known[] = [
     ...OPENING.flatMap((st): Known[] => {
       const d = drafts[st.id];
@@ -269,7 +243,6 @@ export function Onboarding({ onDone, live }: { onDone?: () => void; live?: LiveS
     }),
     ...trail.map((t) => ({ label: t.q.key.replace("_", " "), ...(t.q.kind === "choice" ? { chips: t.answer } : { text: t.answer }) })),
   ];
-  const q = ask.status === "ready" ? ask.q : null;
   const followCheck = q?.kind === "choice" ? (followText ? { state: "valid" as const } : { state: "empty" as const }) : checkAnswer(followText, 1);
 
   return (
@@ -286,7 +259,7 @@ export function Onboarding({ onDone, live }: { onDone?: () => void; live?: LiveS
           ) : (
             <div key={`${phase}-${phase === "opening" ? i : trail.length}`} className={cn("my-auto flex w-full max-w-2xl flex-col gap-6 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300", dir === 1 ? "motion-safe:slide-in-from-bottom-4" : "motion-safe:slide-in-from-top-4")}>
               <div className="flex items-center gap-3">
-                <MascotAvatar id="profiler" expression={phase === "followup" && ask.status === "loading" ? "thinking" : "listening"} activity={phase === "followup" && ask.status === "loading" ? "thinking" : "speaking"} size={48} />
+                <MascotAvatar id="profiler" expression="listening" activity="speaking" size={48} />
                 <span className="text-[15px] font-semibold text-muted-foreground">Profiler</span>
               </div>
 
@@ -313,32 +286,6 @@ export function Onboarding({ onDone, live }: { onDone?: () => void; live?: LiveS
                 </>
               )}
 
-              {phase === "followup" && ask.status === "loading" && (
-                <div role="status" aria-label="Writing your next question" className="flex flex-col gap-4">
-                  <Skeleton className="h-9 w-4/5" />
-                  <Skeleton className="h-9 w-3/5" />
-                  <Skeleton className="h-6 w-2/5" />
-                  <Skeleton className="h-28 w-full rounded-xl" />
-                </div>
-              )}
-
-              {phase === "followup" && ask.status === "error" && (
-                <div className="flex flex-col gap-4">
-                  <h1 className="text-[32px] leading-tight font-extrabold tracking-tight">{ask.refused ? "I can't use one of your answers." : "I couldn't write your next question."}</h1>
-                  <p role="alert" className="text-xl font-semibold text-destructive">{ask.message}</p>
-                  <div className="flex flex-wrap items-center gap-3">
-                    {ask.refused ? (
-                      <Button size="lg" className="h-12 rounded-full px-6 text-base font-bold" onClick={goBack}>Change my answers</Button>
-                    ) : (
-                      <>
-                        <Button size="lg" className="h-12 rounded-full px-6 text-base font-bold" onClick={() => void request(trail)}>Retry</Button>
-                        <Button variant="outline" size="lg" className="h-12 rounded-full px-6 text-base font-bold" onClick={() => standard([...openingAnswers, ...followAnswers(trail)])}>Use a standard question</Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-
               {phase === "followup" && q && (
                 <>
                   <div>
@@ -347,16 +294,15 @@ export function Onboarding({ onDone, live }: { onDone?: () => void; live?: LiveS
                   {q.kind === "choice" && q.options ? (
                     <Chips options={q.options} value={followText ? [followText] : []} onChange={(v) => setFollowText(v[0] ?? "")} labelledBy={headingId} />
                   ) : (
-                    <TextField id={`${fieldId}-text`} labelledBy={headingId} value={followText} onChange={(v) => { setFollowText(v); setRefusal(null); }} placeholder={q.placeholder ?? ""} onSubmit={() => followCheck.state === "valid" && submitFollow(q)} invalid={!!refusal || followCheck.state === "bare"} />
+                    <TextField id={`${fieldId}-text`} labelledBy={headingId} value={followText} onChange={setFollowText} placeholder={q.placeholder ?? ""} onSubmit={() => followCheck.state === "valid" && submitFollow(q)} invalid={followCheck.state === "bare"} />
                   )}
-                  <p aria-live="polite" role={refusal ? "alert" : undefined} className="min-h-6 text-base font-semibold">
-                    {refusal && <span className="text-destructive">{refusal}</span>}
-                    {!refusal && followCheck.state === "bare" && <span className="text-destructive">{followCheck.message}</span>}
+                  <p aria-live="polite" className="min-h-6 text-base font-semibold">
+                    {followCheck.state === "bare" && <span className="text-destructive">{followCheck.message}</span>}
                   </p>
                 </>
               )}
 
-              {!(phase === "followup" && ask.status !== "ready") && (
+              {(phase === "opening" || q) && (
                 <div className="flex items-center gap-3">
                   <Button variant="ghost" size="lg" onClick={goBack} disabled={phase === "opening" && i === 0} className="h-12 rounded-full text-base"><ArrowLeft className="size-4" /> Back</Button>
                   <Button

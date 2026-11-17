@@ -16,7 +16,8 @@ import { Button } from "@/components/ui/button";
 import { ApiError, sendAnswer, sendGate, type Run } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { CASES, LEARN, TEAM } from "./data";
-import { friendlyFileName, gateArgsFromPending, learnKeyFor, outcomeSentence, progressLine, refusalText, sourceCardsFrom, speakerFor, stageInfo } from "./live-model";
+import { LevelUpDialog, useLevelUp } from "./level-up";
+import { friendlyFileName, gateArgsFromPending, learnKeyFor, outcomeSentence, progressLine, refusalText, sourceCardsFrom, speakerFor, stageInfo, STAGE_NAMES, stageTitle } from "./live-model";
 import { BoardroomTool, GateNextContext, GateSubmitContext, RetryContext } from "./tools";
 import { FaceAvatar, PARODY, TarekCard } from "./parody";
 import { ProgramSection } from "./program-card";
@@ -37,10 +38,10 @@ function useTranscript(run: Run | null) {
     if (!run) return;
     const s = seen.current;
     const add: ThreadMessageLike[] = [];
-    const gatePrompt = run.pending?.kind === "gate" ? run.pending.prompt : null;
+    const shownElsewhere = run.pending?.kind === "gate" || run.pending?.kind === "level_up" ? run.pending.prompt : null;
     run.messages.slice(s.said).forEach((m, i) => {
-      // The gate card already shows the question and the options.
-      if (gatePrompt && m.startsWith(gatePrompt)) return;
+      // The gate card shows its own question; the level-up prompt is added once below.
+      if (shownElsewhere && m.startsWith(shownElsewhere)) return;
       add.push(assistant(`say-${s.said + i}`, m));
     });
     s.said = run.messages.length;
@@ -53,6 +54,9 @@ function useTranscript(run: Run | null) {
     if (run.pending?.kind === "question") {
       const p = run.pending;
       once(`q|${p.key}|${p.prompt}`, () => assistant(`q-${s.ids.size}`, p.prompt));
+    } else if (run.pending?.kind === "level_up") {
+      const p = run.pending;
+      once(`l|${p.done}`, () => assistant(`l-${p.done}`, p.prompt));
     } else if (run.pending?.kind === "gate") {
       const p = run.pending;
       once(`g|${p.key}|${p.prompt}`, () => ({
@@ -70,8 +74,23 @@ function useTranscript(run: Run | null) {
   return { messages, push: (m: ThreadMessageLike) => setMessages((prev) => [...prev, m]) };
 }
 
+/** Always on top of the chat: which stage, which step, and what comes next. */
+export function StageBar({ run, onNext, error }: { run: Run; onNext?: () => void; error?: string | null }) {
+  const p = run.pending?.kind === "level_up" ? run.pending : null;
+  const title = p ? `Stage ${p.done} of ${STAGE_NAMES.length}: ${p.stage}, complete` : stageTitle(run.stage);
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b px-6 py-3">
+      <span className="text-base font-bold">{title}</span>
+      {p && <span className="text-base text-muted-foreground">Next: Stage {p.done + 1}, {p.next}</span>}
+      {p && onNext && <Button size="sm" className="ml-auto rounded-full text-base font-bold" onClick={onNext}>Go to {p.next}</Button>}
+      {p && onNext && error && <p role="alert" className="w-full text-base font-semibold text-destructive">{error}</p>}
+    </div>
+  );
+}
+
 export function LiveChat({ run, update, onRestart = () => {}, onRetry }: { run: Run; update: (r: Run) => void; onRestart?: () => void; onRetry?: () => void }) {
   const { messages, push } = useTranscript(run);
+  const levelUp = useLevelUp(run, update);
   const [sending, setSending] = useState(false);
   const counter = useRef(0);
   const next = () => `local-${counter.current++}`;
@@ -83,12 +102,14 @@ export function LiveChat({ run, update, onRestart = () => {}, onRetry }: { run: 
     onNew: async (m: AppendMessage) => {
       const said = m.content.map((p) => (p.type === "text" ? p.text : "")).join(" ").trim();
       if (!said) return;
-      if (run.pending?.kind !== "question") {
-        push(assistant(next(), run.pending?.kind === "gate" ? "I'm waiting for your decision on the card above. Pick an option and say why." : "I'm still working. I'll ask when I need you."));
+      const kind = run.pending?.kind;
+      if (kind !== "question" && kind !== "level_up") {
+        push(assistant(next(), kind === "gate" ? "I'm waiting for your decision on the card above. Pick an option and say why." : "I'm still working. I'll ask when I need you."));
         return;
       }
       push({ id: next(), role: "user", content: text(said) });
-      if (checkReason(said, 1).state === "bare") {
+      // A chat message to the co-founder is not an answer, so any length is fine.
+      if (kind === "question" && checkReason(said, 1).state === "bare") {
         push(assistant(next(), `“${said}” isn't an answer I can use. Tell me in a few more words.`));
         return;
       }
@@ -116,6 +137,7 @@ export function LiveChat({ run, update, onRestart = () => {}, onRetry }: { run: 
     run.pending?.kind === "gate" ? "Pick an option above, then say why."
     : run.status === "done" || run.status === "closed" ? "This run is finished. Start a new one when you are ready."
     : undefined;
+  const composerHint = levelUp.pending ? "Ask the co-founder anything about this stage. Move on when you are ready." : undefined;
   const nextStep = useMemo(() => ({ done: run.status === "done", startOver: onRestart }), [run.status, onRestart]);
 
   return (
@@ -123,13 +145,22 @@ export function LiveChat({ run, update, onRestart = () => {}, onRetry }: { run: 
       <GateNextContext.Provider value={nextStep}>
         <RetryContext.Provider value={onRetry ?? null}>
           <AssistantRuntimeProvider runtime={runtime}>
-            <Thread
-              components={{ ToolFallback: BoardroomTool, ToolGroup: InlineToolGroup }}
-              autoFocus={false}
-              composerNote={composerNote}
-              progress={run.status === "working" ? progressLine(run.stage) : undefined}
-              waitHint="Wait for the reply, then send."
-            />
+            <div className="flex h-full min-h-0 flex-col">
+              <StageBar run={run} onNext={levelUp.pending && !levelUp.open ? () => void levelUp.go() : undefined} error={levelUp.error} />
+              {levelUp.pending && (
+                <LevelUpDialog pending={levelUp.pending} open={levelUp.open} onGo={() => void levelUp.go()} onKeepTalking={levelUp.keepTalking} busy={levelUp.busy} error={levelUp.error} />
+              )}
+              <div className="min-h-0 flex-1">
+                <Thread
+                  components={{ ToolFallback: BoardroomTool, ToolGroup: InlineToolGroup }}
+                  autoFocus={false}
+                  composerNote={composerNote}
+                  composerHint={composerHint}
+                  progress={run.status === "working" ? progressLine(run.stage) : undefined}
+                  waitHint="Wait for the reply, then send."
+                />
+              </div>
+            </div>
           </AssistantRuntimeProvider>
         </RetryContext.Provider>
       </GateNextContext.Provider>

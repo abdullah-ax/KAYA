@@ -48,6 +48,20 @@ export function stageInfo(step: string): { stageId: string; label: string } {
   return { stageId, label: STEP_LABEL[step] ?? (phase ? "Working on this stage" : "Starting") };
 }
 
+export const STAGE_NAMES = ["Ideation", "Validation", "Build", "Commercial setup", "Sell and get paid", "Operate and learn"];
+
+/** The stage number, 1 to 6, from the step. Unknown steps count as stage 1. */
+export function stageNumber(step: string): number {
+  const phase = Number(/^phase(\d+)/.exec(step)?.[1]);
+  return phase >= 1 && phase <= STAGE_NAMES.length ? phase : 1;
+}
+
+/** "Stage 1 of 6: Ideation, Opportunities". The app uses no dot separators. */
+export function stageTitle(step: string): string {
+  const n = stageNumber(step);
+  return `Stage ${n} of ${STAGE_NAMES.length}: ${STAGE_NAMES[n - 1]}, ${stageInfo(step).label}`;
+}
+
 const FILE_NAMES: [RegExp, string][] = [
   [/answers/i, "Your answers"],
   [/sources/i, "Sources list"],

@@ -10,7 +10,9 @@ export type ApiProvider = "ollama" | "openai";
 export type GateOptionDto = { id: string; name: string; cost: string; risk: string; source: string };
 export type Pending =
   | { kind: "question"; key: string; prompt: string }
-  | { kind: "gate"; key: string; prompt: string; options: GateOptionDto[] };
+  | { kind: "gate"; key: string; prompt: string; options: GateOptionDto[] }
+  /** A stage passed. The run waits until the founder moves on with POST /next. */
+  | { kind: "level_up"; key: "level_up"; prompt: string; done: number; stage: string; next: string; proof: string };
 
 /** One entry of outputs/*_sources.json, as the API returns it. */
 export type ApiSource = {
@@ -117,6 +119,7 @@ export const createRun = (body: { brief: string; mode?: "demo" | "full"; provide
 export const getRun = (id: string) => call<Run>(`/runs/${encodeURIComponent(id)}`);
 export const sendAnswer = (id: string, text: string) => call<Run>(`/runs/${encodeURIComponent(id)}/answer`, { method: "POST", body: { text } });
 export const sendGate = (id: string, option: string, reason: string) => call<Run>(`/runs/${encodeURIComponent(id)}/gate`, { method: "POST", body: { option, reason } });
+export const nextStage = (id: string) => call<Run>(`/runs/${encodeURIComponent(id)}/next`, { method: "POST" });
 export const getLog = (id: string) => call<LogEntry[]>(`/runs/${encodeURIComponent(id)}/log`);
 export const testModel = (provider: ApiProvider, key?: string, model?: string) =>
   call<ModelTestResult>("/model/test", { method: "POST", body: { provider, ...(model ? { model } : {}) }, key });

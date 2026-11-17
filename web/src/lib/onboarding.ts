@@ -16,7 +16,7 @@ export type Edge = { title: string; why: string; key: string; quote: string };
 export type Profile = Omit<ApiProfile, "strengths"> & { strengths: Item[]; network?: Item[]; experience?: Item[]; interests?: Item[]; fit?: { edges: Edge[] } };
 
 export const MAX_FOLLOWUPS = 4;
-const MAX_BRIEF = 8000;
+export const MAX_BRIEF = 8000;
 export const ASSUMPTION = "ASSUMPTION: not answered yet";
 
 export type OpeningId = "role" | "city" | "education" | "work" | "help" | "hobbies" | "group" | "connections" | "access" | "time" | "money" | "wont_do";

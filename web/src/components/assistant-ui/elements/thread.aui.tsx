@@ -169,6 +169,8 @@ export type ThreadProps = {
   autoFocus?: boolean | undefined;
   /** When set, the composer is hidden and this note takes its place. */
   composerNote?: string | undefined;
+  /** A short line shown above an open composer. */
+  composerHint?: string | undefined;
   /** Who is working right now. Shown with a skeleton above the composer. */
   progress?: string | undefined;
   /** Shown when Enter is pressed while a reply is running. */
@@ -179,7 +181,7 @@ const EMPTY_COMPONENTS: ThreadComponents = {};
 
 const ThreadComponentsContext =
   createContext<ThreadComponents>(EMPTY_COMPONENTS);
-const ThreadExtrasContext = createContext<Pick<ThreadProps, "composerNote" | "progress" | "waitHint">>({});
+const ThreadExtrasContext = createContext<Pick<ThreadProps, "composerNote" | "composerHint" | "progress" | "waitHint">>({});
 
 // Startup exposes a loading placeholder thread; treat it as a new chat so
 // the composer mounts centered. Loads after startup keep the docked layout.
@@ -219,6 +221,7 @@ export const Thread: FC<ThreadProps> = ({
   components = EMPTY_COMPONENTS,
   autoFocus = true,
   composerNote,
+  composerHint,
   progress,
   waitHint,
 }) => {
@@ -226,7 +229,7 @@ export const Thread: FC<ThreadProps> = ({
 
   return (
     <ThreadComponentsContext.Provider value={components}>
-      <ThreadExtrasContext.Provider value={{ composerNote, progress, waitHint }}>
+      <ThreadExtrasContext.Provider value={{ composerNote, composerHint, progress, waitHint }}>
         <ThreadRoot isEmpty={isEmpty} autoFocus={autoFocus} />
       </ThreadExtrasContext.Provider>
     </ThreadComponentsContext.Provider>
@@ -238,7 +241,7 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
   autoFocus,
 }) => {
   const { Welcome = ThreadWelcome } = useContext(ThreadComponentsContext);
-  const { composerNote, progress } = useContext(ThreadExtrasContext);
+  const { composerNote, composerHint, progress } = useContext(ThreadExtrasContext);
 
   return (
     <ThreadPrimitive.Root
@@ -299,7 +302,10 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
             {composerNote ? (
               <p className="rounded-xl border bg-muted/40 px-4 py-3 text-base">{composerNote}</p>
             ) : (
-              <Composer autoFocus={autoFocus} />
+              <>
+                {composerHint && <p className="px-1 text-base text-muted-foreground">{composerHint}</p>}
+                <Composer autoFocus={autoFocus} />
+              </>
             )}
             <AuiIf condition={(s) => isNewChatView(s) && s.composer.isEmpty}>
               <ThreadSuggestions />
