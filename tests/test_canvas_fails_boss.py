@@ -24,7 +24,7 @@ def _run(tmp_run, boss_replies):
 
 
 def test_canvas_failing_the_boss_twice_does_not_offer_publishing(tmp_run):
-    ctx, result, said, answers = _run(tmp_run, [PASS, FAIL, FAIL])
+    ctx, result, said, answers = _run(tmp_run, [PASS, PASS, FAIL, FAIL])
 
     assert result.outcome == "repeat" and result.stopped_at == "phase2_step1"
     assert result.phase2 is None
@@ -34,7 +34,7 @@ def test_canvas_failing_the_boss_twice_does_not_offer_publishing(tmp_run):
 
 
 def test_founder_is_told_plainly_and_the_reasons_are_logged(tmp_run):
-    ctx, result, said, _ = _run(tmp_run, [PASS, FAIL, FAIL])
+    ctx, result, said, _ = _run(tmp_run, [PASS, PASS, FAIL, FAIL])
 
     assert any("Lean Canvas" in m and "did not pass" in m and "value line says nothing specific" in m for m in said)
     entry = next(e for e in ctx.log.entries() if e["action"] == "stop_canvas_failed_review")
@@ -43,7 +43,7 @@ def test_founder_is_told_plainly_and_the_reasons_are_logged(tmp_run):
 
 
 def test_canvas_passing_after_one_redraft_still_offers_publishing(tmp_run):
-    ctx, result, said, answers = _run(tmp_run, [PASS, FAIL, PASS])
+    ctx, result, said, answers = _run(tmp_run, [PASS, PASS, FAIL, PASS])
 
     assert result.outcome == "go"
     assert "publish_option" in [k for k, _ in answers.asked]

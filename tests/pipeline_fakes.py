@@ -70,6 +70,15 @@ def canvas(url: str = LOW_URL) -> dict[str, Any]:
             "costs": plain, "key_metrics": {"content": "Sign-ups in 14 days.", "source_url": None}}
 
 
+def interview_script() -> dict[str, Any]:
+    return {"questions": ["Tell me about the last time you practised speaking before a test.",
+                          "What happened the last time you could not find a partner?",
+                          "Why was that hard for you?",
+                          "What did you do to fix it?",
+                          "What did you not like about what you tried?"],
+            "first_people": ["The ten most active students in the IELTS Alexandria WhatsApp group."]}
+
+
 def scripted_llm(opps: dict[str, Any], questions: int = 2, boss: str = "pass",
                  overrides: dict[str, list[dict[str, Any]]] | None = None) -> FakeLLM:
     """A FakeLLM that answers by schema name. overrides hold queued replies per schema."""
@@ -81,6 +90,7 @@ def scripted_llm(opps: dict[str, Any], questions: int = 2, boss: str = "pass",
         "OpportunityDraft": opps,
         "BossVerdict": {"verdict": boss, "checks": [], "delete_lines": []},
         "LeanCanvas": canvas(),
+        "InterviewScript": interview_script(),
     }
 
     def reply(system: str, user: str, schema: type) -> dict[str, Any]:
