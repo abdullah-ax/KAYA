@@ -25,6 +25,7 @@ from api.guardrail import check_request
 from api.llm import LLM
 from api.log import DecisionLog
 from api.plan import snapshot
+from api.sharks import run_panel
 from api.research import Search, SourceRegistry, write_sources
 
 PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
@@ -334,6 +335,7 @@ def _run(ctx: Ctx, brief: str, result: RunResult) -> RunResult:
                        reasons=canvas.review_reasons)
     _save(ctx, result, "phase2_step1")
 
+    ctx.output(2, 1, "shark_panel").write_text(run_panel(ctx, canvas.markdown), encoding="utf-8")
     page = _signup_page(chosen, canvas)
     page_check = check_draft(page)
     published = False

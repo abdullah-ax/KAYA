@@ -62,7 +62,7 @@ Statuses are updated only after a real run. The committed run (`outputs/`, `deci
 | 2 Validate | Sign-up page draft and founder publish approval (page saved locally) | Working |
 | 2 Validate | Publish sign-up page to Netlify (founder's own free account; code and tests only, never run against Netlify) | STUBBED |
 | 2 Validate | Sign-up target gate (recommends stop under 30% of the target; founder enters the real count) | Working |
-| 2 Validate | Shark panel (SIMULATION) | STUBBED |
+| 2 Validate | Shark panel (SIMULATION, one model call after the Lean Canvas; built and tested, not yet in a committed real run) | STUBBED |
 | 3 Build | User stories, MVP spec and build gate (hours checked against the founder's time) | Working |
 | 4 Commercial setup | Offer, price and refund policy, then a founder gate before the MOCKED checkout | Working |
 | 5 Sell | Store page and launch posts (no code yet) | STUBBED |
