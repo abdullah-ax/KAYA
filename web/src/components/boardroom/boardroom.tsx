@@ -154,9 +154,9 @@ export function Boardroom({ initialScreen, initialRunId, dark, egg: eggParam, de
           !runId ? (
             <Onboarding live={{ provider: apiProviderOf(model), modelKey, model: localModelOf(model), onRun: (r: Run) => { setRunId(r.id); update(r); } }} />
           ) : (
-            <div className="grid min-h-0 flex-1 grid-cols-[17rem_1fr_22rem]">
+            <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:grid-cols-[17rem_1fr_22rem] lg:overflow-visible">
               <LiveRoster run={run} tarek={egg} />
-              <main className="flex min-h-0 flex-col">
+              <main className="flex min-h-[85dvh] flex-col lg:min-h-0">
                 <div className="flex shrink-0 items-center gap-3 border-b px-6 py-3">
                   <MascotAvatar id={speakerFor(run)} expression="listening" activity={run?.status === "working" ? "thinking" : "speaking"} size={44} />
                   <div>
@@ -178,9 +178,9 @@ export function Boardroom({ initialScreen, initialRunId, dark, egg: eggParam, de
         ) : screenId === "states" || !screen ? (
           <ScrollArea className="min-h-0 flex-1"><StatesGallery /></ScrollArea>
         ) : (
-          <div className="grid min-h-0 flex-1 grid-cols-[17rem_1fr_22rem]">
+          <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:grid-cols-[17rem_1fr_22rem] lg:overflow-visible">
             {/* Left: team roster */}
-            <aside className="flex min-h-0 flex-col border-r">
+            <aside className="hidden min-h-0 flex-col border-r lg:flex">
               <div className="min-h-0 flex-1 overflow-y-auto">
                 <div className="flex flex-col gap-5 p-4">
                   {GROUPS.map((g) => (
@@ -214,7 +214,7 @@ export function Boardroom({ initialScreen, initialRunId, dark, egg: eggParam, de
             </aside>
 
             {/* Center: chat */}
-            <main className="flex min-h-0 flex-col">
+            <main className="flex min-h-[85dvh] flex-col lg:min-h-0">
               <div className="flex shrink-0 items-center gap-3 border-b px-6 py-3">
                 {speaker && <MascotAvatar id={speaker.id} expression="listening" activity="speaking" size={44} />}
                 <div>

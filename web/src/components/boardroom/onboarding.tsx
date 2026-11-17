@@ -202,7 +202,7 @@ export function Onboarding({ onDone, live }: { onDone?: () => void; live?: LiveS
   const followCheck = checkReason(followText, 1);
 
   return (
-    <div className="grid min-h-0 flex-1 grid-cols-[1fr_22rem]">
+    <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:grid-cols-[1fr_22rem] lg:overflow-visible">
       <div className="flex min-h-0 flex-col">
         <div className="flex items-center gap-4 px-10 pt-6">
           <Progress value={(position / (TOTAL - 1)) * 100} className="h-1.5 flex-1" />

@@ -203,7 +203,7 @@ export function LiveRoster({ run, tarek = false }: { run: Run | null; tarek?: bo
   const working = run?.status === "working";
   const speaker = speakerFor(run);
   return (
-    <aside className="flex min-h-0 flex-col border-r">
+    <aside className="hidden min-h-0 flex-col border-r lg:flex">
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="flex flex-col gap-5 p-4">
           {GROUPS.map((g) => (
