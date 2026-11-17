@@ -39,6 +39,13 @@ const R2 = 'We got more sign-ups than the target in two weeks, so building the p
   };
 
   await p.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+  // Ahmed Tarek mode is on by default; PARODY=off takes the shots without it.
+  if (process.env.PARODY === 'off') {
+    await p.getByRole('button', { name: 'Settings' }).click();
+    const sw = p.getByRole('switch', { name: /Ahmed Tarek mode/ });
+    if ((await sw.getAttribute('aria-checked')) === 'true') await sw.click();
+    await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+  }
   await snap('01_onboarding', 'Onboarding: specific questions, one per screen');
   const texts = ['IELTS tutor', 'Alexandria', 'Cairo University, English, 2019', 'Taught at a language centre for 3 years',
     'Students ask me for speaking practice', 'Book club host', 'My WhatsApp group of 420 IELTS students',
@@ -84,16 +91,34 @@ const R2 = 'We got more sign-ups than the target in two weeks, so building the p
   await until(s => s.pending && s.pending.key === 'phase3', 'build gate');
   await snap('11_build_gate', 'Build gate: user stories and a two-week MVP plan checked against your hours');
   await decide('Build this MVP', R2);
-  await until(s => s.status === 'done' || (s.pending && s.pending.kind === 'level_up'), 'end');
-  if ((await state()).pending?.kind === 'level_up') {
-    await snap('12_build_complete', 'Build complete. The next stages run as the MOCKED sale-to-cash test');
-    await p.getByRole('button', { name: /^Go to / }).first().click();
-    await until(s => s.status === 'done', 'done');
-  }
-  await snap('13_done', 'The run is finished. Every action is in the decision log');
-  await p.getByRole('button', { name: 'Open map' }).click(); await snap('14_map', 'The founder map: look back at every stage');
+  await levelUp('12', 'Commercial setup', null);
+  await until(s => s.pending && s.pending.key === 'price', 'price');
+  await say('400');
+  await until(s => s.pending && s.pending.key === 'phase4', 'checkout gate');
+  await snap('13_checkout_gate', 'Commercial setup: offer, price and refund policy. Checkout stays MOCKED');
+  await decide('Open the MOCKED checkout', 'Four hundred pounds is what my students already pay for two private lessons, so it feels fair');
+  await levelUp('14', 'Sell and get paid', null);
+  await until(s => s.pending && s.pending.key === 'buyers', 'buyers');
+  await say('6');
+  await until(s => s.pending && s.pending.key === 'refund', 'refund');
+  await snap('15_refund', 'Sell: a refund only happens with your approval. No real money moves');
+  await decide('Approve the refund', 'The buyer booked the wrong exam date and asked within a day, so a refund is the fair thing');
+  await until(s => s.pending && s.pending.key === 'phase5', 'sales gate');
+  await snap('16_sales_gate', 'Sales gate: one delivery per payment, duplicate webhook ignored, books reconciled');
+  await decide('Keep selling', 'Six people paid and the books match, so I will keep selling to the rest of my group');
+  await levelUp('17', 'Operate and learn', null);
+  await until(s => s.pending && s.pending.key === 'came_back', 'came back');
+  await say('3');
+  await until(s => s.pending && s.pending.key === 'feedback', 'feedback');
+  await say('They want more mock tests and feedback on pronunciation');
+  await until(s => s.pending && s.pending.key === 'phase6', 'learning gate');
+  await snap('18_learning_gate', 'Operate and learn: repeat buyers decide keep, fix, pivot or stop');
+  await decide('Keep going and grow', 'Half of the buyers came back for more practice, so the product is worth growing carefully');
+  await until(s => s.status === 'done', 'done');
+  await snap('19_done', 'The run is finished. Every action is in the decision log');
+  await p.getByRole('button', { name: 'Open map' }).click(); await snap('20_map', 'The founder map: look back at every stage');
   await p.keyboard.press('Escape'); await p.waitForTimeout(400);
-  await p.getByRole('button', { name: 'Open plan' }).click(); await snap('15_plan', 'The living business plan with sources and version history');
+  await p.getByRole('button', { name: 'Open plan' }).click(); await snap('21_plan', 'The living business plan with sources and version history');
   await p.keyboard.press('Escape');
   fs.writeFileSync(`${OUT}/shots.json`, JSON.stringify(shots, null, 1));
   console.log(JSON.stringify({ shots: shots.length, errors }));

@@ -24,6 +24,20 @@ Open http://localhost:3000. The first start downloads the local model, which tak
 
 ![The profile you check before anything starts](docs/media/profile.png)
 
+### Every screen of one run
+
+Captured by `tests/e2e/readme_shots.js` through the real app and API with the scripted test model, so every run looks the same. Real-model results are in `outputs/`.
+
+| | |
+|---|---|
+| ![1. Onboarding: specific questions, one per screen, no model needed](docs/media/flow/01_onboarding.png)<br>1. Onboarding: specific questions, one per screen, no model needed | ![2. Check what it understood about you before anything starts](docs/media/flow/03_profile.png)<br>2. Check what it understood about you before anything starts |
+| ![3. The co-founder asks only what is missing. The stage bar always shows where you are](docs/media/flow/04_cofounder.png)<br>3. The co-founder asks only what is missing. The stage bar always shows where you are | ![4. Ideation gate: options with sources, cost and risk, and a recommendation](docs/media/flow/05_ideation_gate.png)<br>4. Ideation gate: options with sources, cost and risk, and a recommendation |
+| ![5. Stage complete: go to the next stage, or keep talking](docs/media/flow/07a_stage_complete.png)<br>5. Stage complete: go to the next stage, or keep talking | ![6. Keep talking: ask the co-founder anything before you move on](docs/media/flow/07b_keep_talking.png)<br>6. Keep talking: ask the co-founder anything before you move on |
+| ![7. Validation gate: real sign-ups against a target set before the test](docs/media/flow/09_validation_gate.png)<br>7. Validation gate: real sign-ups against a target set before the test | ![8. Build gate: user stories and a 2-week MVP plan checked against your hours](docs/media/flow/11_build_gate.png)<br>8. Build gate: user stories and a 2-week MVP plan checked against your hours |
+| ![9. Commercial setup: offer, price and refund policy; checkout is MOCKED](docs/media/flow/13_checkout_gate.png)<br>9. Commercial setup: offer, price and refund policy; checkout is MOCKED | ![10. Sell: a refund only happens with your approval; no real money moves](docs/media/flow/15_refund.png)<br>10. Sell: a refund only happens with your approval; no real money moves |
+| ![11. Sales gate: one delivery per payment, duplicate webhook ignored, books reconciled](docs/media/flow/16_sales_gate.png)<br>11. Sales gate: one delivery per payment, duplicate webhook ignored, books reconciled | ![12. Operate and learn: repeat buyers decide keep, fix, pivot or stop](docs/media/flow/18_learning_gate.png)<br>12. Operate and learn: repeat buyers decide keep, fix, pivot or stop |
+| ![13. The founder map: look back at every stage](docs/media/flow/20_map.png)<br>13. The founder map: look back at every stage | ![14. The living business plan with sources and version history](docs/media/flow/21_plan.png)<br>14. The living business plan with sources and version history |
+
 Without Docker: `pip install -r requirements-dev.txt`, then `python3 -m api.cli --brief briefs/strong.md` runs the pipeline in the terminal.
 
 ## What works and what is mocked
