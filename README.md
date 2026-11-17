@@ -28,7 +28,7 @@ Statuses are updated only after a real run. Working = tested end to end. MOCKED 
 | 3 Build | User stories and MVP spec | STUBBED |
 | 4 Commercial setup | Pricing and draft policies | STUBBED |
 | 5 Launch | Store page and launch posts | STUBBED |
-| 5 Launch | Payment and automatic delivery | MOCKED |
+| 5 Launch | Payment and automatic delivery (simulated events, access token, refunds, reconcile; no real money) | MOCKED |
 | 6 Operate | Support, metrics, pivot memo | STUBBED |
 | All | Founder approval enforced in code | STUBBED |
 | All | Ethics bot, guardrail, judges, decision log | STUBBED |

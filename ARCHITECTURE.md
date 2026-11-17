@@ -80,13 +80,15 @@ Every step: an intern agent drafts from a template, a boss agent checks it (code
 
 ## Sale to cash
 
-All MOCKED. No real payments of any kind.
+All MOCKED. Simulated events only: no real payments of any kind, not even sandbox. No money is held, moved or refunded.
 
-- **Payment triggers delivery:** a mock "payment succeeded" event creates a delivery record and an access token for the buyer.
-- **Refund revokes access:** a mock refund event marks the order refunded and disables the token.
-- **Idempotency:** every event carries an order ID; a second event with the same ID is ignored, so no order is delivered twice.
-- **Reconciliation:** a script matches orders, mock payments, fees, and mock payouts, and lists any mismatch.
-- **Log:** every test run goes to `outputs/payment_test_log.md`.
+- **Payment triggers delivery:** `api/payments.py` takes a mock `payment_succeeded` event keyed by `order_id` and `event_id`. `api/fulfilment.py` then issues one access token (prefix `MOCKED-`) for the digital product. Nothing is emailed or sent.
+- **Idempotency:** a repeated `event_id` is ignored and counted. A second payment event for an order that is already handled does not deliver again.
+- **Refund revokes access:** `api/refunds.py` marks the order refunded and disables its token. A refund starts only from a founder-approved request (`request_refund` checks `approval.py`) or a mock provider `refunded` event. The system never starts one on its own.
+- **Reconciliation:** `api/reconcile.py` matches orders, payments, fees (expected 3 percent, MOCKED) and payouts. It lists `missing_payout`, `amount_mismatch`, `fee_mismatch` and `payout_mismatch`.
+- **Log:** payment, delivery, refund and reconcile actions go to `decision_log.json` with MOCKED in the outcome; founder refunds carry `approved_by: founder`.
+- **Test run:** `python3 scripts/payment_test.py` runs 3 orders (normal, duplicate webhook, refunded, with one missing payout and one fee mismatch) and writes `outputs/payment_test_log.md`.
+- **Netlify publishing** (the approved sign-up page) lives in `api/publish.py`.
 
 ## Data flow
 
