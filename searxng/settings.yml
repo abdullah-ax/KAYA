@@ -1,0 +1,15 @@
+# SearXNG settings for the research agent. Mounted at /etc/searxng.
+use_default_settings: true
+
+server:
+  # Placeholder only. The real value comes from the SEARXNG_SECRET env var,
+  # which SearXNG uses in place of this key.
+  secret_key: "change-me-set-SEARXNG_SECRET"
+  limiter: false
+  image_proxy: false
+
+search:
+  safe_search: 1
+  formats:
+    - html
+    - json
