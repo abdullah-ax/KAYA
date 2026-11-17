@@ -158,3 +158,9 @@ def test_script_writes_log_with_mocked_and_counts(tmp_path):
     assert "Mismatches found: 2" in text
     assert "missing_payout" in text and "fee_mismatch" in text
     assert "·" not in text and "•" not in text
+
+
+def test_reconcile_checks_fee_on_refunded_order_but_not_payout(proc):
+    proc.handle_event(paid(fee=999))
+    proc.handle_event({"event_id": "r1", "order_id": "o1", "type": "refunded"})
+    assert [m.kind for m in reconcile(proc).mismatches] == ["fee_mismatch"]
