@@ -118,6 +118,11 @@ def _tidy_opportunities(ctx: Ctx, draft: OpportunityDraft) -> list[bool]:
     return tainted
 
 
+def _trusted(cards: Sequence[SourceCard]) -> bool:
+    """Only medium or high trust cards make a claim sourced; forums and social posts do not."""
+    return any(c.trust != "low" for c in cards)
+
+
 def _render_opportunities(ctx: Ctx, draft: OpportunityDraft) -> Draft:
     tainted = _tidy_opportunities(ctx, draft)
     out = Draft(markdown="", texts=[], data=draft)
@@ -126,7 +131,7 @@ def _render_opportunities(ctx: Ctx, draft: OpportunityDraft) -> Draft:
         claim, cards = claim_sources(opp.problem, [] if bad else opp.evidence_urls, ctx.registry)
         source = ", ".join(c.url for c in cards) or "ASSUMPTION"
         out.cards += cards
-        out.sourced += bool(cards)
+        out.sourced += _trusted(cards)
         out.options.append(opp.title)
         out.rows.append((opp.title, opp.cost_to_test, opp.risk, source))
         out.founder_fit = min(out.founder_fit or opp.founder_fit, opp.founder_fit)  # weakest option
@@ -187,7 +192,7 @@ def draft_lean_canvas(ctx: Ctx, opportunity: Opportunity, profile: FounderProfil
         urls = [box.source_url] if box.source_url and not removed else []
         _claim, cards = claim_sources(box.content, urls, ctx.registry)
         out.cards += cards
-        out.sourced += bool(cards)
+        out.sourced += _trusted(cards)
         out.texts.append(box.content)
         lines.append(f"| {label} | {box.content} | {cards[0].url if cards else 'ASSUMPTION'} |")
     lines += [f'| 9. Unfair advantage (founder writes this) | "{unfair_advantage}" | founder |', "",
