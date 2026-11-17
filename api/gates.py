@@ -25,10 +25,13 @@ def _require_positive(name: str, value: int) -> None:
         raise ValueError(f"Gate target {name} must be above 0 in config.yaml.")
 
 
-def phase1_gate(sourced_problems: int, founder_fit: int, cfg: Any) -> GateResult:
+def phase1_gate(sourced_problems: int, founder_fit: int, cfg: Any, reach: int | None = None,
+                hours: int | None = None) -> GateResult:
     """Check sourced problems and founder fit (1 to 5, a model estimate) against config.
 
     Both weak: stop. Only fit weak: pivot. Only sourcing weak: repeat. Nothing sourced: stop.
+    reach is how many groups or people the founder named that they can reach today, counted in code.
+    No one to reach: stop, whatever the model's fit estimate says.
     """
     rules = cfg.gates.phase1_discover
     _require_positive("min_sourced_problems", rules.min_sourced_problems)
@@ -40,6 +43,8 @@ def phase1_gate(sourced_problems: int, founder_fit: int, cfg: Any) -> GateResult
                 "min_sourced_problems": rules.min_sourced_problems,
                 "founder_fit": founder_fit,
                 "min_founder_fit_score": rules.min_founder_fit_score}
+    if reach is not None:
+        evidence["reach"] = reach
     got = (f"{sourced_problems} sourced problems (need {rules.min_sourced_problems}), "
            f"founder fit {founder_fit} of 5 (model estimate; need {rules.min_founder_fit_score})")
     few_sources = sourced_problems < rules.min_sourced_problems
@@ -48,6 +53,12 @@ def phase1_gate(sourced_problems: int, founder_fit: int, cfg: Any) -> GateResult
         return GateResult("phase1_discover", "stop",
                           f"stop: {got}. Nothing here has a source, only assumptions. "
                           "Stop, or start again with a new search.", evidence)
+    if reach == 0:
+        time = f" and {hours} hours a week" if hours else ""
+        return GateResult("phase1_discover", "stop",
+                          f"stop: {got}. You named no group or person you can reach today{time}. "
+                          "Without people to ask, there is no way to test any of these problems. "
+                          "Stop, and start from a problem inside a group you already belong to.", evidence)
     if few_sources and low_fit:
         return GateResult("phase1_discover", "stop",
                           f"stop: {got}. Too few sourced problems and a weak fit. "

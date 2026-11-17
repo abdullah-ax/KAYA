@@ -291,7 +291,9 @@ def _run(ctx: Ctx, brief: str, result: RunResult) -> RunResult:
         return _save(ctx, result, "phase1_step2", "stop")
     _write_draft(ctx, 1, 2, "opportunities", opps)
 
-    result.phase1 = phase1_gate(opps.sourced, opps.founder_fit, ctx.cfg)
+    hours, known = intern.weekly_hours(profile)
+    result.phase1 = phase1_gate(opps.sourced, opps.founder_fit, ctx.cfg, reach=len(profile.access),
+                                hours=hours if known else None)
     options = [Option(*row, id=f"option_{i}") for i, row in enumerate(opps.rows, 1)] + [STOP_HERE]
     pick = _gate(ctx, 1, result.phase1, options)
     if pick.option == STOP_HERE.name:
