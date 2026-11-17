@@ -10,7 +10,7 @@ from api.gates import phase3_gate
 from api.log import DecisionLog
 from api.orchestrator import Ctx, run_pipeline
 from api.plan import build_plan
-from test_app import BRIEF, REASON1, REASON2, REASON3, answer, decide, start
+from test_app import BRIEF, REASON1, REASON2, REASON3, answer, decide, next_stage, start
 from test_pipeline import out, run, strong_answers
 
 
@@ -139,10 +139,12 @@ def test_api_phase3_gate_is_pending_with_three_options_then_run_is_done(tmp_run)
         answer(client, run_id, "I can reach 420 students today")
         answer(client, run_id, "I can spend EGP 2,000")
         decide(client, run_id, "Speaking drills", REASON1)
+        next_stage(client, run_id)
         answer(client, run_id, "I coached 300 students and scored band 8.5")
         decide(client, run_id, "Publish the sign-up page", REASON1)
         answer(client, run_id, "130")
-        state = decide(client, run_id, "Continue to Build", REASON2)
+        decide(client, run_id, "Continue to Build", REASON2)
+        state = next_stage(client, run_id)
 
         assert state["status"] == "gate" and state["stage"] == "phase3_gate"
         assert state["pending"]["key"] == "phase3"
@@ -154,6 +156,8 @@ def test_api_phase3_gate_is_pending_with_three_options_then_run_is_done(tmp_run)
         bad = client.post(f"/runs/{run_id}/gate", json={"option": "Build this MVP", "reason": "yes"})
         assert bad.status_code == 422
         state = decide(client, run_id, "Build this MVP", REASON3)
+        assert state["pending"]["kind"] == "level_up" and state["pending"]["done"] == 3
+        state = next_stage(client, run_id)
         assert state["status"] == "done" and state["outcome"] == "go" and state["phase3"] == "go"
 
 

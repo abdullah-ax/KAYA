@@ -63,8 +63,8 @@ def test_model_written_text_still_gets_the_ethics_block(tmp_run):
     assert result.outcome == "stop" and result.stopped_at == "phase2_step1"
 
 
-# 2. a canvas that fails review is not offered for publishing -------------------
-def test_canvas_with_urgency_fails_review_twice_and_nothing_is_offered(tmp_run):
+# 2. a canvas that fails review twice is flagged, and the run goes on -------------
+def test_canvas_with_urgency_fails_review_twice_and_the_founder_is_warned(tmp_run):
     bad = fx.canvas()
     bad["uvp"] = {"content": "Hurry, last chance to join the drills.", "source_url": None}
     llm = fx.scripted_llm(fx.strong_opportunities(), overrides={"LeanCanvas": [bad, bad]})
@@ -74,9 +74,9 @@ def test_canvas_with_urgency_fails_review_twice_and_nothing_is_offered(tmp_run):
     run_pipeline(ctx, (ROOT / "briefs" / "strong.md").read_text(encoding="utf-8"))
 
     assert any("Fake urgency" in m for m in said)
-    stop = [e for e in ctx.log.entries() if e["action"] == "stop_canvas_failed_review"]
-    assert len(stop) == 1 and stop[0]["agent"] == "orchestrator"
-    assert not (tmp_run / "outputs" / "phase2_step2_signup_page.md").exists()
+    warn = [e for e in ctx.log.entries() if e["action"] == "warn_canvas_failed_review"]
+    assert len(warn) == 1 and warn[0]["agent"] == "orchestrator" and warn[0]["outcome"] == "warn"
+    assert not any(e["action"] == "stop_canvas_failed_review" for e in ctx.log.entries())
 
 
 # 3. ask_number --------------------------------------------------------------------

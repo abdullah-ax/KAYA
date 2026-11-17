@@ -54,6 +54,12 @@ def decide(client, run_id, option, reason):
     return resp.json()
 
 
+def next_stage(client, run_id):
+    resp = client.post(f"/runs/{run_id}/next")
+    assert resp.status_code == 200, resp.text
+    return resp.json()
+
+
 def to_phase1_gate(client):
     run_id = start(client)
     answer(client, run_id, "I can reach 420 students today")
@@ -70,6 +76,8 @@ def test_full_happy_path_through_the_api_reaches_phase2_go(client, tmp_run):
     assert "phase1_step2_opportunities.md" in state["outputs"] and state["sources"]
 
     state = decide(client, run_id, "Speaking drills", REASON1)
+    assert state["pending"]["kind"] == "level_up" and state["pending"]["done"] == 1
+    state = next_stage(client, run_id)
     assert state["pending"] == {"kind": "question", "key": "unfair_advantage",
                                 "prompt": state["pending"]["prompt"]}
     state = answer(client, run_id, "I coached 300 students and scored band 8.5")
@@ -78,8 +86,12 @@ def test_full_happy_path_through_the_api_reaches_phase2_go(client, tmp_run):
     state = answer(client, run_id, "130")
     assert state["pending"]["key"] == "phase2"
     state = decide(client, run_id, "Continue to Build", REASON2)
+    assert state["pending"]["kind"] == "level_up" and state["pending"]["next"] == "Build"
+    state = next_stage(client, run_id)
     assert state["pending"]["key"] == "phase3"
     state = decide(client, run_id, "Build this MVP", REASON3)
+    assert state["pending"]["kind"] == "level_up" and state["pending"]["next"] == "Commercial setup"
+    state = next_stage(client, run_id)
 
     assert state["status"] == "done" and state["outcome"] == "go" and state["phase2"] == "go"
     assert {"phase2_gate_decision.md", "phase2_step2_signup_page.md"} <= set(state["outputs"])
@@ -208,7 +220,7 @@ def test_gate_reason_that_mentions_investment_is_not_refused(client):
     run_id, _ = to_phase1_gate(client)
     reason = "It needs little investment of my time and money, and my students ask for it"
     state = decide(client, run_id, "Speaking drills", reason)
-    assert state["pending"]["key"] == "unfair_advantage"
+    assert state["pending"]["kind"] == "level_up"
 
 
 def test_answer_that_mentions_a_loan_is_not_refused(client):

@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 import pipeline_fakes as fx
 from api.app import create_app
 from api.publish import DeliveryError, NetlifyPublisher, render_index
-from test_app import answer, decide, to_phase1_gate, REASON1
+from test_app import answer, decide, next_stage, to_phase1_gate, REASON1
 
 TOKEN = "nfp_SECRETTOKEN1234567890"
 API = "https://api.netlify.com/api/v1"
@@ -32,6 +32,7 @@ def client(tmp_run):
 def to_publish_gate(client):
     run_id, _ = to_phase1_gate(client)
     decide(client, run_id, "Speaking drills", REASON1)
+    next_stage(client, run_id)
     state = answer(client, run_id, "I coached 300 students and scored band 8.5")
     assert state["pending"]["key"] == "publish"
     return run_id

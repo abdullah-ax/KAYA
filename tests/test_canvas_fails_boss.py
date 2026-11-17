@@ -1,4 +1,4 @@
-"""A Lean Canvas the boss fails twice is not turned into a sign-up page to publish."""
+"""A Lean Canvas the boss fails twice gets a plain warning, and the run goes on to the sign-up page."""
 from pathlib import Path
 
 import pipeline_fakes as fx
@@ -23,22 +23,21 @@ def _run(tmp_run, boss_replies):
     return ctx, result, said, answers
 
 
-def test_canvas_failing_the_boss_twice_does_not_offer_publishing(tmp_run):
+def test_canvas_failing_the_boss_twice_warns_and_still_offers_publishing(tmp_run):
     ctx, result, said, answers = _run(tmp_run, [PASS, PASS, FAIL, FAIL])
 
-    assert result.outcome == "repeat" and result.stopped_at == "phase2_step1"
-    assert result.phase2 is None
-    assert "publish_option" not in [k for k, _ in answers.asked]
-    assert not (tmp_run / "outputs" / "phase2_step2_signup_page.md").exists()
-    assert not any("Publish this sign-up page?" in m for m in said)
+    assert result.outcome == "go"
+    assert "publish_option" in [k for k, _ in answers.asked]
+    assert (tmp_run / "outputs" / "phase2_step1_lean_canvas.md").exists()
+    assert not any(e["action"] == "stop_canvas_failed_review" for e in ctx.log.entries())
 
 
-def test_founder_is_told_plainly_and_the_reasons_are_logged(tmp_run):
+def test_founder_is_warned_plainly_and_the_reasons_are_logged(tmp_run):
     ctx, result, said, _ = _run(tmp_run, [PASS, PASS, FAIL, FAIL])
 
     assert any("Lean Canvas" in m and "did not pass" in m and "value line says nothing specific" in m for m in said)
-    entry = next(e for e in ctx.log.entries() if e["action"] == "stop_canvas_failed_review")
-    assert entry["agent"] == "orchestrator" and entry["outcome"] == "repeat"
+    entry = next(e for e in ctx.log.entries() if e["action"] == "warn_canvas_failed_review")
+    assert entry["agent"] == "orchestrator" and entry["outcome"] == "warn"
     assert any("value line says nothing specific" in r for r in entry["reasons"])
 
 
