@@ -40,12 +40,17 @@ _PATTERNS: list[tuple[str, str, str, str]] = [
      "fake sign-ups", "No fake sign-ups", "Show the real number and the stop/pivot recommendation"),
     (r"\b(reviews?|testimonials?|ratings?)\b.{0,40}\b(fake|made[- ]up|invent)|"
      r"\b(fake|five[- ]star|5[- ]star|glowing|made[- ]up)\b.{0,30}\b(reviews?|testimonials?|ratings?)\b|"
+     r"\b(write|create|generate|invent|make up|produce|post)\b(?![^.]{0,40}\b(real|honest|genuine|ask|asking|request|quote)\b)"
+     r"[^.]{0,30}\b(testimonials?|reviews?)\b|"
+     r"\b(reviews?|testimonials?)\b.{0,30}\bfrom (different|other|many|various|made[- ]up) (names|accounts|people|users)\b|"
      r"\bfake (screenshots?|results|proof|wins)\b|\b(photos?|pictures?|screenshots?)\b.{0,20}\b(found|took|taken|copied) (online|from)\b",
      "fake reviews", "No fake reviews", "Ask real users for honest reviews"),
-    (r"\bcountdown\b|\b(offer|sale|deal) (ends|expires) in\b|\bonly \d+ (left|spots?)\b",
+    (r"\bcountdown\b|\b(offer|sale|deal) (ends|expires) in\b|\bonly \d+ (left|spots?|seats?|places?|copies)\b|"
+     r"\b\d+ (seats?|spots?|places?|copies) (left|remain\w*)\b",
      "fake urgency", "No fake urgency", "Show the real launch date, if there is one"),
     (r"\b(make|earn|making|earning)\b.{0,20}\$\s?\d|\bguarantee(d)? (income|profit|results|success)\b|"
      r"\$\s?[\d,]+\s*(a|per) (day|week|month|year)\b|"
+     r"\b(make|earn|making|earning)\b.{0,20}\b\d[\d,]*\s*(dollars?|usd|egp|euros?)\b|"
      r"\b(buy|afford|get) (me )?(a |my own )?(bentley|lamborghini|ferrari|porsche|rolls[- ]royce|yacht|villa)\b|"
      r"\bdouble (their|your|my) money\b|\b(get|getting|be|become) rich\b|\buntil i'?m rich\b|\bmillionaire\b|بنتلي|هبقى غني",
      "income promises", "No income promises", "Describe what the product does, with no earnings claims"),
@@ -54,6 +59,10 @@ _PATTERNS: list[tuple[str, str, str, str]] = [
     (r"\b(post|publish|send|tweet)\b.{0,40}\b(as me|for me right now|right now)\b",
      "impersonation", "Nothing published without approval; no impersonation",
      "Draft the post for the founder to approve and post"),
+    (r"\b(send|post|publish|email)\b.{0,40}\b(to my (list|audience|followers|subscribers|contacts|customers)|them out)\b"
+     r".{0,15}\b(now|immediately|right away)\b",
+     "impersonation", "Nothing published without approval; no impersonation",
+     "Draft the posts for the founder to read, approve and send"),
     (r"\b(charge|refund|transfer|withdraw)\b.{0,30}\b(card|money|payment|account|customer)\b",
      "move money", "Never move money", "The founder acts in their own payment tool"),
     (r"\b(save|store|keep|remember)\b.{0,30}\b(passwords?|card numbers?|credit card|cvv|pin)\b",
@@ -67,12 +76,13 @@ _PATTERNS: list[tuple[str, str, str, str]] = [
      "Suggest a digital product in the same area, like a feed and cost calculator or a short guide "
      "for small poultry farmers. The plan also assumes every chick lives, every egg hatches and feed "
      "costs nothing. That is an ASSUMPTION, not a plan"),
-    (r"\b(supplements?|physical (goods|products?)|t-?shirts?|merch|dropship\w*)\b",
+    (r"\b(supplements?|physical (goods|products?)|t-?shirts?|merch|dropship\w*|etsy|handmade|candles?|stickers?|posters?)\b|"
+     r"\bprint(ed)?\b.{0,15}\b(and|to) (sell|ship)\b|\bprinted\b",
      "physical goods", "Physical goods not allowed", "Suggest a digital product in the same area"),
     (r"\blegal advice\b",
      "legal advice", "Legal advice products not allowed",
      "Draft terms marked \"draft, not legal advice\" and suggest a lawyer review"),
-    (r"\b(medical|health|diet|therapy|nutrition) advice\b|\blose \d+\s?(kg|kilos?|pounds|lbs)\b|"
+    (r"\b(medical|health|diet|therapy|nutrition) advice\b|\b(meal|diet|keto|weight[- ]loss) (plan|program)s?\b|\blose weight\b|\blose \d+\s?(kg|kilos?|pounds|lbs)\b|"
      r"\b(cures?|treats?|heals?)\b.{0,20}\b(diabetes|cancer|disease|anxiety|depression|obesity)\b",
      "health advice", "Health advice products not allowed",
      "Explain the excluded categories; suggest a digital product outside health advice"),
