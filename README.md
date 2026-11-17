@@ -8,7 +8,7 @@ An open-source AI co-founder team that builds the founder as much as the busines
 docker compose up
 ```
 
-Open http://localhost:3000. The first start downloads the local model, which takes a few minutes. Pick "New founder", paste a founder brief, and answer the Profiler's questions by typing or holding the talk button.
+Open http://localhost:3000. The first start downloads the local model, which takes a few minutes. Answer the onboarding questions (type, or use the mic button), then follow the co-founder through each gate. The Map and Plan buttons at the top are always there.
 
 ## What works and what is mocked
 
@@ -16,23 +16,24 @@ Statuses are updated only after a real run. Working = tested end to end. MOCKED 
 
 | Phase | Step | Status |
 |---|---|---|
-| 1 Discover | Founder intake and profile | STUBBED |
-| 1 Discover | Find opportunities (research intern + boss) | STUBBED |
-| 1 Discover | Customer interview script | STUBBED |
-| 1 Discover | Gate: founder picks an option and explains why | STUBBED |
-| 2 Validate | Lean Canvas | STUBBED |
-| 2 Validate | Landing page draft | STUBBED |
-| 2 Validate | Publish sign-up page to Netlify (founder's own free account) | STUBBED |
-| 2 Validate | Sign-up target gate (recommends stop on weak evidence) | STUBBED |
+| 1 Discover | Founder intake and profile | Working |
+| 1 Discover | Find opportunities (research intern + boss) | Working |
+| 1 Discover | Customer interview script | Working |
+| 1 Discover | Gate: founder picks an option and explains why | Working |
+| 2 Validate | Lean Canvas (boss stops the run when boxes are unsourced) | Working |
+| 2 Validate | Sign-up page draft (seen in live runs, not in the committed demo run) | Working |
+| 2 Validate | Publish sign-up page to Netlify (founder's own free account; code and tests only, never run against Netlify) | STUBBED |
+| 2 Validate | Sign-up target gate (recommends stop under 30% of the target; seen in live runs, not in the committed demo run) | Working |
 | 2 Validate | Shark panel (SIMULATION) | STUBBED |
 | 3 Build | User stories and MVP spec | STUBBED |
 | 4 Commercial setup | Pricing and draft policies | STUBBED |
 | 5 Launch | Store page and launch posts | STUBBED |
 | 5 Launch | Payment and automatic delivery (simulated events, access token, refunds, reconcile; no real money) | MOCKED |
 | 6 Operate | Support, metrics, pivot memo | STUBBED |
-| All | Founder approval enforced in code | STUBBED |
-| All | Ethics bot, guardrail, judges, decision log | STUBBED |
-| Web | Voice input (speech to text in the chat box and onboarding) | REAL in the browser (not run against a live microphone in CI) |
+| All | Founder approval enforced in code (no bare yes, option plus reason) | Working |
+| All | Guardrail, ethics check and decision log | Working |
+| All | Judges panel | STUBBED |
+| Web | Voice input (speech to text in the chat box and onboarding; built and unit-tested, not yet tried with a real microphone) | STUBBED |
 | All | Text to speech and voice in the Python pipeline | STUBBED |
 
 ## Architecture
@@ -41,7 +42,8 @@ A fixed workflow in plain Python runs the six phases. Each step is done by small
 
 ## Models and free resources
 
-- Model: `gpt-oss:20b` via Ollama (open weights). Fallback for smaller machines: `qwen3:8b`.
+- Model: `qwen3:8b` via Ollama (open weights) by default, `gpt-oss:20b` as the stronger choice; the founder picks per run, and the other one is used automatically if the first is missing.
+- No GPU or Ollama? Use a free OpenAI-compatible tier with your own key (Groq or OpenRouter). The committed demo run used `nvidia/nemotron-3.5-lightning:free` (open weights) on OpenRouter's free tier.
 - Web search: a local SearXNG container, no API key.
 - Voice input (web, implemented): a mic button in the chat box and on onboarding free-text answers, in English or Arabic. It records with MediaRecorder and runs open-weight Whisper (`onnx-community/whisper-base`) in the browser through [transformers.js](https://github.com/huggingface/transformers.js) (Apache-2.0), on WebGPU when available and WASM otherwise. The model downloads on first use (with a progress note) and no audio leaves the device. If recording is not available, it falls back to the browser's own speech service (Web Speech API), which is labelled in the UI and may send audio to the browser vendor. The text lands in the box for the founder to edit; nothing is sent automatically.
 - Voice, not built yet: Kokoro-82M (Apache-2.0) text to speech and a server-side faster-whisper path.
@@ -49,7 +51,7 @@ A fixed workflow in plain Python runs the six phases. Each step is done by small
 
 ## Cost per run
 
-About $0.00 per run (local model). Token count per run is measured and reported here after the demo run.
+About $0.00 per run (local model or free tier, about 119k tokens for the committed Phase 1 to 2 demo run; 56k to 85k tokens in other live runs). Tokens are logged per model call in `decision_log.json`.
 
 ## Demo video
 
