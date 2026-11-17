@@ -9,6 +9,7 @@ from api.orchestrator import Ctx, ScriptedAnswers, run_pipeline
 ROOT = Path(__file__).resolve().parent.parent
 REQUIRED = {"timestamp", "agent", "action", "sources", "model", "cost", "approved_by", "founder_input"}
 REASON1 = "My WhatsApp group of 420 students asks for speaking practice every single week"
+REASON3 = "The three must-have stories fit in my two weeks so I will build the manual version first"
 REASON2 = "We got more sign-ups than the target in two weeks so building is the next step"
 
 
@@ -18,7 +19,8 @@ def strong_answers(**changes):
               "unfair_advantage": "I coached 300 students and scored band 8.5",
               "publish_option": "Publish the sign-up page", "publish_reason": REASON1,
               "signups": "130",
-              "phase2_option": "Continue to Build", "phase2_reason": REASON2}
+              "phase2_option": "Continue to Build", "phase2_reason": REASON2,
+              "phase3_option": "Build this MVP", "phase3_reason": REASON3}
     script.update(changes)
     return ScriptedAnswers(script)
 
@@ -103,7 +105,7 @@ def test_every_log_entry_has_required_keys_and_gated_ones_name_the_founder(tmp_r
     entries = ctx.log.entries()
     assert entries and all(REQUIRED <= set(e) for e in entries)
     decisions = [e for e in entries if e["action"].endswith("_decision") or e["action"] == "publish_signup_page"]
-    assert len(decisions) == 3
+    assert len(decisions) == 4
     assert all(e["approved_by"] == "founder" and e["founder_input"] for e in decisions)
     assert {e["model"] for e in entries if e["agent"] in ("profiler", "research_intern", "boss")} >= {"fake"}
 

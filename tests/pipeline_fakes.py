@@ -79,6 +79,46 @@ def interview_script() -> dict[str, Any]:
             "first_people": ["The ten most active students in the IELTS Alexandria WhatsApp group."]}
 
 
+def story(who: str, want: str, why: str, priority: str, hours: int, first: str,
+          url: str | None = None) -> dict[str, Any]:
+    return {"who": who, "want": want, "why": why, "priority": priority, "hours": hours,
+            "criteria": [f"Given a student in the group, when they ask for {want.lower()}, then they get it within a day.",
+                         "Given the first ten students, when they try it, then at least seven finish it."],
+            "first_version": first, "backed_by": url}
+
+
+def user_stories(must_hours: int = 4) -> dict[str, Any]:
+    """Five stories. Three are must-haves that share must_hours hours between them."""
+    a, b = must_hours // 3, must_hours // 3
+    c = max(1, must_hours - a - b)
+    who = "IELTS student in Alexandria"
+    return {"stories": [
+        story(who, "a short speaking drill every day", "I practise before the test", "must", max(1, a),
+              "Send one prompt a day in the WhatsApp group by hand.", URLS[0]),
+        story(who, "feedback on my answer", "I know what to fix", "must", max(1, b),
+              "Coach listens to each voice note and replies with three notes.", None),
+        story(who, "a sign-up form for the weekly drill", "I get a spot without chasing anyone", "must", c,
+              "A free form that collects a name and a phone number.", None),
+        story(who, "a score tracker", "I see my progress", "should", 6,
+              "A shared spreadsheet with one row per student.", None),
+        story(who, "reminders before the test", "I do not forget to practise", "could", 3,
+              "A calendar note sent to the group every Sunday.", None)]}
+
+
+def mvp_plan() -> dict[str, Any]:
+    return {"not_building": ["An app or a website", "Payments", "A score tracker for every student"],
+            "tools": ["WhatsApp group you already run", "Google Forms (free)", "Google Sheets (free)"],
+            "checklist": [{"when": "Days 1-2", "task": "Write seven speaking prompts and a short feedback guide."},
+                          {"when": "Days 3-5", "task": "Make the sign-up form and test it with a friend."},
+                          {"when": "Week 1", "task": "Send the first prompt to ten students from the group."},
+                          {"when": "Days 8-12", "task": "Reply to every voice note by hand with three notes."},
+                          {"when": "Days 13-14", "task": "Ask each student what they would change, then list the fixes."}],
+            "first_10": ["Pick the ten most active students in the IELTS Alexandria WhatsApp group.",
+                         "Message each one by name and offer a free week of daily drills.",
+                         "Do not post in the whole group until these ten have tried it."],
+            "one_metric": "How many of the ten students finish at least five drills in the first week."}
+
+
 def scripted_llm(opps: dict[str, Any], questions: int = 2, boss: str = "pass",
                  overrides: dict[str, list[dict[str, Any]]] | None = None) -> FakeLLM:
     """A FakeLLM that answers by schema name. overrides hold queued replies per schema."""
@@ -91,6 +131,8 @@ def scripted_llm(opps: dict[str, Any], questions: int = 2, boss: str = "pass",
         "BossVerdict": {"verdict": boss, "checks": [], "delete_lines": []},
         "LeanCanvas": canvas(),
         "InterviewScript": interview_script(),
+        "UserStories": user_stories(),
+        "MvpPlan": mvp_plan(),
     }
 
     def reply(system: str, user: str, schema: type) -> dict[str, Any]:

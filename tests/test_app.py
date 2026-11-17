@@ -11,6 +11,7 @@ from api.app import create_app
 ROOT = Path(__file__).resolve().parent.parent
 BRIEF = (ROOT / "briefs" / "strong.md").read_text(encoding="utf-8")
 REASON1 = "My WhatsApp group of 420 students asks for speaking practice every single week"
+REASON3 = "The three must-have stories fit in my two weeks so I will build the manual version first"
 REASON2 = "We got more sign-ups than the target in two weeks so building is the next step"
 
 
@@ -77,12 +78,14 @@ def test_full_happy_path_through_the_api_reaches_phase2_go(client, tmp_run):
     state = answer(client, run_id, "130")
     assert state["pending"]["key"] == "phase2"
     state = decide(client, run_id, "Continue to Build", REASON2)
+    assert state["pending"]["key"] == "phase3"
+    state = decide(client, run_id, "Build this MVP", REASON3)
 
     assert state["status"] == "done" and state["outcome"] == "go" and state["phase2"] == "go"
     assert {"phase2_gate_decision.md", "phase2_step2_signup_page.md"} <= set(state["outputs"])
     log = client.get(f"/runs/{run_id}/log").json()
     gated = [e for e in log if e["action"].endswith("_decision") or e["action"] == "publish_signup_page"]
-    assert len(gated) == 3 and all(e["approved_by"] == "founder" and e["founder_input"] for e in gated)
+    assert len(gated) == 4 and all(e["approved_by"] == "founder" and e["founder_input"] for e in gated)
     assert (tmp_run / run_id / "outputs" / "phase2_gate_decision.md").exists()
 
 
