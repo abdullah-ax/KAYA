@@ -36,7 +36,7 @@ class AnswersExhausted(RuntimeError):
 
 
 class AnswerSource(Protocol):
-    def ask(self, key: str, prompt: str) -> str: ...
+    def ask(self, key: str, prompt: str, choice: dict[str, Any] | None = None) -> str: ...
 
 
 class ScriptedAnswers:
@@ -51,7 +51,7 @@ class ScriptedAnswers:
     def from_file(cls, path: str | Path) -> ScriptedAnswers:
         return cls(yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {})
 
-    def ask(self, key: str, prompt: str) -> str:
+    def ask(self, key: str, prompt: str, choice: dict[str, Any] | None = None) -> str:
         self.asked.append((key, prompt))
         queue = self._queues.get(key)
         if not queue:
@@ -66,7 +66,7 @@ class InteractiveAnswers:
         self._in = stdin or sys.stdin
         self._out = stdout or sys.stdout
 
-    def ask(self, key: str, prompt: str) -> str:
+    def ask(self, key: str, prompt: str, choice: dict[str, Any] | None = None) -> str:
         self._out.write(f"\n{prompt}\n> ")
         self._out.flush()
         line = self._in.readline()
@@ -98,9 +98,10 @@ class Ctx:
 
     def complete(self, agent: str, action: str, system: str, user: str, schema: type[M],
                  sources: list[str] | None = None) -> M:
-        """One model call, logged with the model name. Local models cost 0."""
-        reply, _usage = self.llm.complete(system, user, schema)
-        self.log.append(agent, action, sources=sources, model=self.llm.name, cost=0)
+        """One model call, logged with the model name and token use. Local models cost 0."""
+        reply, usage = self.llm.complete(system, user, schema)
+        self.log.append(agent, action, sources=sources, model=self.llm.name, cost=0,
+                        tokens={"prompt": usage.prompt_tokens, "completion": usage.completion_tokens})
         return reply  # type: ignore[return-value]
 
 
@@ -130,7 +131,7 @@ def publish_signup_page(ctx: Ctx, page: str, *, approval: Approval) -> Path:
     return path
 
 
-STOP_HERE = Option("Stop here", "EGP 0", "The work so far is not used", "none")
+STOP_HERE = Option("Stop here", "EGP 0", "The work so far is not used", "none", id="stop")
 PUBLISH = [Option("Publish the sign-up page", "EGP 0", "Few people may sign up",
                   "STUBBED: saved locally, not posted"),
            Option("Keep it private", "EGP 0", "No sign-ups to count", "none")]
@@ -235,7 +236,7 @@ def _run(ctx: Ctx, brief: str, result: RunResult) -> RunResult:
     _write_draft(ctx, 1, 2, "opportunities", opps)
 
     result.phase1 = phase1_gate(opps.sourced, opps.founder_fit, ctx.cfg)
-    options = [Option(*row) for row in opps.rows] + [STOP_HERE]
+    options = [Option(*row, id=f"option_{i}") for i, row in enumerate(opps.rows, 1)] + [STOP_HERE]
     pick = _gate(ctx, 1, result.phase1, options)
     if pick.option == STOP_HERE.name:
         return _save(ctx, result, "phase1_gate", "stop")
@@ -253,7 +254,12 @@ def _run(ctx: Ctx, brief: str, result: RunResult) -> RunResult:
     _save(ctx, result, "phase2_step1")
 
     page = _signup_page(chosen, canvas)
-    if check_draft(page).outcome == "pass":
+    page_check = check_draft(page)
+    if page_check.outcome != "pass":
+        ctx.say("We did not offer to publish the sign-up page. It failed the ethics check:\n"
+                + "\n".join(f"- {issue}" for issue in page_check.issues))
+        ctx.log.append("orchestrator", "skip_publish", outcome=page_check.outcome)
+    else:
         ctx.say(page)
         choice = cofounder.ask_choice(ctx, "publish", "Publish this sign-up page?", PUBLISH)
         if choice.option == PUBLISH[0].name:

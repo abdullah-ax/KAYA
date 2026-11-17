@@ -2,8 +2,8 @@
 use_default_settings: true
 
 server:
-  # Placeholder only. The real value comes from the SEARXNG_SECRET env var,
-  # which SearXNG uses in place of this key.
+  # Placeholder only. docker-compose requires SEARXNG_SECRET (set it in .env);
+  # SearXNG uses that env var in place of this key.
   secret_key: "change-me-set-SEARXNG_SECRET"
   limiter: false
   image_proxy: false

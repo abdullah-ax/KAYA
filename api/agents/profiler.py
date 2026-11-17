@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Literal
 from pydantic import BaseModel, Field
 
 from api.agents.cofounder import ask_founder
+from api.research import UNTRUSTED_NOTE, untrusted
 
 if TYPE_CHECKING:
     from api.orchestrator import Ctx
@@ -57,7 +58,7 @@ def _limit(ctx: Ctx) -> int:
 def run(ctx: Ctx, brief: str) -> FounderProfile:
     system = ctx.prompt("profiler", "question_bank")
     plan = ctx.complete("profiler", "plan_intake_questions", system,
-                        f"Founder brief:\n{brief}\n\nList only questions the brief does not answer. "
+                        f"{UNTRUSTED_NOTE}\n\nFounder brief:\n{untrusted(brief)}\n\nList only questions the brief does not answer. "
                         f"At most {_limit(ctx)}.", IntakePlan)
     intake = []
     for question in plan.questions[:_limit(ctx)]:
@@ -66,7 +67,7 @@ def run(ctx: Ctx, brief: str) -> FounderProfile:
         intake.append({"question": question, "answer": answer})
     qa = "\n".join(f"Q: {x['question']}\nA: {x['answer']}" for x in intake) or "(no questions asked)"
     profile = ctx.complete("profiler", "write_founder_profile", system,
-                           f"Founder brief:\n{brief}\n\nIntake answers:\n{qa}\n\n"
+                           f"{UNTRUSTED_NOTE}\n\nFounder brief:\n{untrusted(brief)}\n\nIntake answers:\n{untrusted(qa)}\n\n"
                            "Mark anything still missing as ASSUMPTION.", FounderProfile)
     path = ctx.output(1, 1, "founder_profile", "json")
     path.write_text(json.dumps(profile.model_dump() | {"intake": intake}, indent=2,

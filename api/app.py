@@ -11,6 +11,7 @@ import json
 import os
 import re
 import threading
+import time
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -30,7 +31,8 @@ from api.research import Search, SearxSearch
 ROOT = Path(__file__).resolve().parent.parent
 LLMFactory = Callable[[Config, str, "str | None"], LLM]
 SearchFactory = Callable[[Config], Search]
-_OPTION_LINE = re.compile(r"^- (.+) \(cost: (.*); risk: (.*); source: (.*)\)$")
+MAX_BODY_BYTES = 64 * 1024
+MAX_SESSIONS = 50
 
 
 def _default_llm(cfg: Config, provider: str, api_key: str | None) -> LLM:
@@ -44,18 +46,18 @@ def _scrub(text: str, secret: str | None) -> str:
 
 
 class NewRun(BaseModel):
-    brief: str = Field(min_length=1)
+    brief: str = Field(min_length=1, max_length=8000)
     mode: Literal["demo", "full"] = "demo"
     provider: Literal["ollama", "openai"] = "ollama"
 
 
 class Answer(BaseModel):
-    text: str
+    text: str = Field(max_length=4000)
 
 
 class Choice(BaseModel):
-    option: str
-    reason: str
+    option: str = Field(max_length=200)
+    reason: str = Field(max_length=2000)
 
 
 class ModelTest(BaseModel):
@@ -72,19 +74,22 @@ class WebAnswers:
     def __init__(self, on_change: Callable[[], None]) -> None:
         self.cv = threading.Condition()
         self.pending: tuple[str, str] | None = None
+        self.pending_choice: dict[str, Any] | None = None  # structured question and options of a gate
         self.inbox: list[str] = []
         self.closed = False
         self._on_change = on_change
 
-    def ask(self, key: str, prompt: str) -> str:
+    def ask(self, key: str, prompt: str, choice: dict[str, Any] | None = None) -> str:
         with self.cv:
             self.pending = (key, prompt)
+            self.pending_choice = choice
             self.cv.notify_all()
             self._on_change()
             self.cv.wait_for(lambda: bool(self.inbox) or self.closed)
             if not self.inbox:
                 raise AnswersExhausted(f"The run was closed while waiting for '{key}'.")
             self.pending = None
+            self.pending_choice = None
             return self.inbox.pop(0)
 
 
@@ -102,6 +107,7 @@ class Session:
     done: bool = False
     outcome: str | None = None
     error: str | None = None
+    touched: float = field(default_factory=time.monotonic)
 
     def __post_init__(self) -> None:
         self.answers = WebAnswers(self.save)
@@ -113,9 +119,9 @@ class Session:
         key, prompt = self.answers.pending
         if not key.endswith("_option"):
             return {"kind": "question", "key": key, "prompt": prompt}
-        asked = next((m for m in reversed(self.messages) if _parse_choice(m)[1]), "")
-        question, options = _parse_choice(asked)
-        return {"kind": "gate", "key": key.removesuffix("_option"), "prompt": question, "options": options}
+        choice = self.answers.pending_choice or {}
+        return {"kind": "gate", "key": key.removesuffix("_option"), "prompt": choice.get("question", ""),
+                "options": choice.get("options", [])}
 
     def status(self) -> str:
         if self.error:
@@ -169,19 +175,6 @@ class Session:
             a.cv.wait_for(lambda: a.pending is not None or self.done, timeout=timeout)
 
 
-def _parse_choice(message: str) -> tuple[str, list[dict[str, str]]]:
-    """Split the co-founder's choice message into the question and its option rows."""
-    question, options = [], []
-    for line in message.splitlines():
-        match = _OPTION_LINE.match(line)
-        if match:
-            name, cost, risk, source = match.groups()
-            options.append({"name": name, "cost": cost, "risk": risk, "source": source})
-        elif not options:
-            question.append(line)
-    return "\n".join(question).strip(), options
-
-
 def _read_json(path: Path) -> Any:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
@@ -196,9 +189,55 @@ def _sources(outputs_dir: Path) -> list[dict[str, Any]]:
     return found
 
 
+class _BodyTooBig(Exception):
+    pass
+
+
+class BodyLimit:
+    """Answer 413 to any request body over the limit, before the app reads it."""
+
+    def __init__(self, app: Any, limit: int = MAX_BODY_BYTES) -> None:
+        self.app, self.limit = app, limit
+
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        declared = dict(scope["headers"]).get(b"content-length", b"0")
+        started = False
+        seen = 0
+
+        async def counted() -> Any:
+            nonlocal seen
+            message = await receive()
+            seen += len(message.get("body", b"")) if message["type"] == "http.request" else 0
+            if seen > self.limit:
+                raise _BodyTooBig
+            return message
+
+        async def tracked(message: Any) -> None:
+            nonlocal started
+            started = started or message["type"] == "http.response.start"
+            await send(message)
+
+        try:
+            if declared.isdigit() and int(declared) > self.limit:
+                raise _BodyTooBig
+            await self.app(scope, counted, tracked)
+        except _BodyTooBig:
+            if started:
+                raise
+            body = b'{"detail":"That request is too big. The limit is 64 KB."}'
+            await send({"type": "http.response.start", "status": 413,
+                        "headers": [(b"content-type", b"application/json"),
+                                    (b"content-length", str(len(body)).encode())]})
+            await send({"type": "http.response.body", "body": body})
+
+
 def create_app(*, llm_factory: LLMFactory = _default_llm, search_factory: SearchFactory | None = None,
-               config_path: Path = ROOT / "config.yaml", wait_seconds: float | None = None) -> FastAPI:
+               config_path: Path = ROOT / "config.yaml", wait_seconds: float | None = None,
+               max_sessions: int = MAX_SESSIONS) -> FastAPI:
     app = FastAPI(title="KAYA API")
+    app.add_middleware(BodyLimit)
     sessions: dict[str, Session] = {}
     wait = wait_seconds if wait_seconds is not None else float(os.environ.get("API_WAIT_SECONDS", "30"))
     make_search = search_factory or (lambda cfg: SearxSearch(cfg.searxng_url))
@@ -213,7 +252,17 @@ def create_app(*, llm_factory: LLMFactory = _default_llm, search_factory: Search
     def get(run_id: str) -> Session:
         if run_id not in sessions:
             raise HTTPException(404, "No run with that id is open.")
+        sessions[run_id].touched = time.monotonic()
         return sessions[run_id]
+
+    def evict_idle() -> None:
+        """Keep at most max_sessions - 1 live runs before a new one starts: drop the oldest idle."""
+        while len(sessions) >= max_sessions:
+            oldest = min(sessions.values(), key=lambda s: s.touched)
+            del sessions[oldest.id]
+            with oldest.answers.cv:
+                oldest.answers.closed = True  # lets its pipeline thread end
+                oldest.answers.cv.notify_all()
 
     def work(session: Session, ctx: Ctx, key: str | None) -> None:
         try:
@@ -241,6 +290,7 @@ def create_app(*, llm_factory: LLMFactory = _default_llm, search_factory: Search
         session = Session(run_id, runs_dir() / run_id, body.brief, body.mode, body.provider)
         ctx = Ctx(cfg=cfg, llm=llm, search=make_search(cfg), log=DecisionLog(session.run_dir / "decision_log.json"),
                   answers=session.answers, run_dir=session.run_dir, say=session.messages.append)
+        evict_idle()
         sessions[run_id] = session
         session.save()
         threading.Thread(target=work, args=(session, ctx, x_model_key), daemon=True).start()
@@ -250,7 +300,7 @@ def create_app(*, llm_factory: LLMFactory = _default_llm, search_factory: Search
     @app.get("/runs/{run_id}")
     def read_run(run_id: str) -> dict[str, Any]:
         if run_id in sessions:
-            return sessions[run_id].state()
+            return get(run_id).state()
         saved = _read_json(runs_dir() / run_id / "session.json") if re.fullmatch(r"\w+", run_id) else None
         if saved is None:
             raise HTTPException(404, "No run with that id.")

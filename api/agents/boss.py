@@ -34,7 +34,7 @@ class Review:
 
 
 def _code_checks(ctx: Ctx, draft: Draft) -> tuple[list[str], bool]:
-    """Return (reasons, blocked). Slop runs on the prose; ethics on the whole draft."""
+    """Return (reasons, blocked). Slop and ethics run on model-written text only, never on founder quotes."""
     prose = "\n\n".join(t if t.rstrip().endswith((".", "!", "?")) else t + "." for t in draft.texts)
     slop = check_text(prose, ctx.cfg)
     reasons = [f"Banned phrase: {p}" for p in slop.banned]
@@ -42,7 +42,7 @@ def _code_checks(ctx: Ctx, draft: Draft) -> tuple[list[str], bool]:
         reasons.append(f"Reading grade {slop.grade} is above {ctx.cfg.writing.max_reading_grade}.")
     if slop.em_dash_paragraphs:
         reasons.append(f"Too many em dashes in {slop.em_dash_paragraphs} paragraph(s).")
-    ethics = check_draft(draft.markdown)
+    ethics = check_draft("\n".join(draft.texts))
     reasons += [f"Ethics ({ethics.outcome}): {issue}" for issue in ethics.issues]
     return reasons, ethics.outcome == "block"
 

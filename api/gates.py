@@ -26,9 +26,13 @@ def _require_positive(name: str, value: int) -> None:
 
 
 def phase1_gate(sourced_problems: int, founder_fit: int, cfg: Any) -> GateResult:
-    """Check sourced problems and founder fit (1 to 5) against config."""
+    """Check sourced problems and founder fit (1 to 5, a model estimate) against config.
+
+    Both weak: stop. Only fit weak: pivot. Only sourcing weak: repeat. Nothing sourced: stop.
+    """
     rules = cfg.gates.phase1_discover
     _require_positive("min_sourced_problems", rules.min_sourced_problems)
+    founder_fit = max(1, min(5, int(founder_fit)))
     evidence = {"metric": "sourced problems", "target": rules.min_sourced_problems,
                 "actual": sourced_problems,
                 "percent": round(sourced_problems / rules.min_sourced_problems * 100),
@@ -37,15 +41,21 @@ def phase1_gate(sourced_problems: int, founder_fit: int, cfg: Any) -> GateResult
                 "founder_fit": founder_fit,
                 "min_founder_fit_score": rules.min_founder_fit_score}
     got = (f"{sourced_problems} sourced problems (need {rules.min_sourced_problems}), "
-           f"founder fit {founder_fit} of 5 (need {rules.min_founder_fit_score})")
+           f"founder fit {founder_fit} of 5 (model estimate; need {rules.min_founder_fit_score})")
+    few_sources = sourced_problems < rules.min_sourced_problems
+    low_fit = founder_fit < rules.min_founder_fit_score
     if sourced_problems == 0:
         return GateResult("phase1_discover", "stop",
                           f"stop: {got}. Nothing here has a source, only assumptions. "
                           "Stop, or start again with a new search.", evidence)
-    if founder_fit < rules.min_founder_fit_score:
+    if few_sources and low_fit:
+        return GateResult("phase1_discover", "stop",
+                          f"stop: {got}. Too few sourced problems and a weak fit. "
+                          "Stop, or start again with a new search.", evidence)
+    if low_fit:
         return GateResult("phase1_discover", "pivot",
                           f"pivot: {got}. Pick a problem closer to what you know.", evidence)
-    if sourced_problems < rules.min_sourced_problems:
+    if few_sources:
         return GateResult("phase1_discover", "repeat",
                           f"repeat: {got}. Find more problems with a source link.", evidence)
     return GateResult("phase1_discover", "go", f"go: {got}.", evidence)

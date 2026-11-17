@@ -14,8 +14,8 @@ _BRANDS = (
     r"netflix|fawry|vodafone|instapay|gumroad|shopify"
 )
 
-# A platform the founder sells or talks through ("from the WhatsApp group") is not the brand speaking.
-_CHANNEL = r"groups?|communit\w*|channels?|chats?|pages?|stores?|shops?"
+# Words that make a brand name a speaker ("Stripe support"), not a place ("Google search").
+_ROLE = r"(support|team|security|billing|help ?desk|customer service|staff|official)\b"
 
 # (pattern, issue text). Any match blocks.
 _BLOCK: list[tuple[str, str]] = [
@@ -28,7 +28,9 @@ _BLOCK: list[tuple[str, str]] = [
     (r"\b(make|earn|making|earning)\b.{0,25}\$\s?\d|\$\s?[\d,]+\s*(a|per) (day|week|month|year)\b|"
      r"\bguarantee(d)?\b.{0,15}\b(income|profit|earnings|results|success)\b",
      "Income promise: describe what the product does, with no earnings claims."),
-    (rf"\b(this is|from|on behalf of) (the )?({_BRANDS})\b(?! ({_CHANNEL}))|"
+    (rf"\bthis is (the )?({_BRANDS}) {_ROLE}|\bon behalf of (the )?({_BRANDS})\b|"
+     rf"\b(i am|i'm|we are|we're) (the )?({_BRANDS}) {_ROLE}|"
+     rf"\b(sent|message|email|notice|alert)s? from (the )?({_BRANDS}) {_ROLE}|"
      r"\b(pretend(ing)? to be|posing as|pose as)\b",
      "Impersonation: write as the founder's own brand only."),
     (r"\bsell\b.{0,30}\b(emails?|e-mail address\w*|phone numbers?|data|contacts?|list|information)\b",

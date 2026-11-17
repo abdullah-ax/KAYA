@@ -18,7 +18,9 @@ COPY kb/ kb/
 COPY evals/ evals/
 COPY config.yaml config.yaml
 
-RUN mkdir -p /app/runs
+# Run as a normal user. UID 1000 matches most Linux hosts, so ./runs stays writable.
+RUN useradd --create-home --uid 1000 kaya && mkdir -p /app/runs && chown -R kaya /app/runs
+USER kaya
 
 EXPOSE 8000
 

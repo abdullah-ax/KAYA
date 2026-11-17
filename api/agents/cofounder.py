@@ -5,11 +5,12 @@ No model here: these are the code rules the co-founder prompt describes.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from dataclasses import asdict, dataclass
+from typing import TYPE_CHECKING, Any
 
 from api.approval import Approval, ApprovalError, check_approval
 from api.guardrail import check_answer
+from api.research import clean_cell
 
 if TYPE_CHECKING:
     from api.orchestrator import Ctx
@@ -21,10 +22,13 @@ class NoFounderDecision(RuntimeError):
     """The founder gave no usable answer after MAX_ASKS tries."""
 
 
-def ask_founder(ctx: Ctx, key: str, prompt: str) -> str:
-    """Ask once; if the guardrail refuses the answer, say why and ask again."""
+def ask_founder(ctx: Ctx, key: str, prompt: str, choice: dict[str, Any] | None = None) -> str:
+    """Ask once; if the guardrail refuses the answer, say why and ask again.
+
+    choice is the structured question and options, for a screen that shows a gate.
+    """
     for _ in range(MAX_ASKS):
-        said = ctx.answers.ask(key, prompt).strip()
+        said = (ctx.answers.ask(key, prompt, choice=choice) if choice else ctx.answers.ask(key, prompt)).strip()
         verdict = check_answer(said)
         if verdict.allowed:
             return said
@@ -39,6 +43,12 @@ class Option:
     cost: str
     risk: str
     source: str
+    id: str = ""  # a reserved id (such as "stop") that no idea title can take
+
+    def __post_init__(self) -> None:
+        """One line, no pipes or backticks, so an option can't break a table or the list."""
+        for name in ("name", "cost", "risk", "source"):
+            object.__setattr__(self, name, clean_cell(getattr(self, name)))
 
 
 def _same(a: str, b: str) -> bool:
@@ -55,10 +65,11 @@ def ask_choice(ctx: Ctx, key: str, question: str, options: list[Option]) -> Appr
     """Ask for one option and a reason. Re-ask on a bare yes, a short reason or an unknown option."""
     names = [o.name for o in options]
     ctx.say(f"{question}\n{show_options(options)}")
+    choice = {"question": question, "options": [asdict(o) for o in options]}
     option: str | None = None
     for _ in range(MAX_ASKS):
         if option is None:
-            option = ask_founder(ctx, f"{key}_option", "Which option? Type its name.")
+            option = ask_founder(ctx, f"{key}_option", "Which option? Type its name.", choice)
         reason = ask_founder(ctx, f"{key}_reason", "Why that one? Use your own words.")
         try:
             return check_approval(option, reason, names, ctx.cfg)
@@ -74,7 +85,7 @@ def ask_number(ctx: Ctx, key: str, prompt: str) -> int:
     """Ask for a whole number of 0 or more, such as a sign-up count."""
     for _ in range(MAX_ASKS):
         said = ask_founder(ctx, key, prompt)
-        if said.isdigit():
+        if re.fullmatch(r"[0-9]+", said):
             ctx.log.append("founder", f"enter_{key}", founder_input=said)
             return int(said)
         ctx.say("Type a whole number, like 12.")

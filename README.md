@@ -62,6 +62,7 @@ Link added after recording (3 minutes or less).
 - Accept a bare "yes" as a decision.
 - Help build physical goods, financial, investment or crypto products, or health or legal advice products.
 - Lock core features behind a paywall.
+- Run on the open internet. The app has no log-in. It is local-only and not meant to be exposed to the internet.
 
 ## How the project stays alive after the hackathon
 

@@ -1,12 +1,15 @@
 """Research intern: searches, then drafts 2-3 options. Every claim gets a source or ASSUMPTION."""
 from __future__ import annotations
 
+import re
+
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Sequence
 
 from pydantic import BaseModel, Field
 
-from api.research import SearchResult, SourceCard, claim_sources
+from api.research import (UNTRUSTED_NOTE, SearchResult, SourceCard, assumption, claim_sources,
+                          clean_cell, scrub_urls, untrusted)
 
 if TYPE_CHECKING:
     from api.agents.profiler import FounderProfile
@@ -49,7 +52,8 @@ class Draft:
 
 def search(ctx: Ctx, brief: str, profile: FounderProfile) -> list[SearchResult]:
     plan = ctx.complete("research_intern", "plan_searches", ctx.prompt("intern"),
-                        f"Founder brief:\n{brief}\n\nProfile:\n{profile.model_dump_json()}\n\n"
+                        f"{UNTRUSTED_NOTE}\n\nFounder brief:\n{untrusted(brief)}\n\n"
+                        f"Profile:\n{profile.model_dump_json()}\n\n"
                         "Give 1 to 3 web search queries that find real problems this founder can solve.",
                         SearchPlan)
     results: list[SearchResult] = []
@@ -74,25 +78,58 @@ def draft_opportunities(ctx: Ctx, brief: str, profile: FounderProfile,
                         results: Sequence[SearchResult], notes: Sequence[str] = ()) -> Draft:
     draft = ctx.complete(
         "research_intern", "draft_opportunities", ctx.prompt("intern"),
-        f"Founder brief:\n{brief}\n\nProfile:\n{profile.model_dump_json()}\n\n"
-        f"Search results (cite only these URLs):\n{_results_text(results)}\n\n"
+        f"{UNTRUSTED_NOTE}\n\nFounder brief:\n{untrusted(brief)}\n\n"
+        f"Profile:\n{profile.model_dump_json()}\n\n"
+        f"Search results (cite only these URLs):\n{untrusted(_results_text(results))}\n\n"
         f"Give 2 or 3 opportunities. Score founder_fit 1 to 5 from the profile.{_notes_text(notes)}",
         OpportunityDraft, sources=[r.url for r in results])
     return _render_opportunities(ctx, draft)
 
 
+RESERVED_TITLES = ("Stop here",)  # option names the pipeline owns
+_OPP_TEXT_FIELDS = ("problem", "who", "founder_edge", "first_10", "cost_to_test", "risk")
+
+
+def _norm_title(title: str) -> str:
+    return " ".join(re.sub(r"[^\w\s]", " ", title.lower()).split())
+
+
+def _tidy_opportunities(ctx: Ctx, draft: OpportunityDraft) -> list[bool]:
+    """Fix titles (one line, unique, never a reserved name) and scrub unseen URLs from every text.
+
+    Returns, per opportunity, whether its problem text held an unseen URL.
+    """
+    taken = {_norm_title(t) for t in RESERVED_TITLES}
+    tainted: list[bool] = []
+    for opp in draft.opportunities:
+        base = clean_cell(scrub_urls(opp.title, ctx.registry)[0]) or "Idea"
+        title, n = base, 2
+        while _norm_title(title) in taken:
+            title, n = f"{base} (idea {n})", n + 1
+        taken.add(_norm_title(title))
+        opp.title = title
+        bad_problem = False
+        for name in _OPP_TEXT_FIELDS:
+            text, removed = scrub_urls(getattr(opp, name), ctx.registry)
+            setattr(opp, name, assumption(text) if removed else text)
+            bad_problem = bad_problem or (removed and name == "problem")
+        tainted.append(bad_problem)
+    return tainted
+
+
 def _render_opportunities(ctx: Ctx, draft: OpportunityDraft) -> Draft:
+    tainted = _tidy_opportunities(ctx, draft)
     out = Draft(markdown="", texts=[], data=draft)
     lines = ["# Opportunities (Phase 1, step 2)", "", "2-3 options. The founder picks one and says why.", ""]
-    for letter, opp in zip("ABC", draft.opportunities):
-        claim, cards = claim_sources(opp.problem, opp.evidence_urls, ctx.registry)
+    for letter, opp, bad in zip("ABC", draft.opportunities, tainted):
+        claim, cards = claim_sources(opp.problem, [] if bad else opp.evidence_urls, ctx.registry)
         source = ", ".join(c.url for c in cards) or "ASSUMPTION"
         out.cards += cards
         out.sourced += bool(cards)
         out.options.append(opp.title)
         out.rows.append((opp.title, opp.cost_to_test, opp.risk, source))
         out.founder_fit = min(out.founder_fit or opp.founder_fit, opp.founder_fit)  # weakest option
-        out.texts += [claim, opp.who, opp.founder_edge, opp.first_10, opp.cost_to_test, opp.risk]
+        out.texts += [opp.title, claim, opp.who, opp.founder_edge, opp.first_10, opp.cost_to_test, opp.risk]
         lines += [f"## Option {letter}: {opp.title}", "",
                   f"- Problem: {claim}", f"- Evidence: {source}", f"- Who has it: {opp.who}",
                   f"- Founder edge: {opp.founder_edge}", f"- First 10 people to ask: {opp.first_10}",
@@ -143,7 +180,11 @@ def draft_lean_canvas(ctx: Ctx, opportunity: Opportunity, profile: FounderProfil
              "| Box | Content | Source or ASSUMPTION |", "|---|---|---|"]
     for key, label in BOX_NAMES.items():
         box: CanvasBox = getattr(canvas, key)
-        _claim, cards = claim_sources(box.content, [box.source_url] if box.source_url else [], ctx.registry)
+        box.content, removed = scrub_urls(box.content, ctx.registry)
+        if removed:
+            box.content = assumption(box.content)
+        urls = [box.source_url] if box.source_url and not removed else []
+        _claim, cards = claim_sources(box.content, urls, ctx.registry)
         out.cards += cards
         out.sourced += bool(cards)
         out.texts.append(box.content)

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from urllib.parse import urlparse
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Protocol
 
@@ -10,6 +11,9 @@ from pydantic import BaseModel, SecretStr, ValidationError
 
 if TYPE_CHECKING:
     from api.config import Config
+
+
+_LOCAL_HOSTS = ("localhost", "127.0.0.1", "::1")
 
 
 class LLMError(Exception):
@@ -147,6 +151,9 @@ def make_llm(cfg: Config, provider: str = "ollama", api_key: str | None = None,
     if provider == "openai":
         if not api_key or not base_url:
             raise ValueError("The openai provider needs an API key and a base URL.")
+        parts = urlparse(base_url)
+        if parts.scheme != "https" and not (parts.scheme == "http" and parts.hostname in _LOCAL_HOSTS):
+            raise ValueError("The base URL must start with https:// (http:// only for localhost).")
         return OpenAICompatLLM(base_url, api_key, model or cfg.model.default,
                                cfg.model.temperature, cfg.model.max_retries)
     raise ValueError(f"Unknown provider: {provider}")

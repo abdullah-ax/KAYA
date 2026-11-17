@@ -1,16 +1,17 @@
 # One command: docker compose up
-# Draft: Claude Code adjusts build paths once api/ and web/ exist.
+# Local use only: every host port is bound to 127.0.0.1.
+# Works with no .env. Set SEARXNG_SECRET in .env if you ever expose search beyond this machine.
 
 services:
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.40.16
     volumes:
       - ollama:/root/.ollama
     ports:
-      - "11434:11434"
+      - "127.0.0.1:11434:11434"
 
   ollama-pull:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.40.16
     depends_on:
       - ollama
     environment:
@@ -19,14 +20,14 @@ services:
     restart: "no"
 
   searxng:
-    image: searxng/searxng:latest
+    image: searxng/searxng:2026.11.17-b99cf7496
     environment:
-      - SEARXNG_SECRET=${SEARXNG_SECRET:-change-me-local-only}
+      - SEARXNG_SECRET=${SEARXNG_SECRET:-local-only-change-if-exposed}
       - SEARXNG_BASE_URL=http://localhost:8080/
     volumes:
       - ./searxng:/etc/searxng
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
 
   api:
     build:
@@ -52,7 +53,7 @@ services:
       - ollama
       - searxng
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
 
   web:
     build: ./web
@@ -61,7 +62,7 @@ services:
     depends_on:
       - api
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
 
 volumes:
   ollama:
