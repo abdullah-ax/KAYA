@@ -23,6 +23,7 @@ from pydantic import BaseModel, Field
 
 from api.approval import ApprovalError, check_approval
 from api.config import Config, load_config
+from api.delivery import DeliveryError, NetlifyPublisher
 from api.guardrail import check_answer
 from api.llm import LLM, LLMError, make_llm
 from api.log import DecisionLog
@@ -123,6 +124,9 @@ class Session:
     outcome: str | None = None
     error: str | None = None
     touched: float = field(default_factory=time.monotonic)
+    site_id: str | None = None  # the founder's live Netlify site. The token is never kept.
+    site_url: str | None = None
+    deploy_lock: threading.Lock = field(default_factory=threading.Lock)
 
     def __post_init__(self) -> None:
         self.answers = WebAnswers(self.save)
@@ -156,7 +160,17 @@ class Session:
                 "outcome": self.outcome or progress.get("outcome"), "mode": self.mode,
                 "provider": self.provider, "model": self.model, "phase1": progress.get("phase1"), "phase2": progress.get("phase2"),
                 "pending": self.pending(), "notice": self.notice, "messages": self.messages,
-                "outputs": outputs, "sources": _sources(outputs_dir), "error": self.error}
+                "outputs": outputs, "sources": _sources(outputs_dir), "error": self.error,
+                "delivery": {"approved": self.publish_approval() is not None, "url": self.site_url,
+                             "site_id": self.site_id}}
+
+    def publish_approval(self) -> dict[str, Any] | None:
+        """The founder's logged approval to publish the sign-up page, or None. Read from the log, not the UI."""
+        for entry in reversed(DecisionLog(self.run_dir / "decision_log.json").entries()):
+            if (entry.get("action") == "publish_signup_page" and entry.get("approved_by") == "founder"
+                    and entry.get("outcome") != "failed" and (entry.get("founder_input") or "").strip()):
+                return entry
+        return None
 
     def stage(self, saved_step: str) -> str:
         """The step the founder is on. A pending gate names itself; the pipeline saves it only after."""
@@ -366,6 +380,57 @@ def create_app(*, llm_factory: LLMFactory = _default_llm, search_factory: Search
         if not re.fullmatch(r"\w+", run_id) or not run_dir.exists():
             raise HTTPException(404, "No run with that id.")
         return DecisionLog(run_dir / "decision_log.json").entries()
+
+    def netlify_token(token: str | None) -> str:
+        if not token or not token.strip():
+            raise HTTPException(422, "Paste your Netlify token first.")
+        return token.strip()
+
+    def log_delivery(session: Session, action: str, approval: dict[str, Any], url: str | None, outcome: str) -> None:
+        DecisionLog(session.run_dir / "decision_log.json").append(
+            "delivery", action, sources=[url] if url else [], approved_by="founder",
+            founder_input=approval["founder_input"], outcome=outcome)
+
+    @app.post("/runs/{run_id}/publish/netlify")
+    def publish_netlify(run_id: str, x_netlify_token: str | None = Header(default=None)) -> dict[str, Any]:
+        """Put the page the founder approved online. Refused unless the log holds that approval."""
+        session = get(run_id)
+        approval = session.publish_approval()
+        page = session.run_dir / "outputs" / "phase2_step2_signup_page.md"
+        if approval is None or not page.exists():
+            raise HTTPException(409, "Publishing waits for your decision. Approve the sign-up page first.")
+        token = netlify_token(x_netlify_token)
+        with session.deploy_lock:
+            if session.site_id:
+                raise HTTPException(409, "Your page is already online. Take it down before publishing again.")
+            try:
+                done = NetlifyPublisher(token).deploy(run_id, page.read_text(encoding="utf-8"))
+            except DeliveryError as err:
+                log_delivery(session, "deploy_netlify", approval, None, "failed")
+                raise HTTPException(err.status, _scrub(str(err), token)) from None
+            session.site_id, session.site_url = done.site_id, done.url
+            log_delivery(session, "deploy_netlify", approval, done.url, "deployed")
+        session.save()
+        return {"url": done.url, "site_id": done.site_id}
+
+    @app.delete("/runs/{run_id}/publish/netlify")
+    def take_down_netlify(run_id: str, x_netlify_token: str | None = Header(default=None)) -> dict[str, Any]:
+        session = get(run_id)
+        approval = session.publish_approval()
+        if approval is None or not session.site_id:
+            raise HTTPException(409, "Your page is not online, so there is nothing to take down.")
+        token = netlify_token(x_netlify_token)
+        with session.deploy_lock:
+            url = session.site_url
+            try:
+                NetlifyPublisher(token).take_down(session.site_id)
+            except DeliveryError as err:
+                log_delivery(session, "take_down_netlify", approval, url, "failed")
+                raise HTTPException(err.status, _scrub(str(err), token)) from None
+            session.site_id = session.site_url = None
+            log_delivery(session, "take_down_netlify", approval, url, "taken_down")
+        session.save()
+        return {"url": None, "site_id": None}
 
     @app.get("/models")
     def models() -> dict[str, Any]:
