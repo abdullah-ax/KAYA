@@ -63,8 +63,8 @@ def test_model_written_text_still_gets_the_ethics_block(tmp_run):
     assert result.outcome == "stop" and result.stopped_at == "phase2_step1"
 
 
-# 2. skipped publish is explained --------------------------------------------------
-def test_failed_signup_page_check_tells_the_founder_and_logs_skip(tmp_run):
+# 2. a canvas that fails review is not offered for publishing -------------------
+def test_canvas_with_urgency_fails_review_twice_and_nothing_is_offered(tmp_run):
     bad = fx.canvas()
     bad["uvp"] = {"content": "Hurry, last chance to join the drills.", "source_url": None}
     llm = fx.scripted_llm(fx.strong_opportunities(), overrides={"LeanCanvas": [bad, bad]})
@@ -74,8 +74,8 @@ def test_failed_signup_page_check_tells_the_founder_and_logs_skip(tmp_run):
     run_pipeline(ctx, (ROOT / "briefs" / "strong.md").read_text(encoding="utf-8"))
 
     assert any("Fake urgency" in m for m in said)
-    skip = [e for e in ctx.log.entries() if e["action"] == "skip_publish"]
-    assert len(skip) == 1 and skip[0]["agent"] == "orchestrator" and skip[0]["outcome"] == "fix"
+    stop = [e for e in ctx.log.entries() if e["action"] == "stop_canvas_failed_review"]
+    assert len(stop) == 1 and stop[0]["agent"] == "orchestrator"
     assert not (tmp_run / "outputs" / "phase2_step2_signup_page.md").exists()
 
 
