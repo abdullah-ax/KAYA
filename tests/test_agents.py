@@ -170,3 +170,13 @@ def test_founder_can_pick_a_gate_option_by_its_number(tmp_run):
               run_dir=tmp_run, say=lambda t: None)
     picked = ask_choice(ctx, "g", "Which one?", [Option("Alpha", "0", "low", "none"), Option("Beta", "0", "low", "none")])
     assert picked.option == "Beta"
+
+
+def test_founder_facing_questions_use_plain_words_not_internal_labels():
+    import re
+    from pathlib import Path
+    src = (Path(__file__).resolve().parent.parent / "api" / "orchestrator.py").read_text(encoding="utf-8")
+    asked = re.findall(r'ask_[a-z_]+\(\s*ctx,\s*"[a-z_0-9]+",\s*"([^"]+)"', src)
+    assert asked, "expected founder questions in the orchestrator"
+    for q in asked:
+        assert not re.search(r"\bbox \d|\bphase\d|\bstep\d|option_\d", q, re.I), q
